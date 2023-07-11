@@ -14,6 +14,7 @@ struct OutCheckers {
 }
 
 impl Position {
+    #[allow(dead_code)]
     fn switch_sides(&self) -> Position {
         let mut pips = self.pips.map(|x| -x);
         pips.reverse();
