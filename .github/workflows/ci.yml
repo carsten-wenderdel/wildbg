@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push
+
+jobs:
+  do-various-checks:
+    runs-on: [ubuntu-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Format Rust code
+        env:
+          TERM: xterm-256color # Make out colored. Only works on step, not on job.
+        run: cargo fmt --all --check -- --color always
+      
+      - name: Clippy
+        env:
+          TERM: xterm-256color
+        run: cargo clippy --all-targets --all-features --color always -- -D warnings
+
+      - name: Unit tests
+        run: cargo test --color always
