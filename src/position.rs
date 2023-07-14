@@ -1,6 +1,9 @@
+use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Formatter;
 use std::fmt::Write;
+
+const NO_OF_CHECKERS: u8 = 15;
 
 /// A single position in backgammon without match information.
 /// We assume two players "x" and "o".
@@ -23,6 +26,26 @@ impl Position {
             pips,
             x_off: self.o_off,
             o_off: self.x_off,
+        }
+    }
+
+    #[allow(dead_code)]
+    fn from(x: &HashMap<usize, u8>, o: &HashMap<usize, u8>) -> Position {
+        let mut pips = [0; 26];
+        for (i, v) in x {
+            pips[*i] = *v as i8;
+        }
+        for (i, v) in o {
+            debug_assert!(pips[*i] == 0);
+            pips[*i] = -(*v as i8);
+        }
+        let x_sum = x.values().sum::<u8>();
+        let o_sum = o.values().sum::<u8>();
+        debug_assert!(x_sum <= 15 && o_sum <= 15);
+        Position {
+            pips,
+            x_off: NO_OF_CHECKERS - x_sum,
+            o_off: NO_OF_CHECKERS - o_sum,
         }
     }
 }
@@ -72,6 +95,7 @@ impl fmt::Debug for Position {
 #[cfg(test)]
 mod tests {
     use crate::position::Position;
+    use std::collections::HashMap;
 
     #[test]
     fn switch_sides() {
@@ -92,6 +116,22 @@ mod tests {
                 -2, -2,
             ],
             x_off: 3,
+            o_off: 0,
+        };
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn from() {
+        let actual = Position::from(
+            &HashMap::from([(25, 2), (3, 2), (1, 1)]),
+            &HashMap::from([(24, 5), (23, 4), (22, 6)]),
+        );
+        let expected = Position {
+            pips: [
+                0, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -6, -4, -5, 2,
+            ],
+            x_off: 10,
             o_off: 0,
         };
         assert_eq!(actual, expected);
