@@ -11,7 +11,7 @@ const O_BAR: usize = 0;
 
 /// A single position in backgammon without match information.
 /// We assume two players "x" and "o".
-#[derive(PartialEq)]
+#[derive(Clone, PartialEq)]
 struct Position {
     // Array positions 25 and 0 are the bar.
     // The other array positions are the pips from the point of view of x, moving from 24 to 0.
