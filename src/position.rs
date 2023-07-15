@@ -1,3 +1,5 @@
+mod double_moves;
+
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Formatter;
