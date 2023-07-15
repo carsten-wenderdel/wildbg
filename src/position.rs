@@ -4,6 +4,8 @@ use std::fmt::Formatter;
 use std::fmt::Write;
 
 const NO_OF_CHECKERS: u8 = 15;
+const X_BAR: usize = 25;
+const O_BAR: usize = 0;
 
 /// A single position in backgammon without match information.
 /// We assume two players "x" and "o".
@@ -41,7 +43,7 @@ impl Position {
         }
         let x_sum = x.values().sum::<u8>();
         let o_sum = o.values().sum::<u8>();
-        debug_assert!(x_sum <= 15 && o_sum <= 15);
+        debug_assert!(x_sum <= NO_OF_CHECKERS && o_sum <= NO_OF_CHECKERS);
         Position {
             pips,
             x_off: NO_OF_CHECKERS - x_sum,
@@ -56,10 +58,10 @@ impl fmt::Debug for Position {
 
         // Write x:
         let mut s = String::from("x: {");
-        if self.pips[0] > 0 {
-            write!(s, "bar:{}, ", self.pips[0]).unwrap();
+        if self.pips[X_BAR] > 0 {
+            write!(s, "bar:{}, ", self.pips[X_BAR]).unwrap();
         }
-        for i in (1..25).rev() {
+        for i in (1..X_BAR).rev() {
             if self.pips[i] > 0 {
                 write!(s, "{}:{}, ", i, self.pips[i]).unwrap();
             }
@@ -75,15 +77,15 @@ impl fmt::Debug for Position {
         // Write o:
         let mut s = String::from("o: {");
         if self.o_off > 0 {
-            write!(s, "off:{}, ", self.x_off).unwrap();
+            write!(s, "off:{}, ", self.o_off).unwrap();
         }
-        for i in (1..25).rev() {
+        for i in (1..X_BAR).rev() {
             if self.pips[i] < 0 {
                 write!(s, "{}:{}, ", i, -self.pips[i]).unwrap();
             }
         }
-        if self.pips[25] < 0 {
-            write!(s, "bar:{}, ", -self.pips[25]).unwrap();
+        if self.pips[O_BAR] < 0 {
+            write!(s, "bar:{}, ", -self.pips[O_BAR]).unwrap();
         }
         s.pop(); // remove last ", "
         s.pop();
@@ -94,7 +96,7 @@ impl fmt::Debug for Position {
 
 #[cfg(test)]
 mod tests {
-    use crate::position::Position;
+    use crate::position::{Position, O_BAR, X_BAR};
     use std::collections::HashMap;
 
     #[test]
@@ -124,7 +126,7 @@ mod tests {
     #[test]
     fn from() {
         let actual = Position::from(
-            &HashMap::from([(25, 2), (3, 2), (1, 1)]),
+            &HashMap::from([(X_BAR, 2), (3, 2), (1, 1)]),
             &HashMap::from([(24, 5), (23, 4), (22, 6)]),
         );
         let expected = Position {
@@ -134,6 +136,19 @@ mod tests {
             x_off: 10,
             o_off: 0,
         };
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn debug() {
+        let actual = format!(
+            "{:?}",
+            Position::from(
+                &HashMap::from([(X_BAR, 2), (3, 5), (1, 1)]),
+                &HashMap::from([(24, 7), (23, 4), (O_BAR, 3)])
+            )
+        );
+        let expected = "Position:\nx: {bar:2, 3:5, 1:1, off:7}\no: {off:1, 24:7, 23:4, bar:3}";
         assert_eq!(actual, expected);
     }
 }
