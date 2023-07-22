@@ -106,8 +106,16 @@ impl Position {
     fn move_single_checker(&mut self, from: usize, die: usize) {
         self.pips[from] -= 1;
         if from > die {
-            self.pips[from - die] += 1;
+            if self.pips[from - die] == -1 {
+                // hit opponent
+                self.pips[from - die] = 1;
+                self.pips[O_BAR] -= 1;
+            } else {
+                // regular move
+                self.pips[from - die] += 1;
+            }
         } else {
+            // bear off
             self.x_off += 1;
         }
     }
@@ -205,7 +213,7 @@ mod tests {
 
 #[cfg(test)]
 mod private_tests {
-    use crate::position::Position;
+    use crate::position::{Position, O_BAR};
     use std::collections::HashMap;
 
     #[test]
@@ -213,6 +221,17 @@ mod private_tests {
         let before = Position::from_x(&HashMap::from([(4, 10)]));
         let actual = before.clone_and_move_single_checker(4, 2);
         let expected = Position::from_x(&HashMap::from([(4, 9), (2, 1)]));
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn move_single_checker_hit_opponent() {
+        let before = Position::from(&HashMap::from([(4, 10)]), &HashMap::from([(2, 1)]));
+        let actual = before.clone_and_move_single_checker(4, 2);
+        let expected = Position::from(
+            &HashMap::from([(4, 9), (2, 1)]),
+            &HashMap::from([(O_BAR, 1)]),
+        );
         assert_eq!(actual, expected);
     }
 
