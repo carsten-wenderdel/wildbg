@@ -2,10 +2,10 @@ use crate::position::{Position, O_BAR, X_BAR};
 use std::cmp::min;
 
 impl Position {
-    /// Returns a vector of all possible moves after entering the checkers from the bar.
+    /// Returns a vector of all possible moves when rolling a double.
     /// The return value both contains the moves and the resulting positions.
     /// The move is encoded in an array of 4 numbers, representing the pip from where to move.
-    /// If a checker cannot be moved, the corresponding number is `O_BAR`.
+    /// If a checker cannot be moved, the corresponding number in the array is `O_BAR`.
     #[allow(dead_code)]
     fn all_double_moves(&self, die: usize) -> Vec<([usize; 4], Position)> {
         if self.pips[X_BAR] > 0 && self.pips[X_BAR - die] <= -1 {
@@ -46,9 +46,7 @@ impl Position {
     }
 
     /// Returns a vector of all possible moves after entering the checkers from the bar.
-    /// The return value both contains the moves and the resulting positions.
-    /// The move is encoded in an array of 4 numbers, representing the pip from where to move.
-    /// If a checker cannot be moved, the corresponding number is `O_BAR`.
+    /// It takes into account the number of already entered checkers.
     fn double_moves_after_entering(
         &self,
         die: usize,
