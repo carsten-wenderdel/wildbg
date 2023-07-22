@@ -121,7 +121,6 @@ impl Position {
     }
 
     /// Only call if this move is legal.
-    #[allow(dead_code)]
     fn clone_and_move_single_checker(&self, from: usize, die: usize) -> Position {
         let mut new = self.clone();
         new.move_single_checker(from, die);
