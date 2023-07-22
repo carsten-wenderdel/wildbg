@@ -120,7 +120,6 @@ impl Position {
         new
     }
 
-    #[allow(dead_code)]
     fn can_move(&self, from: usize, die: usize) -> bool {
         debug_assert!(
             self.pips[X_BAR] == 0,

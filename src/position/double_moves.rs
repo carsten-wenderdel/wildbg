@@ -32,6 +32,25 @@ impl Position {
         }
         (self, number_of_checkers_to_enter as u32)
     }
+
+    /// Will return 4 if 4 or more checkers can be moved.
+    /// The return value is never bigger than `number_of_entered_checkers`.
+    /// Will return 0 if no checker can be moved.
+    #[allow(dead_code)]
+    fn number_of_movable_checkers(&self, die: usize, number_of_entered_checkers: u32) -> u32 {
+        let mut number_of_checkers = 0;
+        let mut pip = 24;
+        let mut position = self.clone();
+        while number_of_checkers < 4 - number_of_entered_checkers && pip > 0 {
+            if position.can_move(pip, die) {
+                position.move_single_checker(pip, die);
+                number_of_checkers += 1;
+            } else {
+                pip -= 1;
+            }
+        }
+        number_of_checkers
+    }
 }
 
 #[cfg(test)]
@@ -60,5 +79,51 @@ mod tests {
         let v = actual.all_double_moves(4);
         // Then
         assert_eq!(v, Vec::from([X_BAR, X_BAR, X_BAR, X_BAR]));
+    }
+}
+
+#[cfg(test)]
+mod private_tests {
+    use crate::position::Position;
+    use std::collections::HashMap;
+
+    #[test]
+    fn number_of_movable_checkers_when_completely_blocked() {
+        // Given
+        let position = Position::from(&HashMap::from([(20, 2)]), &HashMap::from([(16, 2)]));
+        // When
+        let actual = position.number_of_movable_checkers(4, 0);
+        // Then
+        assert_eq!(actual, 0);
+    }
+
+    #[test]
+    fn number_of_movable_checkers_when_many_moves_would_be_possible() {
+        // Given
+        let position = Position::from(&HashMap::from([(20, 2)]), &HashMap::from([(16, 1)]));
+        // When
+        let actual = position.number_of_movable_checkers(4, 0);
+        // Then
+        assert_eq!(actual, 4);
+    }
+
+    #[test]
+    fn number_of_movable_checkers_when_one_checker_was_entered_from_bar() {
+        // Given
+        let position = Position::from_x(&HashMap::from([(20, 2)]));
+        // When
+        let actual = position.number_of_movable_checkers(4, 1);
+        // Then
+        assert_eq!(actual, 3);
+    }
+
+    #[test]
+    fn number_of_movable_checkers_when_blocked_after_one_move() {
+        // Given
+        let position = Position::from(&HashMap::from([(20, 2)]), &HashMap::from([(12, 2)]));
+        // When
+        let actual = position.number_of_movable_checkers(4, 0);
+        // Then
+        assert_eq!(actual, 2);
     }
 }
