@@ -13,7 +13,7 @@ jobs:
 
       - name: Format Rust code
         env:
-          TERM: xterm-256color # Make out colored. Only works on step, not on job.
+          TERM: xterm-256color # Make output colored. Only works on step, not on job.
         run: cargo fmt --all --check -- --color always
       
       - name: Clippy
