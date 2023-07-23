@@ -32,8 +32,8 @@ impl Position {
             if self.can_enter(die2) {
                 let position = self.clone_and_enter_single_checker(die2);
                 let mut moves2 = position.one_checker_moves(die1, 0, Some(X_BAR));
-                if moves2.first().unwrap().0[0] != None {
-                    if moves1.first().unwrap().0[1] != None {
+                if moves2.first().unwrap().0[0].is_some() {
+                    if moves1.first().unwrap().0[1].is_some() {
                         // Both move vectors contain moves with both checkers
                         if self.pips[X_BAR - die1] != -1 && self.pips[X_BAR - die2] != -1 {
                             // Moving the checker from X_BAR to (X_BAR - die1 - die2) is in both vectors
@@ -41,29 +41,29 @@ impl Position {
                             moves2.retain(|m| m.0[0] != Some(X_BAR - die2));
                         }
                         moves1.append(&mut moves2);
-                        return moves1;
+                        moves1
                     } else {
                         // Only moves2 contains moves with both checkers
-                        return moves2;
+                        moves2
                     }
                 } else {
                     // moves2 does not contain moves with both checkers
                     // We return moves1 - if it contains moves with both checkers, it's perfect.
                     // If moves1 only contains a single move with a single checker, the bigger die wins.
-                    return moves1;
+                    moves1
                 }
             } else {
                 // die2 can't enter
-                return moves1;
+                moves1
             }
         } else {
             // die1 can't enter
             if self.can_enter(die2) {
                 let position = self.clone_and_enter_single_checker(die2);
-                return position.one_checker_moves(die1, 0, Some(X_BAR));
+                position.one_checker_moves(die1, 0, Some(X_BAR))
             } else {
                 // Neither die1 nor die2 allow entering - return the identity move.
-                return Vec::from([([None, None], self.clone())]);
+                Vec::from([([None, None], self.clone())])
             }
         }
     }
