@@ -120,13 +120,13 @@ mod tests {
     #[test]
     fn cannot_enter_from_the_bar() {
         // Given
-        let actual = Position::from(&HashMap::from([(X_BAR, 4)]), &HashMap::from([(22, 2)]));
+        let position = Position::from(&HashMap::from([(X_BAR, 4)]), &HashMap::from([(22, 2)]));
         // When
-        let v = actual.all_double_moves(3);
+        let moves = position.all_double_moves(3);
         // Then
-        assert_eq!(v.len(), 1);
-        assert_eq!(v[0].0, [O_BAR, O_BAR, O_BAR, O_BAR]);
-        assert_eq!(v[0].1, actual);
+        assert_eq!(moves.len(), 1);
+        assert_eq!(moves[0].0, [O_BAR, O_BAR, O_BAR, O_BAR]);
+        assert_eq!(moves[0].1, position);
     }
 
     #[test]
@@ -137,13 +137,13 @@ mod tests {
             &HashMap::from([(22, 2), (20, 2)]),
         );
         // When
-        let v = actual.all_double_moves(4);
+        let moves = actual.all_double_moves(4);
         // Then
         let expected = Position::from(
             &HashMap::from([(21, 4)]),
             &HashMap::from([(22, 2), (20, 2)]),
         );
-        assert_eq!(v, Vec::from([([X_BAR, X_BAR, X_BAR, X_BAR], expected)]));
+        assert_eq!(moves, Vec::from([([X_BAR, X_BAR, X_BAR, X_BAR], expected)]));
     }
 
     #[test]
@@ -166,12 +166,12 @@ mod tests {
     #[test]
     fn enter_two_and_move_two_out_of_many() {
         // Given
-        let actual = Position::from(
+        let position = Position::from(
             &HashMap::from([(X_BAR, 2), (4, 1), (3, 1)]),
             &HashMap::from([(24, 2)]),
         );
         // When
-        let moves = actual.all_double_moves(3);
+        let moves = position.all_double_moves(3);
         // Then
         let expected1 = (
             [X_BAR, X_BAR, 22, 22],
@@ -201,12 +201,12 @@ mod tests {
     #[test]
     fn bearoff_4_or_bearoff_less() {
         // Given
-        let actual = Position::from(
+        let position = Position::from(
             &HashMap::from([(4, 1), (3, 1), (2, 4)]),
             &HashMap::from([(22, 2)]),
         );
         // When
-        let moves = actual.all_double_moves(2);
+        let moves = position.all_double_moves(2);
         // Then
         let expected1 = (
             [4, 3, 2, 2],
