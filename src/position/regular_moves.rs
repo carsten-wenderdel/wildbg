@@ -12,8 +12,59 @@ impl Position {
         debug_assert!(die1 > die2);
         match self.pips[X_BAR] {
             0 => self.moves_with_0_checkers_on_bar(die1, die2),
-            1 => Vec::new(),
+            1 => self.moves_with_1_checker_on_bar(die1, die2),
             _ => self.moves_with_2_checkers_on_bar(die1, die2),
+        }
+    }
+
+    /// Regular moves with no checkers on the bar.
+    fn moves_with_1_checker_on_bar(
+        &self,
+        die1: usize,
+        die2: usize,
+    ) -> Vec<([Option<usize>; 2], Position)> {
+        debug_assert!(die1 > die2);
+        debug_assert!(self.pips[X_BAR] == 1);
+
+        if self.can_enter(die1) {
+            let position = self.clone_and_enter_single_checker(die1);
+            let mut moves1 = position.one_checker_moves(die2, 1, Some(X_BAR));
+            if self.can_enter(die2) {
+                let position = self.clone_and_enter_single_checker(die2);
+                let mut moves2 = position.one_checker_moves(die1, 0, Some(X_BAR));
+                if moves2.first().unwrap().0[0] != None {
+                    if moves1.first().unwrap().0[1] != None {
+                        // Both move vectors contain moves with both checkers
+                        if self.pips[X_BAR - die1] != -1 && self.pips[X_BAR - die2] != -1 {
+                            // Moving the checker from X_BAR to (X_BAR - die1 - die2) is in both vectors
+                            // Nothing is hit, so it's a duplication that must be removed
+                            moves2.retain(|m| m.0[0] != Some(X_BAR - die2));
+                        }
+                        moves1.append(&mut moves2);
+                        return moves1;
+                    } else {
+                        // Only moves2 contains moves with both checkers
+                        return moves2;
+                    }
+                } else {
+                    // moves2 does not contain moves with both checkers
+                    // We return moves1 - if it contains moves with both checkers, it's perfect.
+                    // If moves1 only contains a single move with a single checker, the bigger die wins.
+                    return moves1;
+                }
+            } else {
+                // die2 can't enter
+                return moves1;
+            }
+        } else {
+            // die1 can't enter
+            if self.can_enter(die2) {
+                let position = self.clone_and_enter_single_checker(die2);
+                return position.one_checker_moves(die1, 0, Some(X_BAR));
+            } else {
+                // Neither die1 nor die2 allow entering - return the identity move.
+                return Vec::from([([None, None], self.clone())]);
+            }
         }
     }
 
@@ -36,6 +87,8 @@ impl Position {
         }
     }
 
+    /// All moves where one die/pip is already fixed.
+    /// `index` is the position in the array from where the new `die` should be moved.
     fn one_checker_moves(
         &self,
         die: usize,
@@ -53,7 +106,11 @@ impl Position {
                 moves.push((the_move, position));
             }
         }
-        debug_assert!(!moves.is_empty());
+        if moves.is_empty() {
+            let mut the_move = [other_value, other_value];
+            the_move[index] = None;
+            moves.push((the_move, self.clone()));
+        }
         moves
     }
 
@@ -186,6 +243,12 @@ impl Position {
         self.pips[X_BAR - die] > -2
     }
 
+    fn clone_and_enter_single_checker(&self, die: usize) -> Position {
+        let mut position = self.clone();
+        position.enter_single_checker(die);
+        position
+    }
+
     fn enter_single_checker(&mut self, die: usize) {
         debug_assert!(
             self.pips[X_BAR] > 0,
@@ -286,6 +349,147 @@ mod tests {
         );
         assert_eq!(moves.len(), 1);
         assert_eq!(moves, Vec::from([([Some(X_BAR), Some(X_BAR)], expected)]));
+    }
+
+    // One checker on bar
+
+    #[test]
+    fn cannot_enter_with_one_checker_on_bar() {
+        // Given
+        let position = Position::from(
+            &HashMap::from([(X_BAR, 1), (10, 2)]),
+            &HashMap::from([(22, 2), (20, 2)]),
+        );
+        // When
+        let moves = position.all_regular_moves(5, 3);
+        // Then
+        assert_eq!(moves, Vec::from([([None, None], position)]));
+    }
+
+    #[test]
+    fn can_enter_with_bigger_die_but_no_other_movement() {
+        // Given
+        let position = Position::from(
+            &HashMap::from([(X_BAR, 1), (10, 2)]),
+            &HashMap::from([(22, 2), (20, 1), (17, 2), (7, 3)]),
+        );
+        // When
+        let moves = position.all_regular_moves(5, 3);
+        // Then
+        let expected = Position::from(
+            &HashMap::from([(20, 1), (10, 2)]),
+            &HashMap::from([(22, 2), (17, 2), (7, 3), (O_BAR, 1)]),
+        );
+        assert_eq!(moves, Vec::from([([Some(X_BAR), None], expected)]));
+    }
+
+    #[test]
+    fn can_enter_with_smaller_die_but_no_other_movement() {
+        // Given
+        let position = Position::from(
+            &HashMap::from([(X_BAR, 1)]),
+            &HashMap::from([(19, 2), (14, 2)]),
+        );
+        // When
+        let moves = position.all_regular_moves(6, 5);
+        // Then
+        let expected = Position::from(
+            &HashMap::from([(20, 1)]),
+            &HashMap::from([(19, 2), (14, 2)]),
+        );
+        assert_eq!(moves, Vec::from([([None, Some(X_BAR)], expected)]));
+    }
+
+    #[test]
+    fn could_enter_with_either_die_but_must_use_bigger_one() {
+        // Given
+        let position = Position::from(&HashMap::from([(X_BAR, 1)]), &HashMap::from([(20, 2)]));
+        // When
+        let moves = position.all_regular_moves(3, 2);
+        // Then
+        let expected = Position::from(&HashMap::from([(22, 1)]), &HashMap::from([(20, 2)]));
+        assert_eq!(moves, Vec::from([([Some(X_BAR), None], expected)]));
+    }
+
+    #[test]
+    fn only_entering_with_smaller_die_allows_two_checkers_to_move() {
+        // Given
+        let position = Position::from(
+            &HashMap::from([(X_BAR, 1), (12, 1)]),
+            &HashMap::from([(20, 2), (10, 2)]),
+        );
+        // When
+        let moves = position.all_regular_moves(3, 2);
+        // Then
+        let expected = Position::from(
+            &HashMap::from([(23, 1), (9, 1)]),
+            &HashMap::from([(20, 2), (10, 2)]),
+        );
+        assert_eq!(moves, Vec::from([([Some(12), Some(X_BAR)], expected)]));
+    }
+
+    #[test]
+    fn only_entering_with_bigger_die_allows_two_checkers_to_move() {
+        // Given
+        let position = Position::from(
+            &HashMap::from([(X_BAR, 1), (12, 1)]),
+            &HashMap::from([(20, 2), (9, 2)]),
+        );
+        // When
+        let moves = position.all_regular_moves(3, 2);
+        // Then
+        let expected = Position::from(
+            &HashMap::from([(22, 1), (10, 1)]),
+            &HashMap::from([(20, 2), (9, 2)]),
+        );
+        assert_eq!(moves, Vec::from([([Some(X_BAR), Some(12)], expected)]));
+    }
+
+    #[test]
+    fn entering_with_either_die_allowed_but_only_one_final_position() {
+        // Given
+        let position = Position::from(&HashMap::from([(X_BAR, 1)]), &HashMap::from([(9, 2)]));
+        // When
+        let moves = position.all_regular_moves(3, 2);
+        // Then
+        let expected = Position::from(&HashMap::from([(20, 1)]), &HashMap::from([(9, 2)]));
+        assert_eq!(moves, Vec::from([([Some(X_BAR), Some(22)], expected)]));
+    }
+
+    #[test]
+    fn final_position_but_different_move_because_die1_hits_opponent() {
+        // Given
+        let position = Position::from(&HashMap::from([(X_BAR, 1)]), &HashMap::from([(22, 1)]));
+        // When
+        let moves = position.all_regular_moves(3, 2);
+        // Then
+        let expected1 = (
+            [Some(X_BAR), Some(22)],
+            Position::from(&HashMap::from([(20, 1)]), &HashMap::from([(O_BAR, 1)])),
+        );
+        let expected2 = (
+            [Some(23), Some(X_BAR)],
+            Position::from(&HashMap::from([(20, 1)]), &HashMap::from([(22, 1)])),
+        );
+        assert_eq!(moves, Vec::from([expected1, expected2]));
+    }
+
+    #[test]
+    fn final_position_but_different_move_because_die2_hits_opponent() {
+        // Given
+        let position = Position::from(&HashMap::from([(X_BAR, 1)]), &HashMap::from([(23, 1)]));
+        // When
+        let moves = position.all_regular_moves(3, 2);
+        // Then
+        let expected1 = (
+            [Some(X_BAR), Some(22)],
+            Position::from(&HashMap::from([(20, 1)]), &HashMap::from([(23, 1)])),
+        );
+        let expected2 = (
+            [Some(23), Some(X_BAR)],
+            Position::from(&HashMap::from([(20, 1)]), &HashMap::from([(O_BAR, 1)])),
+        );
+        assert_eq!(moves, Vec::from([expected1, expected2]));
     }
 
     // No checkers on bar
