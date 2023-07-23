@@ -7,8 +7,11 @@ impl Position {
     /// The move is encoded in an array of 2 numbers, representing the pip from where to move.
     /// Element '0' in that array is the pip from where to move with the first die,
     /// element '1' is the pip from where to move with the second die.
-    #[allow(dead_code)]
-    fn all_regular_moves(&self, die1: usize, die2: usize) -> Vec<([Option<usize>; 2], Position)> {
+    pub(super) fn all_regular_moves(
+        &self,
+        die1: usize,
+        die2: usize,
+    ) -> Vec<([Option<usize>; 2], Position)> {
         debug_assert!(die1 > die2);
         match self.pips[X_BAR] {
             0 => self.moves_with_0_checkers_on_bar(die1, die2),

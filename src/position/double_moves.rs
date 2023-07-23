@@ -6,8 +6,7 @@ impl Position {
     /// The return value both contains the moves and the resulting positions.
     /// The move is encoded in an array of 4 numbers, representing the pip from where to move.
     /// If a checker cannot be moved, the corresponding number in the array is `O_BAR`.
-    #[allow(dead_code)]
-    fn all_double_moves(&self, die: usize) -> Vec<([usize; 4], Position)> {
+    pub(super) fn all_double_moves(&self, die: usize) -> Vec<([usize; 4], Position)> {
         if self.pips[X_BAR] > 0 && self.pips[X_BAR - die] <= -1 {
             // Has at least one checker on the bar but can't move it
             return Vec::from([([O_BAR, O_BAR, O_BAR, O_BAR], self.clone())]);

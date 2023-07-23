@@ -24,6 +24,22 @@ struct Position {
 
 impl Position {
     #[allow(dead_code)]
+    /// The return values have switched the sides of the players.
+    fn all_positions_after_moving(&self, die1: usize, die2: usize) -> Vec<Position> {
+        return if die1 == die2 {
+            let moves = self.all_double_moves(die1);
+            moves.iter().map(|m| m.1.switch_sides()).collect()
+        } else {
+            let (big, small) = if die1 > die2 {
+                (die1, die2)
+            } else {
+                (die2, die1)
+            };
+            let moves = self.all_regular_moves(big, small);
+            moves.iter().map(|m| m.1.switch_sides()).collect()
+        };
+    }
+
     fn switch_sides(&self) -> Position {
         let mut pips = self.pips.map(|x| -x);
         pips.reverse();
@@ -156,6 +172,42 @@ impl Position {
 mod tests {
     use crate::position::{Position, O_BAR, X_BAR};
     use std::collections::HashMap;
+
+    #[test]
+    fn all_positions_after_moving_double() {
+        // Given
+        let pos = Position::from(
+            &HashMap::from([(X_BAR, 2), (4, 1), (3, 1)]),
+            &HashMap::from([(24, 2)]),
+        );
+        // When
+        let positions = pos.all_positions_after_moving(3, 3);
+        // Then
+        let expected1 = Position::from(
+            &HashMap::from([(1, 2)]),
+            &HashMap::from([(6, 2), (21, 1), (22, 1)]),
+        );
+        let expected2 = Position::from(
+            &HashMap::from([(1, 2)]),
+            &HashMap::from([(3, 1), (9, 1), (21, 1), (22, 1)]),
+        );
+        let expected3 = Position::from(
+            &HashMap::from([(1, 2)]),
+            &HashMap::from([(3, 1), (6, 1), (22, 1), (24, 1)]),
+        );
+        assert_eq!(positions, [expected1, expected2, expected3]);
+    }
+
+    #[test]
+    fn all_positions_after_moving_regular() {
+        let pos = Position::from(&HashMap::from([(X_BAR, 1)]), &HashMap::from([(22, 1)]));
+        // When
+        let positions = pos.all_positions_after_moving(2, 3);
+        // Then
+        let expected1 = Position::from(&HashMap::from([(X_BAR, 1)]), &HashMap::from([(5, 1)]));
+        let expected2 = Position::from(&HashMap::from([(3, 1)]), &HashMap::from([(5, 1)]));
+        assert_eq!(positions, [expected1, expected2]);
+    }
 
     #[test]
     fn switch_sides() {
