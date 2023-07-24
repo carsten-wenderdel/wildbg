@@ -7,7 +7,7 @@ impl Position {
     /// The move is encoded in an array of 4 numbers, representing the pip from where to move.
     /// If a checker cannot be moved, the corresponding number in the array is `O_BAR`.
     pub(super) fn all_double_moves(&self, die: usize) -> Vec<([usize; 4], Position)> {
-        if self.pips[X_BAR] > 0 && self.pips[X_BAR - die] <= -1 {
+        if self.pips[X_BAR] > 0 && self.pips[X_BAR - die] < -1 {
             // Has at least one checker on the bar but can't move it
             return Vec::from([([O_BAR, O_BAR, O_BAR, O_BAR], self.clone())]);
         }
@@ -26,9 +26,11 @@ impl Position {
                 }
             }
         }
+        debug_assert!(!moves.is_empty());
         moves
     }
 
+    /// Returns the position after entering all possible checkers and the number of entered checkers (0 to 4)
     fn position_after_entering_checkers(&self, die: usize) -> (Position, u32) {
         if self.pips[X_BAR] == 0 {
             return (self.clone(), 0);
@@ -36,10 +38,14 @@ impl Position {
         debug_assert!(self.pips[X_BAR - die] > -2);
         let number_of_checkers_to_enter = min(4, self.pips[X_BAR]);
         let mut position = self.clone();
-        position.pips[X_BAR] -= number_of_checkers_to_enter;
-        position.pips[X_BAR - die] = number_of_checkers_to_enter;
-        if self.pips[X_BAR - die] == -1 {
-            position.pips[O_BAR] -= 1;
+        if number_of_checkers_to_enter > 0 {
+            position.pips[X_BAR] -= number_of_checkers_to_enter;
+            if self.pips[X_BAR - die] == -1 {
+                position.pips[O_BAR] -= 1;
+                position.pips[X_BAR - die] = number_of_checkers_to_enter;
+            } else {
+                position.pips[X_BAR - die] += number_of_checkers_to_enter;
+            }
         }
         (position, number_of_checkers_to_enter as u32)
     }
@@ -52,10 +58,10 @@ impl Position {
         number_of_entered_checkers: u32,
     ) -> Vec<([usize; 4], Position)> {
         let nr_movable_checkers = self.number_of_movable_checkers(die, number_of_entered_checkers);
-        let mut moves: Vec<([usize; 4], Position)> = Vec::new();
         if nr_movable_checkers == 0 {
-            return moves;
+            return Vec::from([([O_BAR, O_BAR, O_BAR, O_BAR], self.clone())]);
         }
+        let mut moves: Vec<([usize; 4], Position)> = Vec::new();
         for i1 in (1..X_BAR).rev() {
             if self.can_move(i1, die) {
                 let pos = self.clone_and_move_single_checker(i1, die);
@@ -231,6 +237,34 @@ mod tests {
             moves,
             Vec::from([expected1, expected2, expected3, expected4])
         );
+    }
+
+    #[test]
+    fn no_checkers_on_the_bar_but_would_hit_opponent_if_entering() {
+        // Given
+        let actual = Position::from(&HashMap::from([(10, 4)]), &HashMap::from([(22, 1), (4, 2)]));
+        // When
+        let moves = actual.all_double_moves(3);
+        // Then
+        let expected = Position::from(&HashMap::from([(7, 4)]), &HashMap::from([(22, 1), (4, 2)]));
+        assert_eq!(moves, Vec::from([([10, 10, 10, 10], expected)]));
+    }
+
+    #[test]
+    fn hits_opponent_when_entering_and_cannot_move_afterwards() {
+        // Given
+        let actual = Position::from(
+            &HashMap::from([(X_BAR, 2)]),
+            &HashMap::from([(22, 1), (19, 2)]),
+        );
+        // When
+        let moves = actual.all_double_moves(3);
+        // Then
+        let expected = Position::from(
+            &HashMap::from([(22, 2)]),
+            &HashMap::from([(19, 2), (O_BAR, 1)]),
+        );
+        assert_eq!(moves, Vec::from([([X_BAR, X_BAR, O_BAR, O_BAR], expected)]));
     }
 }
 
