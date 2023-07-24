@@ -146,12 +146,17 @@ impl Position {
                 for j in (1..max(7, i + 1)).rev() {
                     if position.can_move(j, die1) {
                         // This describes cases 1 and 2:
-                        let two_movements_with_same_checker_and_different_outcome =
-                            i == j + die2 && (self.pips[i - die1] < 0 || self.pips[i - die2] < 0);
+                        let two_movements_with_same_checker_and_different_outcome = i == j + die2
+                            && i > die1
+                            && i > die2
+                            && (self.pips[i - die1] < 0 || self.pips[i - die2] < 0);
                         // This describes case 3:
                         let bear_off_was_illegal_but_not_anymore = i > 6 && j <= die1;
+                        let could_not_bear_off_because_die_bigger_than_pip_and_checker_was_on_bigger_pip =
+                            die1 > j && i > j;
                         if two_movements_with_same_checker_and_different_outcome
                             || bear_off_was_illegal_but_not_anymore
+                            || could_not_bear_off_because_die_bigger_than_pip_and_checker_was_on_bigger_pip
                         {
                             let final_position = position.clone_and_move_single_checker(j, die1);
                             moves.push(([Some(j), Some(i)], final_position));
@@ -688,5 +693,23 @@ mod tests {
         // Then
         let expected = Position::from(&HashMap::from([(1, 3)]), &HashMap::from([(24, 8)]));
         assert_eq!(moves, Vec::from([([Some(1), Some(1)], expected)]));
+    }
+
+    #[test]
+    fn bear_off_from_same_pip_with_either_big_or_small_die() {
+        // Given
+        let position = Position::from_x(&HashMap::from([(2, 1), (1, 5)]));
+        // When
+        let moves = position.all_regular_moves(6, 1);
+        // Then
+        let expected1 = (
+            [Some(2), Some(1)],
+            Position::from_x(&HashMap::from([(1, 4)])),
+        );
+        let expected2 = (
+            [Some(1), Some(2)],
+            Position::from_x(&HashMap::from([(1, 5)])),
+        );
+        assert_eq!(moves, Vec::from([expected1, expected2]));
     }
 }
