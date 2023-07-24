@@ -13,7 +13,7 @@ const O_BAR: usize = 0;
 /// A single position in backgammon without match information.
 /// We assume two players "x" and "o".
 #[derive(Clone, PartialEq)]
-struct Position {
+pub struct Position {
     // Array positions 25 and 0 are the bar.
     // The other array positions are the pips from the point of view of x, moving from 24 to 0.
     // A positive number means x has that many checkers on that point. Negative for o.
@@ -25,7 +25,7 @@ struct Position {
 impl Position {
     #[allow(dead_code)]
     /// The return values have switched the sides of the players.
-    fn all_positions_after_moving(&self, die1: usize, die2: usize) -> Vec<Position> {
+    pub fn all_positions_after_moving(&self, die1: usize, die2: usize) -> Vec<Position> {
         return if die1 == die2 {
             let moves = self.all_double_moves(die1);
             moves.iter().map(|m| m.1.switch_sides()).collect()
@@ -50,7 +50,7 @@ impl Position {
         }
     }
 
-    fn from(x: &HashMap<usize, u8>, o: &HashMap<usize, u8>) -> Position {
+    pub fn from(x: &HashMap<usize, u8>, o: &HashMap<usize, u8>) -> Position {
         let mut pips = [0; 26];
         for (i, v) in x {
             pips[*i] = *v as i8;
