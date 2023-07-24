@@ -147,7 +147,7 @@ impl Position {
                     if position.can_move(j, die1) {
                         // This describes cases 1 and 2:
                         let two_movements_with_same_checker_and_different_outcome =
-                            j == i - die2 && (self.pips[i - die1] < 0 || self.pips[i - die2] < 0);
+                            i == j + die2 && (self.pips[i - die1] < 0 || self.pips[i - die2] < 0);
                         // This describes case 3:
                         let bear_off_was_illegal_but_not_anymore = i > 6 && j <= die1;
                         if two_movements_with_same_checker_and_different_outcome
@@ -677,5 +677,16 @@ mod tests {
             Position::from(&HashMap::from([(1, 1)]), &HashMap::from([(O_BAR, 1)])),
         );
         assert_eq!(moves, Vec::from([expected1, expected2]));
+    }
+
+    #[test]
+    fn two_bear_offs_from_same_pip() {
+        // Given
+        let position = Position::from(&HashMap::from([(1, 5)]), &HashMap::from([(24, 8)]));
+        // When
+        let moves = position.all_regular_moves(6, 4);
+        // Then
+        let expected = Position::from(&HashMap::from([(1, 3)]), &HashMap::from([(24, 8)]));
+        assert_eq!(moves, Vec::from([([Some(1), Some(1)], expected)]));
     }
 }
