@@ -127,8 +127,7 @@ impl Position {
             // Looking at moves where die1 *can* be used first
             if self.can_move(i, die1) {
                 let position = self.clone_and_move_single_checker(i, die1);
-                // We have to look at all pips in the home board, in case bearing off just became possible. This is why the 7 appears in the max function.
-                for j in (1..max(7, i + 1)).rev() {
+                for j in (1..X_BAR).rev() {
                     if position.can_move(j, die2) {
                         let final_position = position.clone_and_move_single_checker(j, die2);
                         moves.push(([Some(i), Some(j)], final_position));
@@ -138,7 +137,7 @@ impl Position {
             // Looking at moves where die2 *must* be moved first
             // This can be because of two reasons:
             // 1. We make two movements with the same checker, but for die1 it's initially blocked.
-            // 2. We make two movements with different checkers and hit something with the first move, either die1 or die2
+            // 2. We make two movements with the same checker and hit something with the first movement, either with die1 or die2.
             // 3. After moving die2, we now can bear off with die1, which was illegal before.
             if self.can_move(i, die2) {
                 let position = self.clone_and_move_single_checker(i, die2);
@@ -711,5 +710,22 @@ mod tests {
             Position::from_x(&HashMap::from([(1, 5)])),
         );
         assert_eq!(moves, Vec::from([expected1, expected2]));
+    }
+
+    #[test]
+    fn use_smaller_die_from_bigger_pip() {
+        // Given
+        let position = Position::from(&HashMap::from([(7, 1), (6, 3)]), &HashMap::from([(2, 2)]));
+        // When
+        let moves = position.all_regular_moves(5, 4);
+        // Then
+        let expected = (
+            [Some(6), Some(7)],
+            Position::from(
+                &HashMap::from([(6, 2), (3, 1), (1, 1)]),
+                &HashMap::from([(2, 2)]),
+            ),
+        );
+        assert_eq!(moves, Vec::from([expected]));
     }
 }
