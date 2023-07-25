@@ -36,7 +36,7 @@ mod tests {
         // Given
         let mut gen = DiceGen::with_seed(123);
         let mut count1 = [0, 0, 0, 0, 0, 0];
-        let mut count2 = count1.clone();
+        let mut count2 = count1;
         // When
         for _ in 0..100_000 {
             let (die1, die2) = gen.roll();
