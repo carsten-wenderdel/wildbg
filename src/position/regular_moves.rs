@@ -578,18 +578,12 @@ mod tests {
     #[test]
     fn bear_off_from_same_pip_with_either_big_or_small_die() {
         // Given
-        let position = Position::from_x(&HashMap::from([(2, 1), (1, 5)]));
+        let position = pos!(x 2:1, 1:5; o);
         // When
         let moves = position.all_regular_moves(6, 1);
         // Then
-        let expected1 = (
-            [Some(2), Some(1)],
-            Position::from_x(&HashMap::from([(1, 4)])),
-        );
-        let expected2 = (
-            [Some(1), Some(2)],
-            Position::from_x(&HashMap::from([(1, 5)])),
-        );
+        let expected1 = ([Some(2), Some(1)], pos!(x 1:4; o));
+        let expected2 = ([Some(1), Some(2)], pos!(x 1:5; o));
         assert_eq!(moves, Vec::from([expected1, expected2]));
     }
 

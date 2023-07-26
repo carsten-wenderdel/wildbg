@@ -241,7 +241,7 @@ mod private_tests {
     #[test]
     fn number_of_movable_checkers_when_one_checker_was_entered_from_bar() {
         // Given
-        let position = Position::from_x(&HashMap::from([(20, 2)]));
+        let position = pos!(x 20:2; o);
         // When
         let actual = position.number_of_movable_checkers(4, 1);
         // Then

@@ -19,15 +19,18 @@ const O_BAR: usize = 0;
 macro_rules! pos {
     ( x $( $x_pip:tt:$x_checkers:tt ), * ;o $( $o_pip:tt:$o_checkers:tt ), * ) => {
         {
+            #[allow(unused_mut)]
             let mut x = HashMap::new();
             $(
                 x.insert($x_pip as usize, $x_checkers as u8);
             )*
 
+            #[allow(unused_mut)]
             let mut o = HashMap::new();
             $(
                 o.insert($o_pip as usize, $o_checkers as u8);
             )*
+
             Position::from(&x, &o)
         }
     };
@@ -91,11 +94,6 @@ impl Position {
             x_off: NO_OF_CHECKERS - x_sum,
             o_off: NO_OF_CHECKERS - o_sum,
         }
-    }
-
-    #[allow(dead_code)]
-    fn from_x(x: &HashMap<usize, u8>) -> Position {
-        Self::from(x, &HashMap::new())
     }
 }
 
@@ -273,9 +271,9 @@ mod private_tests {
 
     #[test]
     fn move_single_checker_regular_move() {
-        let before = Position::from_x(&HashMap::from([(4, 10)]));
+        let before = pos!(x 4:10; o);
         let actual = before.clone_and_move_single_checker(4, 2);
-        let expected = Position::from_x(&HashMap::from([(4, 9), (2, 1)]));
+        let expected = pos!(x 4:9, 2:1; o);
         assert_eq!(actual, expected);
     }
 
@@ -289,23 +287,23 @@ mod private_tests {
 
     #[test]
     fn move_single_checker_bearoff_regular() {
-        let before = Position::from_x(&HashMap::from([(4, 10)]));
+        let before = pos!(x 4:10; o);
         let actual = before.clone_and_move_single_checker(4, 4);
-        let expected = Position::from_x(&HashMap::from([(4, 9)]));
+        let expected = pos!(x 4:9; o);
         assert_eq!(actual, expected);
     }
 
     #[test]
     fn move_single_checker_bearoff_from_lower_pip() {
-        let before = Position::from_x(&HashMap::from([(4, 10)]));
+        let before = pos!(x 4:10; o);
         let actual = before.clone_and_move_single_checker(4, 5);
-        let expected = Position::from_x(&HashMap::from([(4, 9)]));
+        let expected = pos!(x 4:9; o);
         assert_eq!(actual, expected);
     }
 
     #[test]
     fn cannot_move_no_checker() {
-        let given = Position::from_x(&HashMap::from([(4, 10)]));
+        let given = pos!(x 4:10; o);
         assert!(!given.can_move(5, 2));
     }
 
@@ -335,25 +333,25 @@ mod private_tests {
 
     #[test]
     fn cannot_move_bear_off_illegal_because_other_checkers() {
-        let given = Position::from_x(&HashMap::from([(10, 2), (4, 10)]));
+        let given = pos!(x 10:2, 4:10; o);
         assert!(!given.can_move(4, 4));
     }
 
     #[test]
     fn can_move_will_bear_off_exactly() {
-        let given = Position::from_x(&HashMap::from([(4, 10)]));
+        let given = pos!(x 4:10; o);
         assert!(given.can_move(4, 4));
     }
 
     #[test]
     fn cannot_move_bear_off_skipping_illegal_because_other_checkers() {
-        let given = Position::from_x(&HashMap::from([(10, 2), (4, 10)]));
+        let given = pos!(x 10:2, 4:10; o);
         assert!(!given.can_move(4, 6));
     }
 
     #[test]
     fn can_move_will_bear_off_skipping() {
-        let given = Position::from_x(&HashMap::from([(4, 10)]));
+        let given = pos!(x 4:10; o);
         assert!(given.can_move(4, 6));
     }
 }
