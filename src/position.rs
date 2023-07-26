@@ -10,6 +10,30 @@ const NO_OF_CHECKERS: u8 = 15;
 const X_BAR: usize = 25;
 const O_BAR: usize = 0;
 
+/// Simple way to create positions for testing
+/// The starting position would be:
+/// pos!(x 24:2, 13:5, 8:3, 6:5; o 19:5, 17:3, 12:5, 1:2)
+/// The order is not important, so this is equivalent:
+/// pos!(x 24:2, 13:5, 8:3, 6:5; o 1:2, 12:5, 17:3, 19:5)
+#[macro_export]
+macro_rules! pos {
+    ( x $( $x_pip:tt:$x_checkers:tt ), * ;o $( $o_pip:tt:$o_checkers:tt ), * ) => {
+        {
+            let mut x = HashMap::new();
+            $(
+                x.insert($x_pip as usize, $x_checkers as u8);
+            )*
+
+            let mut o = HashMap::new();
+            $(
+                o.insert($o_pip as usize, $o_checkers as u8);
+            )*
+            Position::from(&x, &o)
+        }
+    };
+}
+pub use pos;
+
 /// A single position in backgammon without match information.
 /// We assume two players "x" and "o".
 #[derive(Clone, PartialEq)]
@@ -176,36 +200,24 @@ mod tests {
     #[test]
     fn all_positions_after_moving_double() {
         // Given
-        let pos = Position::from(
-            &HashMap::from([(X_BAR, 2), (4, 1), (3, 1)]),
-            &HashMap::from([(24, 2)]),
-        );
+        let pos = pos!(x X_BAR:2, 4:1, 3:1; o 24:2);
         // When
         let positions = pos.all_positions_after_moving(3, 3);
         // Then
-        let expected1 = Position::from(
-            &HashMap::from([(1, 2)]),
-            &HashMap::from([(6, 2), (21, 1), (22, 1)]),
-        );
-        let expected2 = Position::from(
-            &HashMap::from([(1, 2)]),
-            &HashMap::from([(3, 1), (9, 1), (21, 1), (22, 1)]),
-        );
-        let expected3 = Position::from(
-            &HashMap::from([(1, 2)]),
-            &HashMap::from([(3, 1), (6, 1), (22, 1), (24, 1)]),
-        );
+        let expected1 = pos!(x 1:2; o 6:2, 21:1, 22:1);
+        let expected2 = pos!(x 1:2; o 3:1, 9:1, 21:1, 22:1);
+        let expected3 = pos!(x 1:2; o 3:1, 6:1, 22:1, 24:1);
         assert_eq!(positions, [expected1, expected2, expected3]);
     }
 
     #[test]
     fn all_positions_after_moving_regular() {
-        let pos = Position::from(&HashMap::from([(X_BAR, 1)]), &HashMap::from([(22, 1)]));
+        let pos = pos!(x X_BAR:1; o 22:1);
         // When
         let positions = pos.all_positions_after_moving(2, 3);
         // Then
-        let expected1 = Position::from(&HashMap::from([(X_BAR, 1)]), &HashMap::from([(5, 1)]));
-        let expected2 = Position::from(&HashMap::from([(3, 1)]), &HashMap::from([(5, 1)]));
+        let expected1 = pos!(x X_BAR:1; o 5:1);
+        let expected2 = pos!(x 3:1; o 5:1);
         assert_eq!(positions, [expected1, expected2]);
     }
 
@@ -235,10 +247,7 @@ mod tests {
 
     #[test]
     fn from() {
-        let actual = Position::from(
-            &HashMap::from([(X_BAR, 2), (3, 2), (1, 1)]),
-            &HashMap::from([(24, 5), (23, 4), (22, 6)]),
-        );
+        let actual = pos!(x X_BAR:2, 3:2, 1:1; o 24:5, 23:4, 22:6);
         let expected = Position {
             pips: [
                 0, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -6, -4, -5, 2,
@@ -251,13 +260,7 @@ mod tests {
 
     #[test]
     fn debug() {
-        let actual = format!(
-            "{:?}",
-            Position::from(
-                &HashMap::from([(X_BAR, 2), (3, 5), (1, 1)]),
-                &HashMap::from([(24, 7), (23, 4), (O_BAR, 3)])
-            )
-        );
+        let actual = format!("{:?}", pos!(x X_BAR:2, 3:5, 1:1; o 24:7, 23:4, O_BAR:3),);
         let expected = "Position:\nx: {bar:2, 3:5, 1:1, off:7}\no: {off:1, 24:7, 23:4, bar:3}";
         assert_eq!(actual, expected);
     }
@@ -278,12 +281,9 @@ mod private_tests {
 
     #[test]
     fn move_single_checker_hit_opponent() {
-        let before = Position::from(&HashMap::from([(4, 10)]), &HashMap::from([(2, 1)]));
+        let before = pos!(x 4:10; o 2:1);
         let actual = before.clone_and_move_single_checker(4, 2);
-        let expected = Position::from(
-            &HashMap::from([(4, 9), (2, 1)]),
-            &HashMap::from([(O_BAR, 1)]),
-        );
+        let expected = pos!(x 4:9, 2:1; o O_BAR:1);
         assert_eq!(actual, expected);
     }
 
@@ -317,19 +317,19 @@ mod private_tests {
 
     #[test]
     fn cannot_move_would_land_on_two_opposing_checkers() {
-        let given = Position::from(&HashMap::from([(4, 10)]), &HashMap::from([(2, 2)]));
+        let given = pos!(x 4:10; o 2:2);
         assert!(!given.can_move(4, 2));
     }
 
     #[test]
     fn can_move_will_land_on_one_opposing_checker() {
-        let given = Position::from(&HashMap::from([(4, 10)]), &HashMap::from([(2, 1)]));
+        let given = pos!(x 4:10; o 2:1);
         assert!(given.can_move(4, 2));
     }
 
     #[test]
     fn can_move_will_land_on_checkers() {
-        let given = Position::from(&HashMap::from([(4, 10)]), &HashMap::from([(2, 1)]));
+        let given = pos!(x 4:10; o 2:1);
         assert!(given.can_move(4, 2));
     }
 

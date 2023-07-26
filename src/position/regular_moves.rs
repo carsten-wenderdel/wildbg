@@ -285,6 +285,7 @@ enum MovePossibilities {
 
 #[cfg(test)]
 mod tests {
+    use crate::pos;
     use crate::position::{Position, O_BAR, X_BAR};
     use std::collections::HashMap;
 
@@ -293,10 +294,7 @@ mod tests {
     #[test]
     fn cannot_enter_with_two_checkers_on_bar() {
         // Given
-        let position = Position::from(
-            &HashMap::from([(X_BAR, 2), (10, 2)]),
-            &HashMap::from([(22, 2), (20, 2)]),
-        );
+        let position = pos!(x X_BAR:2, 10:2; o 22:2, 20:2);
         // When
         let moves = position.all_regular_moves(5, 3);
         // Then
@@ -307,17 +305,11 @@ mod tests {
     #[test]
     fn can_enter_bigger_die_with_two_on_the_bar() {
         // Given
-        let position = Position::from(
-            &HashMap::from([(X_BAR, 2), (10, 2)]),
-            &HashMap::from([(22, 2)]),
-        );
+        let position = pos!(x X_BAR:2, 10:2; o 22:2);
         // When
         let moves = position.all_regular_moves(5, 3);
         // Then
-        let expected = Position::from(
-            &HashMap::from([(X_BAR, 1), (20, 1), (10, 2)]),
-            &HashMap::from([(22, 2)]),
-        );
+        let expected = pos!(x X_BAR:1, 20:1, 10:2; o 22:2);
         assert_eq!(moves.len(), 1);
         assert_eq!(moves, Vec::from([([Some(X_BAR), None], expected)]));
     }
@@ -325,17 +317,11 @@ mod tests {
     #[test]
     fn can_enter_smaller_die_with_two_on_the_bar() {
         // Given
-        let position = Position::from(
-            &HashMap::from([(X_BAR, 2), (10, 2)]),
-            &HashMap::from([(22, 1), (20, 2)]),
-        );
+        let position = pos!(x X_BAR:2, 10:2; o 22:1, 20:2);
         // When
         let moves = position.all_regular_moves(5, 3);
         // Then
-        let expected = Position::from(
-            &HashMap::from([(X_BAR, 1), (22, 1), (10, 2)]),
-            &HashMap::from([(20, 2), (O_BAR, 1)]),
-        );
+        let expected = pos!(x X_BAR:1, 22:1, 10:2; o 20:2, O_BAR:1);
         assert_eq!(moves.len(), 1);
         assert_eq!(moves, Vec::from([([None, Some(X_BAR)], expected)]));
     }
@@ -343,17 +329,11 @@ mod tests {
     #[test]
     fn can_enter_both_with_three_on_the_bar() {
         // Given
-        let position = Position::from(
-            &HashMap::from([(X_BAR, 3), (10, 2)]),
-            &HashMap::from([(20, 1)]),
-        );
+        let position = pos!(x X_BAR:3, 10:2; o 20:1);
         // When
         let moves = position.all_regular_moves(5, 3);
         // Then
-        let expected = Position::from(
-            &HashMap::from([(X_BAR, 1), (22, 1), (20, 1), (10, 2)]),
-            &HashMap::from([(O_BAR, 1)]),
-        );
+        let expected = pos!(x X_BAR:1, 22:1, 20:1, 10:2; o O_BAR:1);
         assert_eq!(moves.len(), 1);
         assert_eq!(moves, Vec::from([([Some(X_BAR), Some(X_BAR)], expected)]));
     }
@@ -363,10 +343,7 @@ mod tests {
     #[test]
     fn cannot_enter_with_one_checker_on_bar() {
         // Given
-        let position = Position::from(
-            &HashMap::from([(X_BAR, 1), (10, 2)]),
-            &HashMap::from([(22, 2), (20, 2)]),
-        );
+        let position = pos!(x X_BAR:1, 10:2; o 22:2, 20:2);
         // When
         let moves = position.all_regular_moves(5, 3);
         // Then
@@ -376,126 +353,90 @@ mod tests {
     #[test]
     fn can_enter_with_bigger_die_but_no_other_movement() {
         // Given
-        let position = Position::from(
-            &HashMap::from([(X_BAR, 1), (10, 2)]),
-            &HashMap::from([(22, 2), (20, 1), (17, 2), (7, 3)]),
-        );
+        let position = pos!(x X_BAR:1, 10:2; o 22:2, 20:1, 17:2, 7:3);
         // When
         let moves = position.all_regular_moves(5, 3);
         // Then
-        let expected = Position::from(
-            &HashMap::from([(20, 1), (10, 2)]),
-            &HashMap::from([(22, 2), (17, 2), (7, 3), (O_BAR, 1)]),
-        );
+        let expected = pos!(x 20:1, 10:2; o 22:2, 17:2, 7:3, O_BAR:1);
         assert_eq!(moves, Vec::from([([Some(X_BAR), None], expected)]));
     }
 
     #[test]
     fn can_enter_with_smaller_die_but_no_other_movement() {
         // Given
-        let position = Position::from(
-            &HashMap::from([(X_BAR, 1)]),
-            &HashMap::from([(19, 2), (14, 2)]),
-        );
+        let position = pos!(x X_BAR:1; o 19:2, 14:2);
         // When
         let moves = position.all_regular_moves(6, 5);
         // Then
-        let expected = Position::from(
-            &HashMap::from([(20, 1)]),
-            &HashMap::from([(19, 2), (14, 2)]),
-        );
+        let expected = pos!(x 20:1; o 19:2, 14:2);
         assert_eq!(moves, Vec::from([([None, Some(X_BAR)], expected)]));
     }
 
     #[test]
     fn could_enter_with_either_die_but_must_use_bigger_one() {
         // Given
-        let position = Position::from(&HashMap::from([(X_BAR, 1)]), &HashMap::from([(20, 2)]));
+        let position = pos!(x X_BAR:1; o 20:2);
         // When
         let moves = position.all_regular_moves(3, 2);
         // Then
-        let expected = Position::from(&HashMap::from([(22, 1)]), &HashMap::from([(20, 2)]));
+        let expected = pos!(x 22:1; o 20:2);
         assert_eq!(moves, Vec::from([([Some(X_BAR), None], expected)]));
     }
 
     #[test]
     fn only_entering_with_smaller_die_allows_two_checkers_to_move() {
         // Given
-        let position = Position::from(
-            &HashMap::from([(X_BAR, 1), (12, 1)]),
-            &HashMap::from([(20, 2), (10, 2)]),
-        );
+        let position = pos!(x X_BAR:1, 12:1; o 20:2, 10:2);
         // When
         let moves = position.all_regular_moves(3, 2);
         // Then
-        let expected = Position::from(
-            &HashMap::from([(23, 1), (9, 1)]),
-            &HashMap::from([(20, 2), (10, 2)]),
-        );
+        let expected = pos!(x 23:1, 9:1; o 20:2, 10:2);
         assert_eq!(moves, Vec::from([([Some(12), Some(X_BAR)], expected)]));
     }
 
     #[test]
     fn only_entering_with_bigger_die_allows_two_checkers_to_move() {
         // Given
-        let position = Position::from(
-            &HashMap::from([(X_BAR, 1), (12, 1)]),
-            &HashMap::from([(20, 2), (9, 2)]),
-        );
+        let position = pos!(x X_BAR:1, 12:1; o 20:2, 9:2);
         // When
         let moves = position.all_regular_moves(3, 2);
         // Then
-        let expected = Position::from(
-            &HashMap::from([(22, 1), (10, 1)]),
-            &HashMap::from([(20, 2), (9, 2)]),
-        );
+        let expected = pos!(x 22:1, 10:1; o 20:2, 9:2);
         assert_eq!(moves, Vec::from([([Some(X_BAR), Some(12)], expected)]));
     }
 
     #[test]
     fn entering_with_either_die_allowed_but_only_one_final_position() {
         // Given
-        let position = Position::from(&HashMap::from([(X_BAR, 1)]), &HashMap::from([(9, 2)]));
+        let position = pos!(x X_BAR:1; o 9:2);
         // When
         let moves = position.all_regular_moves(3, 2);
         // Then
-        let expected = Position::from(&HashMap::from([(20, 1)]), &HashMap::from([(9, 2)]));
+        let expected = pos!(x 20:1; o 9:2);
         assert_eq!(moves, Vec::from([([Some(X_BAR), Some(22)], expected)]));
     }
 
     #[test]
     fn final_position_but_different_move_because_die1_hits_opponent() {
         // Given
-        let position = Position::from(&HashMap::from([(X_BAR, 1)]), &HashMap::from([(22, 1)]));
+        let position = pos!(x X_BAR:1; o 22:1);
         // When
         let moves = position.all_regular_moves(3, 2);
         // Then
-        let expected1 = (
-            [Some(X_BAR), Some(22)],
-            Position::from(&HashMap::from([(20, 1)]), &HashMap::from([(O_BAR, 1)])),
-        );
-        let expected2 = (
-            [Some(23), Some(X_BAR)],
-            Position::from(&HashMap::from([(20, 1)]), &HashMap::from([(22, 1)])),
-        );
+        let expected1 = ([Some(X_BAR), Some(22)], pos!(x 20:1; o O_BAR:1));
+        let expected2 = ([Some(23), Some(X_BAR)], pos!(x 20:1; o 22:1));
         assert_eq!(moves, Vec::from([expected1, expected2]));
     }
 
     #[test]
     fn final_position_but_different_move_because_die2_hits_opponent() {
         // Given
-        let position = Position::from(&HashMap::from([(X_BAR, 1)]), &HashMap::from([(23, 1)]));
+        let position = pos!(x X_BAR:1; o 23:1);
         // When
         let moves = position.all_regular_moves(3, 2);
         // Then
-        let expected1 = (
-            [Some(X_BAR), Some(22)],
-            Position::from(&HashMap::from([(20, 1)]), &HashMap::from([(23, 1)])),
-        );
-        let expected2 = (
-            [Some(23), Some(X_BAR)],
-            Position::from(&HashMap::from([(20, 1)]), &HashMap::from([(O_BAR, 1)])),
-        );
+        let expected1 = ([Some(X_BAR), Some(22)], pos!(x 20:1; o 23:1));
+        let expected2 = ([Some(23), Some(X_BAR)], pos!(x 20:1; o O_BAR:1));
         assert_eq!(moves, Vec::from([expected1, expected2]));
     }
 
@@ -504,10 +445,7 @@ mod tests {
     #[test]
     fn cannot_user_either_die() {
         // Given
-        let position = Position::from(
-            &HashMap::from([(10, 2), (2, 3)]),
-            &HashMap::from([(8, 2), (6, 2)]),
-        );
+        let position = pos!(x 10:2, 2:3; o 8:2, 6:2);
         // When
         let moves = position.all_regular_moves(4, 2);
         // Then
@@ -518,107 +456,62 @@ mod tests {
     #[test]
     fn forced_only_smaller_die() {
         // Given
-        let position = Position::from(&HashMap::from([(7, 2)]), &HashMap::from([(2, 2)]));
+        let position = pos!(x 7:2; o 2:2);
         // When
         let moves = position.all_regular_moves(5, 2);
         // Then
-        let expected = Position::from(&HashMap::from([(7, 1), (5, 1)]), &HashMap::from([(2, 2)]));
+        let expected = pos!(x 7:1, 5:1; o 2:2);
         assert_eq!(moves, Vec::from([([None, Some(7)], expected)]));
     }
 
     #[test]
     fn forced_smaller_die_first_then_bear_off() {
         // Given
-        let position = Position::from(&HashMap::from([(8, 1), (4, 3)]), &HashMap::from([(1, 2)]));
+        let position = pos!(x 8:1, 4:3; o 1:2);
         // When
         let moves = position.all_regular_moves(4, 3);
         // Then
-        let expected = Position::from(&HashMap::from([(5, 1), (4, 2)]), &HashMap::from([(1, 2)]));
+        let expected = pos!(x 5:1, 4:2; o 1:2);
         assert_eq!(moves, Vec::from([([Some(4), Some(8)], expected)]));
     }
 
     #[test]
     fn bigger_die_cannot_move_initially() {
         // Given
-        let position = Position::from(&HashMap::from([(20, 1)]), &HashMap::from([(16, 3)]));
+        let position = pos!(x 20:1; o 16:3);
         // When
         let moves = position.all_regular_moves(4, 3);
         // Then
-        let expected = Position::from(&HashMap::from([(13, 1)]), &HashMap::from([(16, 3)]));
+        let expected = pos!(x 13:1; o 16:3);
         assert_eq!(moves, Vec::from([([Some(17), Some(20)], expected)]));
     }
 
     #[test]
     fn smaller_first_allows_bear_off() {
         // Given
-        let position = Position::from(&HashMap::from([(9, 1), (5, 1)]), &HashMap::from([(20, 2)]));
+        let position = pos!(x 9:1, 5:1; o 20:2);
         // When
         let moves = position.all_regular_moves(5, 3);
         // Then
-        let expected1 = (
-            [Some(9), Some(5)],
-            Position::from(&HashMap::from([(4, 1), (2, 1)]), &HashMap::from([(20, 2)])),
-        );
-        let expected2 = (
-            [Some(9), Some(4)],
-            Position::from(&HashMap::from([(5, 1), (1, 1)]), &HashMap::from([(20, 2)])),
-        );
-        let expected3 = (
-            [Some(5), Some(9)],
-            Position::from(&HashMap::from([(6, 1)]), &HashMap::from([(20, 2)])),
-        );
+        let expected1 = ([Some(9), Some(5)], pos!(x 4:1, 2:1; o 20:2));
+        let expected2 = ([Some(9), Some(4)], pos!(x 5:1, 1:1; o 20:2));
+        let expected3 = ([Some(5), Some(9)], pos!(x 6:1; o 20:2));
         assert_eq!(moves, Vec::from([expected1, expected2, expected3]));
     }
 
     #[test]
     fn could_bear_off_but_could_do_other_moves_as_well() {
         // Given
-        let position = Position::from(
-            &HashMap::from([(5, 2), (4, 3), (3, 1)]),
-            &HashMap::from([(20, 1)]),
-        );
+        let position = pos!(x 5:2, 4:3, 3:1; o 20:1);
         // When
         let moves = position.all_regular_moves(4, 3);
         // Then
-        let expected1 = (
-            [Some(5), Some(5)],
-            Position::from(
-                &HashMap::from([(4, 3), (3, 1), (2, 1), (1, 1)]),
-                &HashMap::from([(20, 1)]),
-            ),
-        );
-        let expected2 = (
-            [Some(5), Some(4)],
-            Position::from(
-                &HashMap::from([(5, 1), (4, 2), (3, 1), (1, 2)]),
-                &HashMap::from([(20, 1)]),
-            ),
-        );
-        let expected3 = (
-            [Some(5), Some(3)],
-            Position::from(
-                &HashMap::from([(5, 1), (4, 3), (1, 1)]),
-                &HashMap::from([(20, 1)]),
-            ),
-        );
-        let expected4 = (
-            [Some(4), Some(5)],
-            Position::from(
-                &HashMap::from([(5, 1), (4, 2), (3, 1), (2, 1)]),
-                &HashMap::from([(20, 1)]),
-            ),
-        );
-        let expected5 = (
-            [Some(4), Some(4)],
-            Position::from(
-                &HashMap::from([(5, 2), (4, 1), (3, 1), (1, 1)]),
-                &HashMap::from([(20, 1)]),
-            ),
-        );
-        let expected6 = (
-            [Some(4), Some(3)],
-            Position::from(&HashMap::from([(5, 2), (4, 2)]), &HashMap::from([(20, 1)])),
-        );
+        let expected1 = ([Some(5), Some(5)], pos!(x 4:3, 3:1, 2:1, 1:1; o 20:1));
+        let expected2 = ([Some(5), Some(4)], pos!(x 5:1, 4:2, 3:1, 1:2; o 20:1));
+        let expected3 = ([Some(5), Some(3)], pos!(x 5:1, 4:3, 1:1; o 20:1));
+        let expected4 = ([Some(4), Some(5)], pos!(x 5:1, 4:2, 3:1, 2:1; o 20:1));
+        let expected5 = ([Some(4), Some(4)], pos!(x 5:2, 4:1, 3:1, 1:1; o 20:1));
+        let expected6 = ([Some(4), Some(3)], pos!(x 5:2, 4:2; o 20:1));
         assert_eq!(
             moves,
             Vec::from([expected1, expected2, expected3, expected4, expected5, expected6])
@@ -628,69 +521,57 @@ mod tests {
     #[test]
     fn only_one_move_if_order_is_not_important() {
         // Given
-        let position = Position::from(&HashMap::from([(20, 1)]), &HashMap::from([(22, 2)]));
+        let position = pos!(x 20:1; o 22:2);
         // When
         let moves = position.all_regular_moves(4, 3);
         // Then
-        let expected = Position::from(&HashMap::from([(13, 1)]), &HashMap::from([(22, 2)]));
+        let expected = pos!(x 13:1; o 22:2);
         assert_eq!(moves, Vec::from([([Some(20), Some(16)], expected)]),);
     }
 
     #[test]
     fn only_one_move_in_home_board_if_order_is_not_important() {
         // Given
-        let position = Position::from(&HashMap::from([(5, 1)]), &HashMap::from([(22, 2)]));
+        let position = pos!(x 5:1; o 22:2);
         // When
         let moves = position.all_regular_moves(2, 1);
         // Then
-        let expected = Position::from(&HashMap::from([(2, 1)]), &HashMap::from([(22, 2)]));
+        let expected = pos!(x 2:1; o 22:2);
         assert_eq!(moves, Vec::from([([Some(5), Some(3)], expected)]),);
     }
 
     #[test]
     fn two_moves_if_bigger_die_hits_opponent() {
         // Given
-        let position = Position::from(&HashMap::from([(10, 1)]), &HashMap::from([(6, 1)]));
+        let position = pos!(x 10:1; o 6:1);
         // When
         let moves = position.all_regular_moves(4, 2);
         // Then
-        let expected1 = (
-            [Some(10), Some(6)],
-            Position::from(&HashMap::from([(4, 1)]), &HashMap::from([(O_BAR, 1)])),
-        );
-        let expected2 = (
-            [Some(8), Some(10)],
-            Position::from(&HashMap::from([(4, 1)]), &HashMap::from([(6, 1)])),
-        );
+        let expected1 = ([Some(10), Some(6)], pos!(x 4:1; o O_BAR:1));
+        let expected2 = ([Some(8), Some(10)], pos!(x 4:1; o 6:1));
         assert_eq!(moves, Vec::from([expected1, expected2]));
     }
 
     #[test]
     fn two_moves_if_smaller_die_hits_opponent() {
         // Given
-        let position = Position::from(&HashMap::from([(5, 1)]), &HashMap::from([(4, 1)]));
+        let position = pos!(x 5:1; o 4:1);
         // When
         let moves = position.all_regular_moves(3, 1);
         // Then
-        let expected1 = (
-            [Some(5), Some(2)],
-            Position::from(&HashMap::from([(1, 1)]), &HashMap::from([(4, 1)])),
-        );
-        let expected2 = (
-            [Some(4), Some(5)],
-            Position::from(&HashMap::from([(1, 1)]), &HashMap::from([(O_BAR, 1)])),
-        );
+        let expected1 = ([Some(5), Some(2)], pos!(x 1:1; o 4:1));
+        let expected2 = ([Some(4), Some(5)], pos!(x 1:1; o O_BAR:1));
         assert_eq!(moves, Vec::from([expected1, expected2]));
     }
 
     #[test]
     fn two_bear_offs_from_same_pip() {
         // Given
-        let position = Position::from(&HashMap::from([(1, 5)]), &HashMap::from([(24, 8)]));
+        let position = pos!(x 1:5; o 24:8);
         // When
         let moves = position.all_regular_moves(6, 4);
         // Then
-        let expected = Position::from(&HashMap::from([(1, 3)]), &HashMap::from([(24, 8)]));
+        let expected = pos!(x 1:3; o 24:8);
         assert_eq!(moves, Vec::from([([Some(1), Some(1)], expected)]));
     }
 
@@ -715,17 +596,11 @@ mod tests {
     #[test]
     fn use_smaller_die_from_bigger_pip() {
         // Given
-        let position = Position::from(&HashMap::from([(7, 1), (6, 3)]), &HashMap::from([(2, 2)]));
+        let position = pos!(x 7:1, 6:3; o 2:2);
         // When
         let moves = position.all_regular_moves(5, 4);
         // Then
-        let expected = (
-            [Some(6), Some(7)],
-            Position::from(
-                &HashMap::from([(6, 2), (3, 1), (1, 1)]),
-                &HashMap::from([(2, 2)]),
-            ),
-        );
+        let expected = ([Some(6), Some(7)], pos!(x 6:2, 3:1, 1:1; o 2:2));
         assert_eq!(moves, Vec::from([expected]));
     }
 }

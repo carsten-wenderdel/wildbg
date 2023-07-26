@@ -119,13 +119,14 @@ impl Position {
 
 #[cfg(test)]
 mod tests {
+    use crate::pos;
     use crate::position::{Position, O_BAR, X_BAR};
     use std::collections::HashMap;
 
     #[test]
     fn cannot_enter_from_the_bar() {
         // Given
-        let position = Position::from(&HashMap::from([(X_BAR, 4)]), &HashMap::from([(22, 2)]));
+        let position = pos!(x X_BAR:4; o 22:2);
         // When
         let moves = position.all_double_moves(3);
         // Then
@@ -137,68 +138,35 @@ mod tests {
     #[test]
     fn enter_all_four_from_the_bar() {
         // Given
-        let actual = Position::from(
-            &HashMap::from([(X_BAR, 4)]),
-            &HashMap::from([(22, 2), (20, 2)]),
-        );
+        let actual = pos!(x X_BAR:4; o 22:2, 20:2);
         // When
         let moves = actual.all_double_moves(4);
         // Then
-        let expected = Position::from(
-            &HashMap::from([(21, 4)]),
-            &HashMap::from([(22, 2), (20, 2)]),
-        );
+        let expected = pos!(x 21:4; o 22:2, 20:2);
         assert_eq!(moves, Vec::from([([X_BAR, X_BAR, X_BAR, X_BAR], expected)]));
     }
 
     #[test]
     fn enter_one_and_move_one_more_and_no_bearoff() {
         // Given
-        let actual = Position::from(
-            &HashMap::from([(X_BAR, 1), (15, 1), (10, 1), (4, 1)]),
-            &HashMap::from([(22, 2), (20, 2), (17, 3), (11, 2), (6, 1), (2, 2)]),
-        );
+        let actual = pos!(x X_BAR:1, 15:1, 10:1, 4:1; o 22:2, 20:2, 17:3, 11:2, 6:1, 2:2);
         // When
         let moves = actual.all_double_moves(4);
         // Then
-        let expected = Position::from(
-            &HashMap::from([(21, 1), (15, 1), (6, 1), (4, 1)]),
-            &HashMap::from([(22, 2), (20, 2), (17, 3), (11, 2), (2, 2), (O_BAR, 1)]),
-        );
+        let expected = pos!(x 21:1, 15:1, 6:1, 4:1; o 22:2, 20:2, 17:3, 11:2, 2:2, O_BAR:1);
         assert_eq!(moves, Vec::from([([X_BAR, 10, O_BAR, O_BAR], expected)]));
     }
 
     #[test]
     fn enter_two_and_move_two_out_of_many() {
         // Given
-        let position = Position::from(
-            &HashMap::from([(X_BAR, 2), (4, 1), (3, 1)]),
-            &HashMap::from([(24, 2)]),
-        );
+        let position = pos!(x X_BAR:2, 4:1, 3:1; o 24:2);
         // When
         let moves = position.all_double_moves(3);
         // Then
-        let expected1 = (
-            [X_BAR, X_BAR, 22, 22],
-            Position::from(
-                &HashMap::from([(19, 2), (4, 1), (3, 1)]),
-                &HashMap::from([(24, 2)]),
-            ),
-        );
-        let expected2 = (
-            [X_BAR, X_BAR, 22, 19],
-            Position::from(
-                &HashMap::from([(22, 1), (16, 1), (4, 1), (3, 1)]),
-                &HashMap::from([(24, 2)]),
-            ),
-        );
-        let expected3 = (
-            [X_BAR, X_BAR, 22, 4],
-            Position::from(
-                &HashMap::from([(22, 1), (19, 1), (3, 1), (1, 1)]),
-                &HashMap::from([(24, 2)]),
-            ),
-        );
+        let expected1 = ([X_BAR, X_BAR, 22, 22], pos!(x 19:2, 4:1, 3:1; o 24:2));
+        let expected2 = ([X_BAR, X_BAR, 22, 19], pos!(x 22:1, 16:1, 4:1, 3:1; o 24:2));
+        let expected3 = ([X_BAR, X_BAR, 22, 4], pos!(x 22:1, 19:1, 3:1, 1:1; o 24:2));
         assert_eq!(moves.len(), 3);
         assert_eq!(moves, Vec::from([expected1, expected2, expected3]));
     }
@@ -206,32 +174,14 @@ mod tests {
     #[test]
     fn bearoff_4_or_bearoff_less() {
         // Given
-        let position = Position::from(
-            &HashMap::from([(4, 1), (3, 1), (2, 4)]),
-            &HashMap::from([(22, 2)]),
-        );
+        let position = pos!(x 4:1, 3:1, 2:4; o 22:2);
         // When
         let moves = position.all_double_moves(2);
         // Then
-        let expected1 = (
-            [4, 3, 2, 2],
-            Position::from(&HashMap::from([(2, 3), (1, 1)]), &HashMap::from([(22, 2)])),
-        );
-        let expected2 = (
-            [4, 2, 2, 2],
-            Position::from(&HashMap::from([(3, 1), (2, 2)]), &HashMap::from([(22, 2)])),
-        );
-        let expected3 = (
-            [3, 2, 2, 2],
-            Position::from(
-                &HashMap::from([(4, 1), (2, 1), (1, 1)]),
-                &HashMap::from([(22, 2)]),
-            ),
-        );
-        let expected4 = (
-            [2, 2, 2, 2],
-            Position::from(&HashMap::from([(4, 1), (3, 1)]), &HashMap::from([(22, 2)])),
-        );
+        let expected1 = ([4, 3, 2, 2], pos!(x 2:3, 1:1; o 22:2));
+        let expected2 = ([4, 2, 2, 2], pos!(x 3:1, 2:2; o 22:2));
+        let expected3 = ([3, 2, 2, 2], pos!(x 4:1, 2:1, 1:1; o 22:2));
+        let expected4 = ([2, 2, 2, 2], pos!(x 4:1, 3:1; o 22:2));
         assert_eq!(moves.len(), 4);
         assert_eq!(
             moves,
@@ -242,41 +192,36 @@ mod tests {
     #[test]
     fn no_checkers_on_the_bar_but_would_hit_opponent_if_entering() {
         // Given
-        let actual = Position::from(&HashMap::from([(10, 4)]), &HashMap::from([(22, 1), (4, 2)]));
+        let actual = pos!(x 10:4; o 22:1, 4:2);
         // When
         let moves = actual.all_double_moves(3);
         // Then
-        let expected = Position::from(&HashMap::from([(7, 4)]), &HashMap::from([(22, 1), (4, 2)]));
+        let expected = pos!(x 7:4; o 22:1, 4:2);
         assert_eq!(moves, Vec::from([([10, 10, 10, 10], expected)]));
     }
 
     #[test]
     fn hits_opponent_when_entering_and_cannot_move_afterwards() {
         // Given
-        let actual = Position::from(
-            &HashMap::from([(X_BAR, 2)]),
-            &HashMap::from([(22, 1), (19, 2)]),
-        );
+        let actual = pos!(x X_BAR:2; o 22:1, 19:2);
         // When
         let moves = actual.all_double_moves(3);
         // Then
-        let expected = Position::from(
-            &HashMap::from([(22, 2)]),
-            &HashMap::from([(19, 2), (O_BAR, 1)]),
-        );
+        let expected = pos!(x 22:2; o 19:2, O_BAR:1);
         assert_eq!(moves, Vec::from([([X_BAR, X_BAR, O_BAR, O_BAR], expected)]));
     }
 }
 
 #[cfg(test)]
 mod private_tests {
+    use crate::pos;
     use crate::position::Position;
     use std::collections::HashMap;
 
     #[test]
     fn number_of_movable_checkers_when_completely_blocked() {
         // Given
-        let position = Position::from(&HashMap::from([(20, 2)]), &HashMap::from([(16, 2)]));
+        let position = pos!(x 20:2; o 16:2);
         // When
         let actual = position.number_of_movable_checkers(4, 0);
         // Then
@@ -286,7 +231,7 @@ mod private_tests {
     #[test]
     fn number_of_movable_checkers_when_many_moves_would_be_possible() {
         // Given
-        let position = Position::from(&HashMap::from([(20, 2)]), &HashMap::from([(16, 1)]));
+        let position = pos!(x 20:2; o 16:1);
         // When
         let actual = position.number_of_movable_checkers(4, 0);
         // Then
@@ -306,7 +251,7 @@ mod private_tests {
     #[test]
     fn number_of_movable_checkers_when_blocked_after_one_move() {
         // Given
-        let position = Position::from(&HashMap::from([(20, 2)]), &HashMap::from([(12, 2)]));
+        let position = pos!(x 20:2; o 12:2);
         // When
         let actual = position.number_of_movable_checkers(4, 0);
         // Then
