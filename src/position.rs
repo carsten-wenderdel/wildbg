@@ -10,6 +10,15 @@ const NO_OF_CHECKERS: u8 = 15;
 const X_BAR: usize = 25;
 const O_BAR: usize = 0;
 
+#[allow(dead_code)]
+pub const STARTING: Position = Position {
+    pips: [
+        0, -2, 0, 0, 0, 0, 5, 0, 3, 0, 0, 0, -5, 5, 0, 0, 0, -3, 0, -5, 0, 0, 0, 0, 2, 0,
+    ],
+    x_off: 0,
+    o_off: 0,
+};
+
 /// Simple way to create positions for testing
 /// The starting position would be:
 /// pos!(x 24:2, 13:5, 8:3, 6:5; o 19:5, 17:3, 12:5, 1:2)
@@ -266,8 +275,15 @@ mod tests {
 
 #[cfg(test)]
 mod private_tests {
-    use crate::position::{Position, O_BAR};
+    use crate::position::{Position, O_BAR, STARTING};
     use std::collections::HashMap;
+
+    #[test]
+    fn starting_position_is_correct_and_symmetric() {
+        let expected = pos!(x 24:2, 13:5, 8:3, 6:5; o 19:5, 17:3, 12:5, 1:2);
+        assert_eq!(STARTING, expected);
+        assert_eq!(STARTING, STARTING.switch_sides());
+    }
 
     #[test]
     fn move_single_checker_regular_move() {
