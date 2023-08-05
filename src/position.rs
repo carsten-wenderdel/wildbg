@@ -1,6 +1,8 @@
 mod double_moves;
 mod regular_moves;
 
+use crate::position::GameResult::*;
+use crate::position::GameState::*;
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Formatter;
@@ -18,6 +20,37 @@ pub const STARTING: Position = Position {
     x_off: 0,
     o_off: 0,
 };
+
+#[derive(Debug, PartialEq)]
+pub(crate) enum GameResult {
+    WinNormal,
+    WinGammon,
+    WinBg,
+    LoseNormal,
+    LoseGammon,
+    LoseBg,
+}
+
+impl GameResult {
+    #[allow(dead_code)]
+    pub(crate) fn reverse(&self) -> Self {
+        match self {
+            WinNormal => LoseNormal,
+            WinGammon => LoseGammon,
+            WinBg => LoseBg,
+            LoseNormal => WinNormal,
+            LoseGammon => WinGammon,
+            LoseBg => WinBg,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+#[allow(dead_code)]
+pub(crate) enum GameState {
+    Ongoing,
+    GameOver(GameResult),
+}
 
 /// Simple way to create positions for testing
 /// The starting position would be:
@@ -53,12 +86,40 @@ pub struct Position {
     // Array positions 25 and 0 are the bar.
     // The other array positions are the pips from the point of view of x, moving from 24 to 0.
     // A positive number means x has that many checkers on that point. Negative for o.
+    // Both x_off and o_off are never negative.
     pips: [i8; 26],
     x_off: u8,
     o_off: u8,
 }
 
 impl Position {
+    #[allow(dead_code)]
+    pub(crate) fn game_state(&self) -> GameState {
+        debug_assert!(
+            self.x_off < 15 || self.o_off < 15,
+            "Not both sides can win at the same time"
+        );
+        if self.x_off == 15 {
+            if self.o_off > 0 {
+                GameOver(WinNormal)
+            } else if self.pips[O_BAR..7].iter().any(|pip| pip < &0) {
+                GameOver(WinBg)
+            } else {
+                GameOver(WinGammon)
+            }
+        } else if self.o_off == 15 {
+            if self.x_off > 0 {
+                GameOver(LoseNormal)
+            } else if self.pips[19..(X_BAR + 1)].iter().any(|pip| pip > &0) {
+                GameOver(LoseBg)
+            } else {
+                GameOver(LoseGammon)
+            }
+        } else {
+            Ongoing
+        }
+    }
+
     #[allow(dead_code)]
     /// The return values have switched the sides of the players.
     pub fn all_positions_after_moving(&self, die1: usize, die2: usize) -> Vec<Position> {
@@ -201,8 +262,55 @@ impl Position {
 
 #[cfg(test)]
 mod tests {
-    use crate::position::{Position, O_BAR, X_BAR};
+    use crate::position::*;
     use std::collections::HashMap;
+
+    #[test]
+    fn game_state_bg_when_on_bar() {
+        let given = pos!(x 25:1, 1:14; o);
+        assert_eq!(given.game_state(), GameOver(LoseBg));
+        assert_eq!(
+            given.switch_sides().game_state(),
+            GameOver(LoseBg.reverse())
+        );
+    }
+
+    #[test]
+    fn game_state_bg_when_not_on_bar() {
+        let given = pos!(x 19:15; o);
+        assert_eq!(given.game_state(), GameOver(LoseBg));
+        assert_eq!(
+            given.switch_sides().game_state(),
+            GameOver(LoseBg.reverse())
+        );
+    }
+
+    #[test]
+    fn game_state_gammon() {
+        let given = pos!(x 18:15; o);
+        assert_eq!(given.game_state(), GameOver(LoseGammon));
+        assert_eq!(
+            given.switch_sides().game_state(),
+            GameOver(LoseGammon.reverse())
+        );
+    }
+
+    #[test]
+    fn game_state_normal() {
+        let given = pos!(x 19:14; o);
+        assert_eq!(given.game_state(), GameOver(LoseNormal));
+        assert_eq!(
+            given.switch_sides().game_state(),
+            GameOver(LoseNormal.reverse())
+        );
+    }
+
+    #[test]
+    fn game_state_ongoing() {
+        let given = pos!(x 19:14; o 1:4);
+        assert_eq!(given.game_state(), Ongoing);
+        assert_eq!(given.switch_sides().game_state(), Ongoing);
+    }
 
     #[test]
     fn all_positions_after_moving_double() {
