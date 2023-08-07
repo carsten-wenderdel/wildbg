@@ -1,6 +1,7 @@
 use crate::position::Position;
 use std::collections::HashMap;
 mod dice_gen;
+mod evaluator;
 mod position;
 
 fn main() {

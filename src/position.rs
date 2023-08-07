@@ -120,7 +120,6 @@ impl Position {
         }
     }
 
-    #[allow(dead_code)]
     /// The return values have switched the sides of the players.
     pub fn all_positions_after_moving(&self, die1: usize, die2: usize) -> Vec<Position> {
         return if die1 == die2 {
@@ -137,7 +136,7 @@ impl Position {
         };
     }
 
-    fn switch_sides(&self) -> Position {
+    pub(crate) fn switch_sides(&self) -> Position {
         let mut pips = self.pips.map(|x| -x);
         pips.reverse();
         Position {
