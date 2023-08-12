@@ -1,17 +1,33 @@
+use crate::position::GameResult::{LoseBg, LoseGammon, LoseNormal, WinBg, WinGammon, WinNormal};
 use crate::position::Position;
 
 #[allow(dead_code)]
 /// Sum of all six fields will always be 1.0
 pub(crate) struct Probabilities {
-    win_normal: f32,
-    win_gammon: f32,
-    win_bg: f32,
-    lose_normal: f32,
-    lose_gammon: f32,
-    lose_bg: f32,
+    pub(crate) win_normal: f32,
+    pub(crate) win_gammon: f32,
+    pub(crate) win_bg: f32,
+    pub(crate) lose_normal: f32,
+    pub(crate) lose_gammon: f32,
+    pub(crate) lose_bg: f32,
 }
 
 impl Probabilities {
+    /// Typically used from rollouts.
+    /// The index within the array has to correspond to the discriminant of the `Probabilities` enum.
+    /// Input integer values will be normalized so that the sum in the return value is 1.0
+    pub(crate) fn new(results: &[u32; 6]) -> Self {
+        let sum = results.iter().sum::<u32>() as f32;
+        Probabilities {
+            win_normal: results[WinNormal as usize] as f32 / sum,
+            win_gammon: results[WinGammon as usize] as f32 / sum,
+            win_bg: results[WinBg as usize] as f32 / sum,
+            lose_normal: results[LoseNormal as usize] as f32 / sum,
+            lose_gammon: results[LoseGammon as usize] as f32 / sum,
+            lose_bg: results[LoseBg as usize] as f32 / sum,
+        }
+    }
+
     /// Cubeless equity
     #[allow(dead_code)]
     fn equity(&self) -> f32 {
@@ -67,6 +83,23 @@ impl Evaluator for RandomEvaluator {
     }
 }
 
+#[cfg(test)]
+mod probabilities_tests {
+    use crate::evaluator::Probabilities;
+
+    #[test]
+    fn new() {
+        // sum of `results is 32, a power of 2. Makes fractions easier to handle.
+        let results = [0_u32, 1, 3, 4, 8, 16];
+        let probabilities = Probabilities::new(&results);
+        assert_eq!(probabilities.win_normal, 0.0);
+        assert_eq!(probabilities.win_gammon, 0.03125);
+        assert_eq!(probabilities.win_bg, 0.09375);
+        assert_eq!(probabilities.lose_normal, 0.125);
+        assert_eq!(probabilities.lose_gammon, 0.25);
+        assert_eq!(probabilities.lose_bg, 0.5);
+    }
+}
 #[cfg(test)]
 mod evaluator_trait_tests {
     use crate::evaluator::{Evaluator, Probabilities};
