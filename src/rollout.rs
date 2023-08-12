@@ -1,9 +1,9 @@
 use crate::dice_gen::{DiceGen, FastrandDice};
-use crate::evaluator::{Evaluator, Probabilities};
+use crate::evaluator::{Evaluator, Probabilities, RandomEvaluator};
 use crate::position::GameState::{GameOver, Ongoing};
 use crate::position::{GameResult, Position};
 
-struct RolloutEvaluator<T: Evaluator> {
+pub struct RolloutEvaluator<T: Evaluator> {
     evaluator: T,
 }
 
@@ -29,6 +29,14 @@ impl<T: Evaluator> Evaluator for RolloutEvaluator<T> {
             "Rollout should look at 1296 games"
         );
         Probabilities::new(&results)
+    }
+}
+
+impl RolloutEvaluator<RandomEvaluator> {
+    pub fn new_random() -> Self {
+        RolloutEvaluator {
+            evaluator: RandomEvaluator {},
+        }
     }
 }
 
@@ -72,8 +80,8 @@ impl<T: Evaluator> RolloutEvaluator<T> {
 mod tests {
     use crate::evaluator::{Evaluator, RandomEvaluator};
     use crate::pos;
+    use crate::position::Position;
     use crate::rollout::RolloutEvaluator;
-    use crate::Position;
     use std::collections::HashMap;
 
     #[test]
@@ -135,8 +143,8 @@ mod private_tests {
     use crate::position::GameResult::{
         LoseBg, LoseGammon, LoseNormal, WinBg, WinGammon, WinNormal,
     };
+    use crate::position::Position;
     use crate::rollout::RolloutEvaluator;
-    use crate::Position;
     use std::collections::HashMap;
 
     #[test]

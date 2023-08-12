@@ -3,7 +3,8 @@ use crate::position::Position;
 
 #[allow(dead_code)]
 /// Sum of all six fields will always be 1.0
-pub(crate) struct Probabilities {
+#[derive(Debug)]
+pub struct Probabilities {
     pub(crate) win_normal: f32,
     pub(crate) win_gammon: f32,
     pub(crate) win_bg: f32,
@@ -37,7 +38,7 @@ impl Probabilities {
     }
 }
 
-pub(crate) trait Evaluator {
+pub trait Evaluator {
     /// Returns a cubeless evaluation of a position.
     /// Implementing types will calculate the probabilities with different strategies.
     /// Examples of such strategies are a rollout or 1-ply inference of a neural net.
@@ -57,7 +58,7 @@ pub(crate) trait Evaluator {
     }
 }
 
-pub(crate) struct RandomEvaluator {}
+pub struct RandomEvaluator {}
 
 impl Evaluator for RandomEvaluator {
     #[allow(dead_code)]

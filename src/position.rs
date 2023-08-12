@@ -76,7 +76,6 @@ macro_rules! pos {
         }
     };
 }
-pub use pos;
 
 /// A single position in backgammon without match information.
 /// We assume two players "x" and "o".
