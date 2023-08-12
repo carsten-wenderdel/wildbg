@@ -46,7 +46,6 @@ impl GameResult {
 }
 
 #[derive(Debug, PartialEq)]
-#[allow(dead_code)]
 pub(crate) enum GameState {
     Ongoing,
     GameOver(GameResult),
@@ -93,7 +92,6 @@ pub struct Position {
 }
 
 impl Position {
-    #[allow(dead_code)]
     pub(crate) fn game_state(&self) -> GameState {
         debug_assert!(
             self.x_off < 15 || self.o_off < 15,

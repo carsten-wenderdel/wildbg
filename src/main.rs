@@ -3,6 +3,7 @@ use std::collections::HashMap;
 mod dice_gen;
 mod evaluator;
 mod position;
+mod rollout;
 
 fn main() {
     // Just some random calls to make sure everything is public that needs to be.
