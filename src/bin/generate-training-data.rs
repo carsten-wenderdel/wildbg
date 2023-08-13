@@ -1,4 +1,5 @@
 use wildbg::evaluator::Evaluator;
+use wildbg::inputs::Inputs;
 use wildbg::position::STARTING;
 use wildbg::rollout::*;
 
@@ -7,5 +8,8 @@ fn main() {
     let evaluator = RolloutEvaluator::new_random();
     let position = STARTING;
     let probabilities = evaluator.eval(&position);
+    let inputs = Inputs::from_position(&position);
     println!("{:?}", probabilities);
+    println!("{}", Inputs::csv_header());
+    println!("{}", inputs);
 }

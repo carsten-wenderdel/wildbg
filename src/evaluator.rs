@@ -30,7 +30,6 @@ impl Probabilities {
     }
 
     /// Cubeless equity
-    #[allow(dead_code)]
     fn equity(&self) -> f32 {
         self.win_gammon - self.lose_normal
             + 2.0 * (self.win_gammon - self.lose_gammon)

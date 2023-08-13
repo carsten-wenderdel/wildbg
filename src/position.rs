@@ -9,10 +9,9 @@ use std::fmt::Formatter;
 use std::fmt::Write;
 
 const NO_OF_CHECKERS: u8 = 15;
-const X_BAR: usize = 25;
-const O_BAR: usize = 0;
+pub(crate) const X_BAR: usize = 25;
+pub(crate) const O_BAR: usize = 0;
 
-#[allow(dead_code)]
 pub const STARTING: Position = Position {
     pips: [
         0, -2, 0, 0, 0, 0, 5, 0, 3, 0, 0, 0, -5, 5, 0, 0, 0, -3, 0, -5, 0, 0, 0, 0, 2, 0,
@@ -91,6 +90,35 @@ pub struct Position {
 }
 
 impl Position {
+    #[inline(always)]
+    pub(crate) fn x_off(&self) -> u8 {
+        self.x_off
+    }
+
+    #[inline(always)]
+    pub(crate) fn o_off(&self) -> u8 {
+        self.o_off
+    }
+
+    #[inline(always)]
+    /// Number of checkers on the bar for `x`. Non negative number.
+    pub(crate) fn x_bar(&self) -> u8 {
+        self.pips[X_BAR] as u8
+    }
+
+    #[inline(always)]
+    /// Number of checkers on the bar for `x`. Non negative number in contrast to internal representation.
+    pub(crate) fn o_bar(&self) -> u8 {
+        -self.pips[O_BAR] as u8
+    }
+
+    #[inline(always)]
+    /// Will return positive value for checkers of `x`, negative value for checkers of `o`.
+    pub(crate) fn pip(&self, pip: usize) -> i8 {
+        debug_assert!((1..=24).contains(&pip));
+        self.pips[pip]
+    }
+
     pub(crate) fn game_state(&self) -> GameState {
         debug_assert!(
             self.x_off < 15 || self.o_off < 15,
@@ -260,6 +288,38 @@ impl Position {
 mod tests {
     use crate::position::*;
     use std::collections::HashMap;
+
+    #[test]
+    fn x_off() {
+        let given = pos! {x 3:15; o 1:1};
+        assert_eq!(given.x_off(), 0);
+        let given = pos! {x 3:10; o 1:1};
+        assert_eq!(given.x_off(), 5);
+    }
+
+    #[test]
+    fn o_off() {
+        let given = pos! {x 1:1; o 3:15};
+        assert_eq!(given.o_off(), 0);
+        let given = pos! {x 1:1; o 3:10};
+        assert_eq!(given.o_off(), 5);
+    }
+
+    #[test]
+    fn x_bar() {
+        let given = pos! {x 3:15; o 1:1};
+        assert_eq!(given.x_bar(), 0);
+        let given = pos! {x X_BAR:2, 3:10; o 1:1};
+        assert_eq!(given.x_bar(), 2);
+    }
+
+    #[test]
+    fn o_bar() {
+        let given = pos! {x 1:1; o 3:15};
+        assert_eq!(given.o_bar(), 0);
+        let given = pos! {x 1:1; o 3:10, O_BAR:1};
+        assert_eq!(given.o_bar(), 1);
+    }
 
     #[test]
     fn game_state_bg_when_on_bar() {
