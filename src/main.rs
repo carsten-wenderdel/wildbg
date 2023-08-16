@@ -1,10 +1,10 @@
-use std::collections::HashMap;
-use wildbg::pos;
-use wildbg::position::Position;
+use wildbg::evaluator::Evaluator;
+use wildbg::onnx::OnnxEvaluator;
+use wildbg::position::STARTING;
 
 fn main() {
-    // Just some random calls to make sure everything is public that needs to be.
-    let position = pos!(x 20:2; o 16:3);
-    let moves = position.all_positions_after_moving(3, 3);
-    println!("Number of moves: {}", moves.len());
+    let position = STARTING;
+    let onnx = OnnxEvaluator::from_file_path("neural-nets/wildbg.onnx").unwrap();
+    let best = onnx.best_position(&position, 3, 1);
+    println!("best: {:?}", best);
 }

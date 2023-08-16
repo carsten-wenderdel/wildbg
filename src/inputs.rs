@@ -1,6 +1,8 @@
 use crate::position::{Position, X_BAR};
 use std::fmt;
 
+pub(crate) const NUM_INPUTS: usize = 202;
+
 /// Custom format, for ideas see https://stackoverflow.com/questions/32428237/board-encoding-in-tesauros-td-gammon
 pub struct Inputs {
     x_inputs: [PipInput; 25],
@@ -22,7 +24,27 @@ impl fmt::Display for Inputs {
         Ok(())
     }
 }
+
 impl Inputs {
+    pub fn to_vec(&self) -> Vec<f32> {
+        let mut vec: Vec<f32> = Vec::with_capacity(NUM_INPUTS);
+        vec.push(self.x_off as f32);
+        vec.push(self.o_off as f32);
+        for input in &self.x_inputs {
+            vec.push(input.p1 as f32);
+            vec.push(input.p2 as f32);
+            vec.push(input.p3 as f32);
+            vec.push(input.p4 as f32);
+        }
+        for input in &self.o_inputs {
+            vec.push(input.p1 as f32);
+            vec.push(input.p2 as f32);
+            vec.push(input.p3 as f32);
+            vec.push(input.p4 as f32);
+        }
+        vec
+    }
+
     pub fn csv_header() -> String {
         let mut string = String::new();
         string.push_str("x_off;o_off;x_bar-1;x_bar-2;x_bar-3;x_bar-4");
@@ -107,7 +129,7 @@ impl PipInput {
 
 #[cfg(test)]
 mod tests {
-    use crate::inputs::Inputs;
+    use crate::inputs::{Inputs, NUM_INPUTS};
     use crate::pos;
     use crate::position::{Position, O_BAR};
     use std::collections::HashMap;
@@ -137,12 +159,12 @@ mod tests {
         let header = Inputs::csv_header();
         let header_semicolons = header.matches(';').count();
 
-        assert_eq!(inputs_semicolons, 201);
-        assert_eq!(header_semicolons, 201);
+        assert_eq!(inputs_semicolons, NUM_INPUTS - 1);
+        assert_eq!(header_semicolons, NUM_INPUTS - 1);
     }
 
     #[test]
-    fn no_empty_colon_in_header() {
+    fn no_empty_column_in_header() {
         assert_eq!(Inputs::csv_header().matches(";;").count(), 0)
     }
 }

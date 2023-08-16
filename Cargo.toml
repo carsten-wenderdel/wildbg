@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 fastrand = "2.0.0"
+tract-onnx = "0.20.7"
