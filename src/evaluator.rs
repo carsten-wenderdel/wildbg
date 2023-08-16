@@ -1,7 +1,7 @@
 use crate::position::GameResult::{LoseBg, LoseGammon, LoseNormal, WinBg, WinGammon, WinNormal};
 use crate::position::Position;
+use std::fmt;
 
-#[allow(dead_code)]
 /// Sum of all six fields will always be 1.0
 #[derive(Debug)]
 pub struct Probabilities {
@@ -13,7 +13,27 @@ pub struct Probabilities {
     pub(crate) lose_bg: f32,
 }
 
+/// Used when writing CSV data to a file
+impl fmt::Display for Probabilities {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{};{};{};{};{};{}",
+            self.win_normal,
+            self.win_gammon,
+            self.win_bg,
+            self.lose_normal,
+            self.lose_gammon,
+            self.lose_bg
+        )
+    }
+}
+
 impl Probabilities {
+    pub fn csv_header() -> String {
+        "win_normal;win_gammon;win_bg;lose_normal;lose_gammon;lose_bg".to_string()
+    }
+
     /// Typically used from rollouts.
     /// The index within the array has to correspond to the discriminant of the `Probabilities` enum.
     /// Input integer values will be normalized so that the sum in the return value is 1.0
@@ -98,6 +118,22 @@ mod probabilities_tests {
         assert_eq!(probabilities.lose_normal, 0.125);
         assert_eq!(probabilities.lose_gammon, 0.25);
         assert_eq!(probabilities.lose_bg, 0.5);
+    }
+
+    #[test]
+    fn to_string() {
+        let probabilities = Probabilities {
+            win_normal: 1.0 / 21.0,
+            win_gammon: 2.0 / 21.0,
+            win_bg: 3.0 / 21.0,
+            lose_normal: 4.0 / 21.0,
+            lose_gammon: 5.0 / 21.0,
+            lose_bg: 6.0 / 21.0,
+        };
+        assert_eq!(
+            probabilities.to_string(),
+            "0.04761905;0.0952381;0.14285715;0.1904762;0.23809524;0.2857143"
+        );
     }
 }
 #[cfg(test)]
