@@ -1,27 +1,33 @@
 use std::fs::File;
-use std::io::Write;
+use std::io::{stdout, Write};
 use wildbg::evaluator::{Evaluator, Probabilities};
 use wildbg::inputs::Inputs;
-use wildbg::position::{Position, STARTING};
+use wildbg::position::Position;
+use wildbg::position_finder::PositionFinder;
 use wildbg::rollout::*;
 
-fn main() {
-    write().unwrap();
-}
-
-fn write() -> std::io::Result<()> {
+fn main() -> std::io::Result<()> {
     let path = "training-data/rollouts.csv";
-    println!("Write CSV data to {}", path);
+    println!("Roll out and write CSV data to {}", path);
     _ = std::fs::create_dir("training-data");
     _ = std::fs::remove_file(path);
     let mut file = File::create(path)?;
-
-    let evaluator = RolloutEvaluator::new_random();
-    let position = STARTING;
-    let probabilities = evaluator.eval(&position);
-
     file.write_all(csv_header().as_bytes())?;
-    file.write_all(csv_line(&position, &probabilities).as_bytes())?;
+
+    let amount = 100_000;
+    let random_positions = PositionFinder::new().find_positions(amount);
+    let evaluator = RolloutEvaluator::new_random();
+
+    for (i, position) in random_positions.iter().enumerate() {
+        let probabilities = evaluator.eval(position);
+        file.write_all(csv_line(position, &probabilities).as_bytes())?;
+        print!(
+            "\rProgress: {:.2} %",
+            (i + 1) as f32 / amount as f32 * 100.0
+        );
+        stdout().flush().unwrap()
+    }
+    println!("\nDone!");
     Ok(())
 }
 

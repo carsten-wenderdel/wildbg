@@ -78,7 +78,7 @@ macro_rules! pos {
 
 /// A single position in backgammon without match information.
 /// We assume two players "x" and "o".
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct Position {
     // Array positions 25 and 0 are the bar.
     // The other array positions are the pips from the point of view of x, moving from 24 to 0.
@@ -147,6 +147,7 @@ impl Position {
 
     /// The return values have switched the sides of the players.
     pub fn all_positions_after_moving(&self, die1: usize, die2: usize) -> Vec<Position> {
+        debug_assert!(self.o_off < NO_OF_CHECKERS && self.x_off < NO_OF_CHECKERS);
         return if die1 == die2 {
             let moves = self.all_double_moves(die1);
             moves.iter().map(|m| m.1.switch_sides()).collect()
