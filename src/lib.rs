@@ -1,4 +1,5 @@
 mod dice_gen;
+pub mod duel;
 pub mod evaluator;
 pub mod inputs;
 pub mod onnx;

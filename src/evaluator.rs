@@ -1,9 +1,9 @@
 use crate::position::GameResult::{LoseBg, LoseGammon, LoseNormal, WinBg, WinGammon, WinNormal};
 use crate::position::Position;
 use std::fmt;
+use std::fmt::Formatter;
 
 /// Sum of all six fields will always be 1.0
-#[derive(Debug)]
 pub struct Probabilities {
     pub(crate) win_normal: f32,
     pub(crate) win_gammon: f32,
@@ -11,6 +11,21 @@ pub struct Probabilities {
     pub(crate) lose_normal: f32,
     pub(crate) lose_gammon: f32,
     pub(crate) lose_bg: f32,
+}
+
+impl fmt::Debug for Probabilities {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Probabilities: wn {:.2}%; wg {:.2}%; wb {:.2}%; ln {:.2}%; lg {:.2}%; lb {:.2}%",
+            100.0 * self.win_normal,
+            100.0 * self.win_gammon,
+            100.0 * self.win_bg,
+            100.0 * self.lose_normal,
+            100.0 * self.lose_gammon,
+            100.0 * self.lose_bg
+        )
+    }
 }
 
 /// Used when writing CSV data to a file
@@ -50,7 +65,7 @@ impl Probabilities {
     }
 
     /// Cubeless equity
-    fn equity(&self) -> f32 {
+    pub fn equity(&self) -> f32 {
         self.win_normal - self.lose_normal
             + 2.0 * (self.win_gammon - self.lose_gammon)
             + 3.0 * (self.win_bg - self.lose_bg)
