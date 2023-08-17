@@ -41,6 +41,10 @@ impl RolloutEvaluator<RandomEvaluator> {
 }
 
 impl<T: Evaluator> RolloutEvaluator<T> {
+    pub fn with_evaluator(evaluator: T) -> Self {
+        Self { evaluator }
+    }
+
     /// `first_dice` contains the dice for first moves, starting at index 0. It may be empty.
     /// Once all of those given dice have been used, subsequent dice are generated from `dice_gen`.
     #[allow(dead_code)]
