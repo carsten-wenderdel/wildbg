@@ -2,26 +2,43 @@ use crate::dice_gen::{DiceGen, FastrandDice};
 use crate::evaluator::{Evaluator, Probabilities, RandomEvaluator};
 use crate::position::GameState::{GameOver, Ongoing};
 use crate::position::{GameResult, Position};
+use rayon::prelude::*;
 
 pub struct RolloutEvaluator<T: Evaluator> {
     evaluator: T,
 }
 
-impl<T: Evaluator> Evaluator for RolloutEvaluator<T> {
+impl<T: Evaluator + Sync> Evaluator for RolloutEvaluator<T> {
     /// Rolls out 1296 times, first two half moves are given, rest is random
     fn eval(&self, pos: &Position) -> Probabilities {
-        let mut dice_gen = FastrandDice::new();
-        let mut results = [0; 6];
-        for die1 in 1_usize..7 {
-            for die2 in 1_usize..7 {
-                for die3 in 1_usize..7 {
-                    for die4 in 1_usize..7 {
-                        let result =
-                            self.single_rollout(pos, &[(die1, die2), (die3, die4)], &mut dice_gen);
-                        results[result as usize] += 1;
+        debug_assert!(pos.game_state() == Ongoing);
+        let dice = {
+            let mut i = 0;
+            let mut dice: [(usize, usize, usize, usize); 1296] = [(0, 0, 0, 0); 1296];
+            for die0 in 1_usize..7 {
+                for die1 in 1_usize..7 {
+                    for die2 in 1_usize..7 {
+                        for die3 in 1_usize..7 {
+                            dice[i] = (die0, die1, die2, die3);
+                            i += 1;
+                        }
                     }
                 }
             }
+            dice
+        };
+
+        let game_results: Vec<GameResult> = dice
+            .par_iter()
+            .map(|dice| {
+                let mut dice_gen = FastrandDice::new();
+                self.single_rollout(pos, &[(dice.0, dice.1), (dice.2, dice.3)], &mut dice_gen)
+            })
+            .collect();
+
+        let mut results = [0; 6];
+        for gr in game_results {
+            results[gr as usize] += 1;
         }
         debug_assert_eq!(
             results.iter().sum::<u32>(),
