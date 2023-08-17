@@ -1,25 +1,22 @@
 use crate::dice_gen::{DiceGen, FastrandDice};
+use crate::evaluator::Evaluator;
 use crate::position::GameState::Ongoing;
 use crate::position::{Position, STARTING};
 use std::collections::HashSet;
 
 /// Finds random positions for later rollout.
-pub struct PositionFinder {
+pub struct PositionFinder<T: Evaluator> {
+    evaluator: T,
     dice_gen: FastrandDice,
-    rng: fastrand::Rng, // temporary, will be replaced with selection algorithm once first neural net is there.
 }
 
-impl PositionFinder {
+impl<T: Evaluator> PositionFinder<T> {
     /// Contains different random number generators every time it's called.
     #[allow(clippy::new_without_default)]
-    pub fn new() -> Self {
-        Self::with_dice_gen(FastrandDice::new())
-    }
-
-    fn with_dice_gen(dice_gen: FastrandDice) -> Self {
+    pub fn new(evaluator: T) -> Self {
         PositionFinder {
-            dice_gen,
-            rng: fastrand::Rng::new(),
+            evaluator,
+            dice_gen: FastrandDice::new(),
         }
     }
 
@@ -41,12 +38,16 @@ impl PositionFinder {
         let mut positions: Vec<Position> = Vec::new();
         let mut pos = STARTING;
         while pos.game_state() == Ongoing {
+            // Todo: Don't allow doubles in first move
             let (die1, die2) = self.dice_gen.roll();
             let new_positions = pos.all_positions_after_moving(die1, die2);
-            let random_index = self.rng.usize(0..new_positions.len());
             // Todo: remove cloning by implementing the Copy trait -> maybe better performance
-            pos = new_positions[random_index].clone();
-            positions.push(pos.clone());
+            pos = self.evaluator.worst_position(&new_positions).clone();
+            let mut ongoing_games: Vec<Position> = new_positions
+                .into_iter()
+                .filter(|p| p.game_state() == Ongoing)
+                .collect();
+            positions.append(&mut ongoing_games);
         }
         positions
     }

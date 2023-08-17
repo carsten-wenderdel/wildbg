@@ -1,6 +1,6 @@
 use std::fs::File;
 use std::io::{stdout, Write};
-use wildbg::evaluator::{Evaluator, Probabilities};
+use wildbg::evaluator::{Evaluator, Probabilities, RandomEvaluator};
 use wildbg::inputs::Inputs;
 use wildbg::position::Position;
 use wildbg::position_finder::PositionFinder;
@@ -15,7 +15,7 @@ fn main() -> std::io::Result<()> {
     file.write_all(csv_header().as_bytes())?;
 
     let amount = 100_000;
-    let random_positions = PositionFinder::new().find_positions(amount);
+    let random_positions = PositionFinder::new(RandomEvaluator {}).find_positions(amount);
     let evaluator = RolloutEvaluator::new_random();
 
     for (i, position) in random_positions.iter().enumerate() {

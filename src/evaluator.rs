@@ -82,13 +82,18 @@ pub trait Evaluator {
     /// The returned `Position` has already switches sides.
     /// This means the returned position will have the *lowest* equity of possible positions.
     fn best_position(&self, pos: &Position, die1: usize, die2: usize) -> Position {
-        pos.all_positions_after_moving(die1, die2)
+        self.worst_position(&pos.all_positions_after_moving(die1, die2))
+            .clone()
+    }
+
+    /// Worst position might be interesting, because when you switch sides, it's suddenly the best.
+    fn worst_position<'a>(&'a self, positions: &'a [Position]) -> &Position {
+        positions
             .iter()
             .map(|pos| (pos, self.eval(pos).equity()))
             .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
             .unwrap()
             .0
-            .clone()
     }
 }
 
