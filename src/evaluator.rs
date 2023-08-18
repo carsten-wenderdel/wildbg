@@ -51,7 +51,7 @@ impl Probabilities {
 
     /// Cubeless equity
     fn equity(&self) -> f32 {
-        self.win_gammon - self.lose_normal
+        self.win_normal - self.lose_normal
             + 2.0 * (self.win_gammon - self.lose_gammon)
             + 3.0 * (self.win_bg - self.lose_bg)
     }
@@ -134,6 +134,97 @@ mod probabilities_tests {
             probabilities.to_string(),
             "0.04761905;0.0952381;0.14285715;0.1904762;0.23809524;0.2857143"
         );
+    }
+
+    #[test]
+    fn equity_win_normal() {
+        let probabilities = Probabilities {
+            win_normal: 1.0,
+            win_gammon: 0.0,
+            win_bg: 0.0,
+            lose_normal: 0.0,
+            lose_gammon: 0.0,
+            lose_bg: 0.0,
+        };
+        assert_eq!(probabilities.equity(), 1.0);
+    }
+
+    #[test]
+    fn equity_win_gammon() {
+        let probabilities = Probabilities {
+            win_normal: 0.0,
+            win_gammon: 1.0,
+            win_bg: 0.0,
+            lose_normal: 0.0,
+            lose_gammon: 0.0,
+            lose_bg: 0.0,
+        };
+        assert_eq!(probabilities.equity(), 2.0);
+    }
+
+    #[test]
+    fn equity_win_bg() {
+        let probabilities = Probabilities {
+            win_normal: 0.0,
+            win_gammon: 0.0,
+            win_bg: 1.0,
+            lose_normal: 0.0,
+            lose_gammon: 0.0,
+            lose_bg: 0.0,
+        };
+        assert_eq!(probabilities.equity(), 3.0);
+    }
+
+    #[test]
+    fn equity_lose_normal() {
+        let probabilities = Probabilities {
+            win_normal: 0.0,
+            win_gammon: 0.0,
+            win_bg: 0.0,
+            lose_normal: 1.0,
+            lose_gammon: 0.0,
+            lose_bg: 0.0,
+        };
+        assert_eq!(probabilities.equity(), -1.0);
+    }
+
+    #[test]
+    fn equity_lose_gammon() {
+        let probabilities = Probabilities {
+            win_normal: 0.0,
+            win_gammon: 0.0,
+            win_bg: 0.0,
+            lose_normal: 0.0,
+            lose_gammon: 1.0,
+            lose_bg: 0.0,
+        };
+        assert_eq!(probabilities.equity(), -2.0);
+    }
+
+    #[test]
+    fn equity_lose_bg() {
+        let probabilities = Probabilities {
+            win_normal: 0.0,
+            win_gammon: 0.0,
+            win_bg: 0.0,
+            lose_normal: 0.0,
+            lose_gammon: 0.0,
+            lose_bg: 1.0,
+        };
+        assert_eq!(probabilities.equity(), -3.0);
+    }
+
+    #[test]
+    fn equity_balanced() {
+        let probabilities = Probabilities {
+            win_normal: 0.3,
+            win_gammon: 0.1,
+            win_bg: 0.1,
+            lose_normal: 0.3,
+            lose_gammon: 0.1,
+            lose_bg: 0.1,
+        };
+        assert_eq!(probabilities.equity(), 0.0);
     }
 }
 #[cfg(test)]
