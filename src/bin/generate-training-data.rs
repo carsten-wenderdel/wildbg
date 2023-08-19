@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::{stdout, Write};
+use std::time::Instant;
 use wildbg::evaluator::{Evaluator, Probabilities, RandomEvaluator};
 use wildbg::inputs::Inputs;
 use wildbg::onnx::OnnxEvaluator;
@@ -19,6 +20,7 @@ fn main() -> std::io::Result<()> {
 
     let evaluator = OnnxEvaluator::with_default_model().map(RolloutEvaluator::with_evaluator);
     let finder = OnnxEvaluator::with_default_model().map(PositionFinder::new);
+    let start = Instant::now();
 
     match (evaluator, finder) {
         (Some(evaluator), Some(mut finder)) => {
@@ -26,7 +28,7 @@ fn main() -> std::io::Result<()> {
             let positions = finder.find_positions(AMOUNT);
             for (i, position) in positions.iter().enumerate() {
                 let probabilities = evaluator.eval(position);
-                write_csv_line(&mut file, position, &probabilities, i)?;
+                write_csv_line(&mut file, position, &probabilities, i, start)?;
             }
         }
         (_, _) => {
@@ -36,7 +38,7 @@ fn main() -> std::io::Result<()> {
             let positions = finder.find_positions(AMOUNT);
             for (i, position) in positions.iter().enumerate() {
                 let probabilities = evaluator.eval(position);
-                write_csv_line(&mut file, position, &probabilities, i)?;
+                write_csv_line(&mut file, position, &probabilities, i, start)?;
             }
         }
     }
@@ -49,14 +51,29 @@ fn write_csv_line(
     position: &Position,
     probabilities: &Probabilities,
     i: usize,
+    start: Instant,
 ) -> std::io::Result<()> {
     file.write_all(csv_line(position, probabilities).as_bytes())?;
+    let done = (i + 1) as f32 / AMOUNT as f32;
+    let todo = 1.0 - done;
+    let seconds_done = start.elapsed().as_secs();
+    let seconds_todo = (seconds_done as f32 * (todo / done)) as u64;
     print!(
-        "\rProgress: {:.2} %",
-        (i + 1) as f32 / AMOUNT as f32 * 100.0
+        "\rProgress: {:2.2} %. Time elapsed: {}. Time left: {}.",
+        done * 100.0,
+        duration(seconds_done),
+        duration(seconds_todo),
     );
     stdout().flush().unwrap();
     Ok(())
+}
+
+fn duration(seconds: u64) -> String {
+    let minutes = seconds / 60;
+    let hours = minutes / 60;
+    let minutes = minutes % 60;
+    let seconds = seconds % 60;
+    format!("{:02}:{:02}:{:02} h", hours, minutes, seconds)
 }
 
 fn csv_header() -> String {
