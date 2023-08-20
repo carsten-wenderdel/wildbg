@@ -43,14 +43,14 @@ impl<T: Evaluator, U: Evaluator> Duel<T, U> {
         let mut pos1_finished = false;
         let mut pos2_finished = false;
         while !(pos1_finished && pos2_finished) {
-            let (die1, die2) = self.dice_gen.roll();
+            let dice = self.dice_gen.roll();
 
             match pos1.game_state() {
                 Ongoing => {
                     pos1 = if iteration % 2 == 0 {
-                        self.evaluator1.best_position(&pos1, die1, die2)
+                        self.evaluator1.best_position(&pos1, &dice)
                     } else {
-                        self.evaluator2.best_position(&pos1, die1, die2)
+                        self.evaluator2.best_position(&pos1, &dice)
                     };
                 }
                 GameOver(result) => {
@@ -68,9 +68,9 @@ impl<T: Evaluator, U: Evaluator> Duel<T, U> {
             match pos2.game_state() {
                 Ongoing => {
                     pos2 = if iteration % 2 == 0 {
-                        self.evaluator2.best_position(&pos2, die1, die2)
+                        self.evaluator2.best_position(&pos2, &dice)
                     } else {
-                        self.evaluator1.best_position(&pos2, die1, die2)
+                        self.evaluator1.best_position(&pos2, &dice)
                     };
                 }
                 GameOver(result) => {

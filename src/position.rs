@@ -1,6 +1,7 @@
 mod double_moves;
 mod regular_moves;
 
+use crate::dice_gen::Dice;
 use crate::position::GameResult::*;
 use crate::position::GameState::*;
 use std::collections::HashMap;
@@ -146,19 +147,17 @@ impl Position {
     }
 
     /// The return values have switched the sides of the players.
-    pub fn all_positions_after_moving(&self, die1: usize, die2: usize) -> Vec<Position> {
+    pub fn all_positions_after_moving(&self, dice: &Dice) -> Vec<Position> {
         debug_assert!(self.o_off < NO_OF_CHECKERS && self.x_off < NO_OF_CHECKERS);
-        return if die1 == die2 {
-            let moves = self.all_double_moves(die1);
-            moves.iter().map(|m| m.1.switch_sides()).collect()
-        } else {
-            let (big, small) = if die1 > die2 {
-                (die1, die2)
-            } else {
-                (die2, die1)
-            };
-            let moves = self.all_regular_moves(big, small);
-            moves.iter().map(|m| m.1.switch_sides()).collect()
+        return match dice {
+            Dice::Double(die) => {
+                let moves = self.all_double_moves(*die);
+                moves.iter().map(|m| m.1.switch_sides()).collect()
+            }
+            Dice::Regular(dice) => {
+                let moves = self.all_regular_moves(dice);
+                moves.iter().map(|m| m.1.switch_sides()).collect()
+            }
         };
     }
 
@@ -374,7 +373,7 @@ mod tests {
         // Given
         let pos = pos!(x X_BAR:2, 4:1, 3:1; o 24:2);
         // When
-        let positions = pos.all_positions_after_moving(3, 3);
+        let positions = pos.all_positions_after_moving(&Dice::new(3, 3));
         // Then
         let expected1 = pos!(x 1:2; o 6:2, 21:1, 22:1);
         let expected2 = pos!(x 1:2; o 3:1, 9:1, 21:1, 22:1);
@@ -386,7 +385,7 @@ mod tests {
     fn all_positions_after_moving_regular() {
         let pos = pos!(x X_BAR:1; o 22:1);
         // When
-        let positions = pos.all_positions_after_moving(2, 3);
+        let positions = pos.all_positions_after_moving(&Dice::new(2, 3));
         // Then
         let expected1 = pos!(x X_BAR:1; o 5:1);
         let expected2 = pos!(x 3:1; o 5:1);

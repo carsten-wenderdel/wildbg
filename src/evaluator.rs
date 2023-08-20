@@ -1,3 +1,4 @@
+use crate::dice_gen::Dice;
 use crate::position::GameResult::{LoseBg, LoseGammon, LoseNormal, WinBg, WinGammon, WinNormal};
 use crate::position::Position;
 use std::fmt;
@@ -81,8 +82,8 @@ pub trait Evaluator {
     /// Returns the position after applying the *best* move to `pos`.
     /// The returned `Position` has already switches sides.
     /// This means the returned position will have the *lowest* equity of possible positions.
-    fn best_position(&self, pos: &Position, die1: usize, die2: usize) -> Position {
-        self.worst_position(&pos.all_positions_after_moving(die1, die2))
+    fn best_position(&self, pos: &Position, dice: &Dice) -> Position {
+        self.worst_position(&pos.all_positions_after_moving(dice))
             .clone()
     }
 
@@ -249,6 +250,7 @@ mod probabilities_tests {
 }
 #[cfg(test)]
 mod evaluator_trait_tests {
+    use crate::dice_gen::Dice;
     use crate::evaluator::{Evaluator, Probabilities};
     use crate::pos;
     use crate::position::Position;
@@ -290,7 +292,7 @@ mod evaluator_trait_tests {
         let given_pos = pos!(x 7:2; o 20:2);
         let evaluator = EvaluatorFake {};
         // When
-        let best_pos = evaluator.best_position(&given_pos, 4, 2);
+        let best_pos = evaluator.best_position(&given_pos, &Dice::new(4, 2));
         // Then
         assert_eq!(best_pos, expected_pos());
     }

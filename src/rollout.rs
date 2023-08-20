@@ -1,4 +1,4 @@
-use crate::dice_gen::{DiceGen, FastrandDice};
+use crate::dice_gen::{Dice, DiceGen, FastrandDice, ALL_1296};
 use crate::evaluator::{Evaluator, Probabilities, RandomEvaluator};
 use crate::position::GameState::{GameOver, Ongoing};
 use crate::position::{GameResult, Position};
@@ -12,27 +12,13 @@ impl<T: Evaluator + Sync> Evaluator for RolloutEvaluator<T> {
     /// Rolls out 1296 times, first two half moves are given, rest is random
     fn eval(&self, pos: &Position) -> Probabilities {
         debug_assert!(pos.game_state() == Ongoing);
-        let dice = {
-            let mut i = 0;
-            let mut dice: [(usize, usize, usize, usize); 1296] = [(0, 0, 0, 0); 1296];
-            for die0 in 1_usize..7 {
-                for die1 in 1_usize..7 {
-                    for die2 in 1_usize..7 {
-                        for die3 in 1_usize..7 {
-                            dice[i] = (die0, die1, die2, die3);
-                            i += 1;
-                        }
-                    }
-                }
-            }
-            dice
-        };
+        let dice = ALL_1296;
 
         let game_results: Vec<GameResult> = dice
             .par_iter()
-            .map(|dice| {
+            .map(|dice_pair| {
                 let mut dice_gen = FastrandDice::new();
-                self.single_rollout(pos, &[(dice.0, dice.1), (dice.2, dice.3)], &mut dice_gen)
+                self.single_rollout(pos, &[dice_pair.0, dice_pair.1], &mut dice_gen)
             })
             .collect();
 
@@ -68,18 +54,18 @@ impl<T: Evaluator> RolloutEvaluator<T> {
     fn single_rollout<U: DiceGen>(
         &self,
         from: &Position,
-        first_dice: &[(usize, usize)],
+        first_dice: &[Dice],
         dice_gen: &mut U,
     ) -> GameResult {
         let mut iteration = 0;
         let mut pos = from.clone();
         loop {
-            let (die1, die2) = if first_dice.len() > iteration {
+            let dice = if first_dice.len() > iteration {
                 first_dice[iteration]
             } else {
                 dice_gen.roll()
             };
-            pos = self.evaluator.best_position(&pos, die1, die2);
+            pos = self.evaluator.best_position(&pos, &dice);
             match pos.game_state() {
                 Ongoing => {
                     iteration += 1;
@@ -158,7 +144,7 @@ mod tests {
 
 #[cfg(test)]
 mod private_tests {
-    use crate::dice_gen::{DiceGenMock, FastrandDice};
+    use crate::dice_gen::{Dice, DiceGenMock, FastrandDice};
     use crate::evaluator::RandomEvaluator;
     use crate::pos;
     use crate::position::GameResult::{
@@ -176,8 +162,8 @@ mod private_tests {
         };
         let pos = pos!(x 12:1; o 13:1);
         // When
-        let mut dice_gen = DiceGenMock::new(&[(2, 1), (2, 1)]);
-        let result = rollout_eval.single_rollout(&pos, &[(4, 5)], &mut dice_gen);
+        let mut dice_gen = DiceGenMock::new(&[Dice::new(2, 1), Dice::new(2, 1)]);
+        let result = rollout_eval.single_rollout(&pos, &[Dice::new(4, 5)], &mut dice_gen);
         //Then
         dice_gen.assert_all_dice_were_used();
         assert_eq!(result, WinNormal);
@@ -191,8 +177,9 @@ mod private_tests {
         };
         let pos = pos!(x 12:1; o 13:1);
         // When
-        let mut dice_gen = DiceGenMock::new(&[(2, 1), (2, 1)]);
-        let result = rollout_eval.single_rollout(&pos, &[(1, 2), (4, 5)], &mut dice_gen);
+        let mut dice_gen = DiceGenMock::new(&[Dice::new(2, 1), Dice::new(2, 1)]);
+        let result =
+            rollout_eval.single_rollout(&pos, &[Dice::new(1, 2), Dice::new(4, 5)], &mut dice_gen);
         // Then
         dice_gen.assert_all_dice_were_used();
         assert_eq!(result, LoseNormal);
@@ -206,7 +193,8 @@ mod private_tests {
         };
         let pos = pos!(x 1:4; o 12:15);
         // When
-        let result = rollout_eval.single_rollout(&pos, &[(2, 2)], &mut FastrandDice::new());
+        let result =
+            rollout_eval.single_rollout(&pos, &[Dice::new(2, 2)], &mut FastrandDice::new());
         //Then
         assert_eq!(result, WinGammon);
     }
@@ -219,7 +207,11 @@ mod private_tests {
         };
         let pos = pos!(x 12:15; o 24:1);
         // When
-        let result = rollout_eval.single_rollout(&pos, &[(2, 1), (3, 3)], &mut FastrandDice::new());
+        let result = rollout_eval.single_rollout(
+            &pos,
+            &[Dice::new(2, 1), Dice::new(3, 3)],
+            &mut FastrandDice::new(),
+        );
         //Then
         assert_eq!(result, LoseGammon);
     }
@@ -232,7 +224,8 @@ mod private_tests {
         };
         let pos = pos!(x 24:1; o 1:15);
         // When
-        let result = rollout_eval.single_rollout(&pos, &[(6, 6)], &mut FastrandDice::new());
+        let result =
+            rollout_eval.single_rollout(&pos, &[Dice::new(6, 6)], &mut FastrandDice::new());
         //Then
         assert_eq!(result, WinBg);
     }
@@ -245,7 +238,11 @@ mod private_tests {
         };
         let pos = pos!(x 24:15; o 1:1);
         // When
-        let result = rollout_eval.single_rollout(&pos, &[(1, 2), (6, 6)], &mut FastrandDice::new());
+        let result = rollout_eval.single_rollout(
+            &pos,
+            &[Dice::new(1, 2), Dice::new(6, 6)],
+            &mut FastrandDice::new(),
+        );
         //Then
         assert_eq!(result, LoseBg);
     }
