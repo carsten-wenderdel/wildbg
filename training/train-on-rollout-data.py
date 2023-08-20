@@ -61,9 +61,9 @@ trainloader = DataLoader(traindata, batch_size=64, shuffle=True)
 criterion = nn.MSELoss()
 
 # Optimizer based on model, adjust the learning rate
-optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+optimizer = torch.optim.SGD(model.parameters(), lr=4.0)
 
-epochs = 10
+epochs = 20
 
 for epoch in range(epochs):
     running_loss = 0.0
