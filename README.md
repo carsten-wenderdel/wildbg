@@ -28,10 +28,10 @@ Already implemented is:
 
 No neural network is committed to this repository.  You can find the training progress and early rather weak networks here: https://github.com/carsten-wenderdel/wildbg-training
 
-#### Backgammon logic
+#### Topic 2: Backgammon logic
 Currently only cubeless equities and moves are implemented. Cubes and cubeful equities are missing.
 
-#### HTTP/json API
+#### Topic 3: HTTP/json API
 Ideation phase.
 
 ## Contributing
