@@ -1,10 +1,22 @@
+use std::collections::HashMap;
 use wildbg::evaluator::Evaluator;
 use wildbg::onnx::OnnxEvaluator;
+use wildbg::pos;
+use wildbg::position::Position;
 use wildbg::position::STARTING;
 
 fn main() {
+    let onnx = OnnxEvaluator::with_default_model().unwrap();
+
     let position = STARTING;
-    let onnx = OnnxEvaluator::from_file_path("neural-nets/wildbg.onnx").unwrap();
     let best = onnx.best_position(&position, 3, 1);
-    println!("best: {:?}", best);
+    println!("best after rolling 31: {:?}", best.switch_sides());
+
+    let position = STARTING;
+    let best = onnx.best_position(&position, 6, 1);
+    println!("best after rolling 61: {:?}", best.switch_sides());
+
+    let position = pos!(x 5:1, 3:4; o 24:3);
+    let best = onnx.best_position(&position, 4, 3);
+    println!("best in bearoff after 43 {:?}", best.switch_sides());
 }

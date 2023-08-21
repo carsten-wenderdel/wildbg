@@ -162,7 +162,7 @@ impl Position {
         };
     }
 
-    pub(crate) fn switch_sides(&self) -> Position {
+    pub fn switch_sides(&self) -> Position {
         let mut pips = self.pips.map(|x| -x);
         pips.reverse();
         Position {

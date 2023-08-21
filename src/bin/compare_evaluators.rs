@@ -1,11 +1,10 @@
 use std::io::{stdout, Write};
 use wildbg::duel::Duel;
-use wildbg::evaluator::RandomEvaluator;
 use wildbg::onnx::OnnxEvaluator;
 
 fn main() {
     let evaluator1 = OnnxEvaluator::from_file_path("neural-nets/wildbg.onnx").unwrap();
-    let evaluator2 = RandomEvaluator {};
+    let evaluator2 = OnnxEvaluator::from_file_path("neural-nets/wildbg01.onnx").unwrap();
     let mut duel = Duel::new(evaluator1, evaluator2);
 
     println!("Let two Evaluators duel each other:");
