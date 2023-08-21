@@ -41,13 +41,13 @@ class Network(nn.Module):
         self.output = nn.Linear(150, 6)
         
         # Define sigmoid activation and softmax output 
-        self.sigmoid = nn.Sigmoid()
+        self.activation = nn.Tanh()
         self.softmax = nn.Softmax(dim=1)
         
     def forward(self, x):
         # Pass the input tensor through each of our operations
         x = self.hidden(x)
-        x = self.sigmoid(x)
+        x = self.activation(x)
         x = self.output(x)
         x = self.softmax(x)
         return x
