@@ -116,7 +116,7 @@ impl Position {
     #[inline(always)]
     /// Will return positive value for checkers of `x`, negative value for checkers of `o`.
     pub(crate) fn pip(&self, pip: usize) -> i8 {
-        debug_assert!((1..=24).contains(&pip));
+        debug_assert!((1..=25).contains(&pip));
         self.pips[pip]
     }
 
@@ -260,11 +260,17 @@ impl Position {
         new
     }
 
+    /// Only call this if no checkers are on `X_BAR`
     fn can_move_in_board(&self, from: usize, die: usize) -> bool {
         debug_assert!(
             self.pips[X_BAR] == 0,
             "Don't call this function if x has checkers on the bar"
         );
+        self.can_move_internally(from, die)
+    }
+
+    #[inline(always)]
+    fn can_move_internally(&self, from: usize, die: usize) -> bool {
         return if self.pips[from] < 1 {
             // no checker to move
             false
@@ -281,6 +287,23 @@ impl Position {
             let checker_on_bigger_pip = self.pips[from + 1..X_BAR].iter().any(|x| x > &0);
             !checker_on_bigger_pip
         };
+    }
+
+    /// Works for all of moves, including those from the bar
+    fn can_move(&self, from: usize, die: usize) -> bool {
+        if (from == X_BAR) == (self.pips[X_BAR] > 0) {
+            self.can_move_internally(from, die)
+        } else {
+            false
+        }
+    }
+
+    pub(crate) fn try_move_single_checker(&self, from: usize, die: usize) -> Option<Position> {
+        if self.can_move(from, die) {
+            Some(self.clone_and_move_single_checker(from, die))
+        } else {
+            None
+        }
     }
 }
 
