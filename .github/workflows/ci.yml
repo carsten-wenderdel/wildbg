@@ -1,7 +1,9 @@
 name: CI
 
 on:
-  push
+  pull_request:
+    types: [ opened, synchronize ]
+  push:
 
 jobs:
   do-various-checks:
