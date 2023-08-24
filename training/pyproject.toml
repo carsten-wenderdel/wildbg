@@ -1,7 +1,7 @@
 [project]
 name = "wildbg"
 description = "Rust-based backgammon engine based on neural networks."
-readme = "README.md"
+readme = "../README.md"
 requires-python = ">=3.11"
 license = {file = "../LICENSES-MIT"}
 classifiers = [
