@@ -1,0 +1,42 @@
+[project]
+name = "wildbg"
+description = "Rust-based backgammon engine based on neural networks."
+readme = "README.md"
+requires-python = ">=3.11"
+license = {file = "../LICENSES-MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Environment :: Console",
+    "Development Status :: 2 - Pre-Alpha",
+    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Apache Software License",
+    "Natural Language :: English",
+    "Topic :: Games/Entertainment :: Board Games",
+    "Typing :: Typed"
+]
+dynamic = ["dependencies", "optional-dependencies", "version"]
+
+[tool.setuptools]
+license-files = ["../LICENSES*"]
+
+
+[project.urls]
+Repository = "https://github.com/carsten-wenderdel/wildbg/"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["test"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[tool.setuptools.dynamic.optional-dependencies]
+dev = { file = ["requirements-dev.txt"] }
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.black]
+line-length = 100
+target-version = ['py311']

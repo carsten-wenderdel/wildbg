@@ -1,0 +1,4 @@
+black
+docformatter
+mypy
+ruff
