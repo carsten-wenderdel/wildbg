@@ -149,16 +149,14 @@ impl Position {
     /// The return values have switched the sides of the players.
     pub fn all_positions_after_moving(&self, dice: &Dice) -> Vec<Position> {
         debug_assert!(self.o_off < NO_OF_CHECKERS && self.x_off < NO_OF_CHECKERS);
-        return match dice {
-            Dice::Double(die) => {
-                let moves = self.all_double_moves(*die);
-                moves.iter().map(|m| m.1.switch_sides()).collect()
-            }
-            Dice::Regular(dice) => {
-                let moves = self.all_positions_after_regular_move(dice);
-                moves.iter().map(|m| m.switch_sides()).collect()
-            }
+        let mut new_positions = match dice {
+            Dice::Double(die) => self.all_positions_after_double_move(*die),
+            Dice::Regular(dice) => self.all_positions_after_regular_move(dice),
         };
+        for position in new_positions.iter_mut() {
+            *position = position.switch_sides();
+        }
+        new_positions
     }
 
     pub fn switch_sides(&self) -> Position {
