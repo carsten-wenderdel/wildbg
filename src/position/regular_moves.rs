@@ -93,7 +93,7 @@ impl Position {
 
         let mut moves: Vec<Position> = Vec::new();
         for i in (1..X_BAR).rev() {
-            // Looking at moves where die1 *can* be used first
+            // Looking at moves where the big die *can* be used first
             if self.can_move_in_board(i, dice.big) {
                 let position = self.clone_and_move_single_checker(i, dice.big);
                 for j in (1..X_BAR).rev() {
@@ -103,11 +103,11 @@ impl Position {
                     }
                 }
             }
-            // Looking at moves where die2 *must* be moved first
+            // Looking at moves where the small die *must* be moved first
             // This can be because of two reasons:
-            // 1. We make two movements with the same checker, but for die1 it's initially blocked.
-            // 2. We make two movements with the same checker and hit something with the first movement, either with die1 or die2.
-            // 3. After moving die2, we now can bear off with die1, which was illegal before.
+            // 1. We make two movements with the same checker, but for the big die it's initially blocked.
+            // 2. We make two movements with the same checker and hit something with the first movement, either with the big or the small die.
+            // 3. After moving the small die, we now can bear off with the big die, which was illegal before.
             if self.can_move_in_board(i, dice.small) {
                 let position = self.clone_and_move_single_checker(i, dice.small);
                 // We have to look at all pips in the home board, in case bearing off just became possible. This is why the 7 appears in the max function.
@@ -157,13 +157,13 @@ impl Position {
     fn move_possibilities(&self, dice: &RegularDice) -> MovePossibilities {
         debug_assert!(self.pips[X_BAR] == 0);
 
-        let mut can_move_die1 = false;
-        let mut can_move_die2 = false;
+        let mut can_move_big = false;
+        let mut can_move_small = false;
 
         // Move die1 first
         for i in (1..X_BAR).rev() {
             if self.can_move_in_board(i, dice.big) {
-                can_move_die1 = true;
+                can_move_big = true;
                 let position = self.clone_and_move_single_checker(i, dice.big);
                 // We have to look at all pips in the home board, in case bearing off just became possible. This is why the 7 appears in the max function.
                 for j in (1..max(7, i + 1)).rev() {
@@ -177,7 +177,7 @@ impl Position {
         // Move die2 first, assuming die1 cannot be moved first
         for i in (1..X_BAR).rev() {
             if self.can_move_in_board(i, dice.small) {
-                can_move_die2 = true;
+                can_move_small = true;
                 let position = self.clone_and_move_single_checker(i, dice.small);
                 // If die1 and die2 could be used with different checkers without bearing off, then we would not get here.
                 // So, we only need to check if die1 can be moved with the same checker as die2.
@@ -193,9 +193,9 @@ impl Position {
             }
         }
 
-        if can_move_die1 {
+        if can_move_big {
             MovePossibilities::One { die: dice.big }
-        } else if can_move_die2 {
+        } else if can_move_small {
             MovePossibilities::One { die: dice.small }
         } else {
             MovePossibilities::None
