@@ -155,8 +155,8 @@ impl Position {
                 moves.iter().map(|m| m.1.switch_sides()).collect()
             }
             Dice::Regular(dice) => {
-                let moves = self.all_regular_moves(dice);
-                moves.iter().map(|m| m.1.switch_sides()).collect()
+                let moves = self.all_positions_after_regular_move(dice);
+                moves.iter().map(|m| m.switch_sides()).collect()
             }
         };
     }

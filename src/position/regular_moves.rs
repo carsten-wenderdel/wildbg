@@ -3,20 +3,26 @@ use crate::position::{Position, O_BAR, X_BAR};
 use std::cmp::max;
 
 impl Position {
-    /// Returns a vector of all possible moves when rolling a double.
-    /// The return value both contains the moves and the resulting positions.
-    /// The move is encoded in an array of 2 numbers, representing the pip from where to move.
-    /// Element '0' in that array is the pip from where to move with the first die,
-    /// element '1' is the pip from where to move with the second die.
-    pub(super) fn all_regular_moves(
-        &self,
-        dice: &RegularDice,
-    ) -> Vec<([Option<usize>; 2], Position)> {
+    /// Returns all legal positions after rolling a double and then moving.
+    /// The return values have not switched sides yet.
+    pub(super) fn all_positions_after_regular_move(&self, dice: &RegularDice) -> Vec<Position> {
         debug_assert!(dice.big > dice.small);
         match self.pips[X_BAR] {
-            0 => self.moves_with_0_checkers_on_bar(dice),
-            1 => self.moves_with_1_checker_on_bar(dice),
-            _ => self.moves_with_2_checkers_on_bar(dice),
+            0 => self
+                .moves_with_0_checkers_on_bar(dice)
+                .iter()
+                .map(|element| element.1.clone())
+                .collect(),
+            1 => self
+                .moves_with_1_checker_on_bar(dice)
+                .iter()
+                .map(|element| element.1.clone())
+                .collect(),
+            _ => self
+                .moves_with_2_checkers_on_bar(dice)
+                .iter()
+                .map(|element| element.1.clone())
+                .collect(),
         }
     }
 
@@ -291,10 +297,10 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:2, 10:2; o 22:2, 20:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice { big: 5, small: 3 });
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice { big: 5, small: 3 });
         // Then
-        assert_eq!(moves.len(), 1);
-        assert_eq!(moves, Vec::from([([None, None], position)]));
+        assert_eq!(resulting_positions, vec![position]);
     }
 
     #[test]
@@ -302,11 +308,11 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:2, 10:2; o 22:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(5, 3));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(5, 3));
         // Then
         let expected = pos!(x X_BAR:1, 20:1, 10:2; o 22:2);
-        assert_eq!(moves.len(), 1);
-        assert_eq!(moves, Vec::from([([Some(X_BAR), None], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -314,11 +320,11 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:2, 10:2; o 22:1, 20:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(5, 3));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(5, 3));
         // Then
         let expected = pos!(x X_BAR:1, 22:1, 10:2; o 20:2, O_BAR:1);
-        assert_eq!(moves.len(), 1);
-        assert_eq!(moves, Vec::from([([None, Some(X_BAR)], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -326,11 +332,11 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:3, 10:2; o 20:1);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(5, 3));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(5, 3));
         // Then
         let expected = pos!(x X_BAR:1, 22:1, 20:1, 10:2; o O_BAR:1);
-        assert_eq!(moves.len(), 1);
-        assert_eq!(moves, Vec::from([([Some(X_BAR), Some(X_BAR)], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     // One checker on bar
@@ -340,9 +346,10 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1, 10:2; o 22:2, 20:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(5, 3));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(5, 3));
         // Then
-        assert_eq!(moves, Vec::from([([None, None], position)]));
+        assert_eq!(resulting_positions, vec![position]);
     }
 
     #[test]
@@ -350,10 +357,11 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1, 10:2; o 22:2, 20:1, 17:2, 7:3);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(5, 3));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(5, 3));
         // Then
         let expected = pos!(x 20:1, 10:2; o 22:2, 17:2, 7:3, O_BAR:1);
-        assert_eq!(moves, Vec::from([([Some(X_BAR), None], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -361,10 +369,11 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1; o 19:2, 14:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(6, 5));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(6, 5));
         // Then
         let expected = pos!(x 20:1; o 19:2, 14:2);
-        assert_eq!(moves, Vec::from([([None, Some(X_BAR)], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -372,10 +381,11 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1; o 20:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(3, 2));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(3, 2));
         // Then
         let expected = pos!(x 22:1; o 20:2);
-        assert_eq!(moves, Vec::from([([Some(X_BAR), None], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -383,10 +393,11 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1, 12:1; o 20:2, 10:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(3, 2));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(3, 2));
         // Then
         let expected = pos!(x 23:1, 9:1; o 20:2, 10:2);
-        assert_eq!(moves, Vec::from([([Some(12), Some(X_BAR)], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -394,10 +405,11 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1, 12:1; o 20:2, 9:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(3, 2));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(3, 2));
         // Then
         let expected = pos!(x 22:1, 10:1; o 20:2, 9:2);
-        assert_eq!(moves, Vec::from([([Some(X_BAR), Some(12)], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -405,10 +417,11 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1; o 9:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(3, 2));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(3, 2));
         // Then
         let expected = pos!(x 20:1; o 9:2);
-        assert_eq!(moves, Vec::from([([Some(X_BAR), Some(22)], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -416,11 +429,12 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1; o 22:1);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(3, 2));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(3, 2));
         // Then
-        let expected1 = ([Some(X_BAR), Some(22)], pos!(x 20:1; o O_BAR:1));
-        let expected2 = ([Some(23), Some(X_BAR)], pos!(x 20:1; o 22:1));
-        assert_eq!(moves, Vec::from([expected1, expected2]));
+        let expected1 = pos!(x 20:1; o O_BAR:1);
+        let expected2 = pos!(x 20:1; o 22:1);
+        assert_eq!(resulting_positions, vec![expected1, expected2]);
     }
 
     #[test]
@@ -428,11 +442,12 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1; o 23:1);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(3, 2));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(3, 2));
         // Then
-        let expected1 = ([Some(X_BAR), Some(22)], pos!(x 20:1; o 23:1));
-        let expected2 = ([Some(23), Some(X_BAR)], pos!(x 20:1; o O_BAR:1));
-        assert_eq!(moves, Vec::from([expected1, expected2]));
+        let expected1 = pos!(x 20:1; o 23:1);
+        let expected2 = pos!(x 20:1; o O_BAR:1);
+        assert_eq!(resulting_positions, vec![expected1, expected2]);
     }
 
     // No checkers on bar
@@ -442,10 +457,10 @@ mod tests {
         // Given
         let position = pos!(x 10:2, 2:3; o 8:2, 6:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(4, 2));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(4, 2));
         // Then
-        assert_eq!(moves.len(), 1);
-        assert_eq!(moves, Vec::from([([None, None], position)]));
+        assert_eq!(resulting_positions, vec![position]);
     }
 
     #[test]
@@ -453,10 +468,11 @@ mod tests {
         // Given
         let position = pos!(x 7:2; o 2:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(5, 2));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(5, 2));
         // Then
         let expected = pos!(x 7:1, 5:1; o 2:2);
-        assert_eq!(moves, Vec::from([([None, Some(7)], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -464,10 +480,11 @@ mod tests {
         // Given
         let position = pos!(x 8:1, 4:3; o 1:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(4, 3));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(4, 3));
         // Then
         let expected = pos!(x 5:1, 4:2; o 1:2);
-        assert_eq!(moves, Vec::from([([Some(4), Some(8)], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -475,10 +492,11 @@ mod tests {
         // Given
         let position = pos!(x 20:1; o 16:3);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(4, 3));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(4, 3));
         // Then
         let expected = pos!(x 13:1; o 16:3);
-        assert_eq!(moves, Vec::from([([Some(17), Some(20)], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -486,12 +504,13 @@ mod tests {
         // Given
         let position = pos!(x 9:1, 5:1; o 20:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(5, 3));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(5, 3));
         // Then
-        let expected1 = ([Some(9), Some(5)], pos!(x 4:1, 2:1; o 20:2));
-        let expected2 = ([Some(9), Some(4)], pos!(x 5:1, 1:1; o 20:2));
-        let expected3 = ([Some(5), Some(9)], pos!(x 6:1; o 20:2));
-        assert_eq!(moves, Vec::from([expected1, expected2, expected3]));
+        let expected1 = pos!(x 4:1, 2:1; o 20:2);
+        let expected2 = pos!(x 5:1, 1:1; o 20:2);
+        let expected3 = pos!(x 6:1; o 20:2);
+        assert_eq!(resulting_positions, vec![expected1, expected2, expected3]);
     }
 
     #[test]
@@ -499,17 +518,18 @@ mod tests {
         // Given
         let position = pos!(x 5:2, 4:3, 3:1; o 20:1);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(4, 3));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(4, 3));
         // Then
-        let expected1 = ([Some(5), Some(5)], pos!(x 4:3, 3:1, 2:1, 1:1; o 20:1));
-        let expected2 = ([Some(5), Some(4)], pos!(x 5:1, 4:2, 3:1, 1:2; o 20:1));
-        let expected3 = ([Some(5), Some(3)], pos!(x 5:1, 4:3, 1:1; o 20:1));
-        let expected4 = ([Some(4), Some(5)], pos!(x 5:1, 4:2, 3:1, 2:1; o 20:1));
-        let expected5 = ([Some(4), Some(4)], pos!(x 5:2, 4:1, 3:1, 1:1; o 20:1));
-        let expected6 = ([Some(4), Some(3)], pos!(x 5:2, 4:2; o 20:1));
+        let expected1 = pos!(x 4:3, 3:1, 2:1, 1:1; o 20:1);
+        let expected2 = pos!(x 5:1, 4:2, 3:1, 1:2; o 20:1);
+        let expected3 = pos!(x 5:1, 4:3, 1:1; o 20:1);
+        let expected4 = pos!(x 5:1, 4:2, 3:1, 2:1; o 20:1);
+        let expected5 = pos!(x 5:2, 4:1, 3:1, 1:1; o 20:1);
+        let expected6 = pos!(x 5:2, 4:2; o 20:1);
         assert_eq!(
-            moves,
-            Vec::from([expected1, expected2, expected3, expected4, expected5, expected6])
+            resulting_positions,
+            vec![expected1, expected2, expected3, expected4, expected5, expected6]
         );
     }
 
@@ -518,10 +538,11 @@ mod tests {
         // Given
         let position = pos!(x 20:1; o 22:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(4, 3));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(4, 3));
         // Then
         let expected = pos!(x 13:1; o 22:2);
-        assert_eq!(moves, Vec::from([([Some(20), Some(16)], expected)]),);
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -529,10 +550,11 @@ mod tests {
         // Given
         let position = pos!(x 5:1; o 22:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(2, 1));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(2, 1));
         // Then
         let expected = pos!(x 2:1; o 22:2);
-        assert_eq!(moves, Vec::from([([Some(5), Some(3)], expected)]),);
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -540,11 +562,12 @@ mod tests {
         // Given
         let position = pos!(x 10:1; o 6:1);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(4, 2));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(4, 2));
         // Then
-        let expected1 = ([Some(10), Some(6)], pos!(x 4:1; o O_BAR:1));
-        let expected2 = ([Some(8), Some(10)], pos!(x 4:1; o 6:1));
-        assert_eq!(moves, Vec::from([expected1, expected2]));
+        let expected1 = pos!(x 4:1; o O_BAR:1);
+        let expected2 = pos!(x 4:1; o 6:1);
+        assert_eq!(resulting_positions, vec![expected1, expected2]);
     }
 
     #[test]
@@ -552,11 +575,12 @@ mod tests {
         // Given
         let position = pos!(x 5:1; o 4:1);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(3, 1));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(3, 1));
         // Then
-        let expected1 = ([Some(5), Some(2)], pos!(x 1:1; o 4:1));
-        let expected2 = ([Some(4), Some(5)], pos!(x 1:1; o O_BAR:1));
-        assert_eq!(moves, Vec::from([expected1, expected2]));
+        let expected1 = pos!(x 1:1; o 4:1);
+        let expected2 = pos!(x 1:1; o O_BAR:1);
+        assert_eq!(resulting_positions, vec![expected1, expected2]);
     }
 
     #[test]
@@ -564,10 +588,11 @@ mod tests {
         // Given
         let position = pos!(x 1:5; o 24:8);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(6, 4));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(6, 4));
         // Then
         let expected = pos!(x 1:3; o 24:8);
-        assert_eq!(moves, Vec::from([([Some(1), Some(1)], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -575,11 +600,12 @@ mod tests {
         // Given
         let position = pos!(x 2:1, 1:5; o);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(6, 1));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(6, 1));
         // Then
-        let expected1 = ([Some(2), Some(1)], pos!(x 1:4; o));
-        let expected2 = ([Some(1), Some(2)], pos!(x 1:5; o));
-        assert_eq!(moves, Vec::from([expected1, expected2]));
+        let expected1 = pos!(x 1:4; o);
+        let expected2 = pos!(x 1:5; o);
+        assert_eq!(resulting_positions, vec![expected1, expected2]);
     }
 
     #[test]
@@ -587,9 +613,10 @@ mod tests {
         // Given
         let position = pos!(x 7:1, 6:3; o 2:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(5, 4));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(5, 4));
         // Then
-        let expected = ([Some(6), Some(7)], pos!(x 6:2, 3:1, 1:1; o 2:2));
-        assert_eq!(moves, Vec::from([expected]));
+        let expected = pos!(x 6:2, 3:1, 1:1; o 2:2);
+        assert_eq!(resulting_positions, vec![expected]);
     }
 }
