@@ -8,21 +8,13 @@ impl Position {
     pub(super) fn all_positions_after_regular_move(&self, dice: &RegularDice) -> Vec<Position> {
         debug_assert!(dice.big > dice.small);
         match self.pips[X_BAR] {
-            0 => self
-                .moves_with_0_checkers_on_bar(dice)
-                .iter()
-                .map(|element| element.1.clone())
-                .collect(),
+            0 => self.moves_with_0_checkers_on_bar(dice),
             1 => self
                 .moves_with_1_checker_on_bar(dice)
                 .iter()
                 .map(|element| element.1.clone())
                 .collect(),
-            _ => self
-                .moves_with_2_checkers_on_bar(dice)
-                .iter()
-                .map(|element| element.1.clone())
-                .collect(),
+            _ => self.moves_with_2_checkers_on_bar(dice),
         }
     }
 
@@ -77,17 +69,17 @@ impl Position {
     }
 
     /// Regular moves with no checkers on the bar.
-    fn moves_with_0_checkers_on_bar(
-        &self,
-        dice: &RegularDice,
-    ) -> Vec<([Option<usize>; 2], Position)> {
+    fn moves_with_0_checkers_on_bar(&self, dice: &RegularDice) -> Vec<Position> {
         debug_assert!(self.pips[X_BAR] == 0);
 
         match self.move_possibilities(dice) {
-            MovePossibilities::None => Vec::from([([None, None], self.clone())]),
+            MovePossibilities::None => vec![self.clone()],
             MovePossibilities::One { die } => {
                 let index = if die == dice.big { 0 } else { 1 };
                 self.one_checker_moves(die, index, None)
+                    .iter()
+                    .map(|element| element.1.clone())
+                    .collect()
             }
             MovePossibilities::Two => self.two_checker_moves(dice),
         }
@@ -121,10 +113,10 @@ impl Position {
     }
 
     // All moves with no checkers on the bar where two checkers can be moved.
-    fn two_checker_moves(&self, dice: &RegularDice) -> Vec<([Option<usize>; 2], Position)> {
+    fn two_checker_moves(&self, dice: &RegularDice) -> Vec<Position> {
         debug_assert!(self.pips[X_BAR] == 0);
 
-        let mut moves: Vec<([Option<usize>; 2], Position)> = Vec::new();
+        let mut moves: Vec<Position> = Vec::new();
         for i in (1..X_BAR).rev() {
             // Looking at moves where die1 *can* be used first
             if self.can_move_in_board(i, dice.big) {
@@ -132,7 +124,7 @@ impl Position {
                 for j in (1..X_BAR).rev() {
                     if position.can_move_in_board(j, dice.small) {
                         let final_position = position.clone_and_move_single_checker(j, dice.small);
-                        moves.push(([Some(i), Some(j)], final_position));
+                        moves.push(final_position);
                     }
                 }
             }
@@ -161,7 +153,7 @@ impl Position {
                             || could_not_bear_off_because_die_bigger_than_pip_and_checker_was_on_bigger_pip
                         {
                             let final_position = position.clone_and_move_single_checker(j, dice.big);
-                            moves.push(([Some(j), Some(i)], final_position));
+                            moves.push( final_position);
                         }
                     }
                 }
@@ -172,24 +164,17 @@ impl Position {
     }
 
     /// All moves (well, exactly one) when at least two checkers are on the bar.
-    fn moves_with_2_checkers_on_bar(
-        &self,
-        dice: &RegularDice,
-    ) -> Vec<([Option<usize>; 2], Position)> {
+    fn moves_with_2_checkers_on_bar(&self, dice: &RegularDice) -> Vec<Position> {
         debug_assert!(self.pips[X_BAR] > 1);
 
         let mut position = self.clone();
-        let mut the_move = [None, None];
-
         if position.can_enter(dice.big) {
             position.enter_single_checker(dice.big);
-            the_move[0] = Some(X_BAR);
         }
         if position.can_enter(dice.small) {
             position.enter_single_checker(dice.small);
-            the_move[1] = Some(X_BAR);
         }
-        Vec::from([(the_move, position)])
+        vec![position]
     }
 
     /// Will return 2 if 2 or more checkers can be moved.
