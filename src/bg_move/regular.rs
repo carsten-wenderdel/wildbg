@@ -3,7 +3,6 @@ use crate::dice_gen::RegularDice;
 use crate::position::Position;
 
 impl BgMove {
-    #[allow(dead_code)]
     pub(super) fn new_regular(old: &Position, new: &Position, dice: &RegularDice) -> BgMove {
         let from = Self::more_checkers(old, new);
         let details: Vec<MoveDetail> = match from {
