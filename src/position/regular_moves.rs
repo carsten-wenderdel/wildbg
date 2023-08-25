@@ -9,61 +9,48 @@ impl Position {
         debug_assert!(dice.big > dice.small);
         match self.pips[X_BAR] {
             0 => self.moves_with_0_checkers_on_bar(dice),
-            1 => self
-                .moves_with_1_checker_on_bar(dice)
-                .iter()
-                .map(|element| element.1.clone())
-                .collect(),
+            1 => self.moves_with_1_checker_on_bar(dice),
             _ => self.moves_with_2_checkers_on_bar(dice),
         }
     }
 
-    /// Regular moves with no checkers on the bar.
-    fn moves_with_1_checker_on_bar(
-        &self,
-        dice: &RegularDice,
-    ) -> Vec<([Option<usize>; 2], Position)> {
+    /// Regular moves with exactly 1 checker on the bar.
+    fn moves_with_1_checker_on_bar(&self, dice: &RegularDice) -> Vec<Position> {
         debug_assert!(self.pips[X_BAR] == 1);
 
         if self.can_enter(dice.big) {
-            let position = self.clone_and_enter_single_checker(dice.big);
-            let mut moves1 = position.one_checker_moves(dice.small, 1, Some(X_BAR));
+            let enter_big = self.clone_and_enter_single_checker(dice.big);
+            let moves_after_entering_big = enter_big.one_checker_moves(dice.small);
             if self.can_enter(dice.small) {
-                let position = self.clone_and_enter_single_checker(dice.small);
-                let mut moves2 = position.one_checker_moves(dice.big, 0, Some(X_BAR));
-                if moves2.first().unwrap().0[0].is_some() {
-                    if moves1.first().unwrap().0[1].is_some() {
-                        // Both move vectors contain moves with both checkers
-                        if self.pips[X_BAR - dice.big] != -1 && self.pips[X_BAR - dice.small] != -1
-                        {
-                            // Moving the checker from X_BAR to (X_BAR - die1 - die2) is in both vectors
-                            // Nothing is hit, so it's a duplication that must be removed
-                            moves2.retain(|m| m.0[0] != Some(X_BAR - dice.small));
+                let enter_small = self.clone_and_enter_single_checker(dice.small);
+                let moves_after_entering_small = enter_small.one_checker_moves(dice.big);
+                match moves_after_entering_small {
+                    None => moves_after_entering_big.unwrap_or(vec![enter_big]),
+                    Some(small_moves) => match moves_after_entering_big {
+                        None => small_moves,
+                        Some(mut big_moves) => {
+                            for position in small_moves {
+                                if !big_moves.contains(&position) {
+                                    // Lets say 21 is rolled: bar/24/22 and bar/23/22 will appear in both vectors.
+                                    big_moves.push(position);
+                                }
+                            }
+                            big_moves
                         }
-                        moves1.append(&mut moves2);
-                        moves1
-                    } else {
-                        // Only moves2 contains moves with both checkers
-                        moves2
-                    }
-                } else {
-                    // moves2 does not contain moves with both checkers
-                    // We return moves1 - if it contains moves with both checkers, it's perfect.
-                    // If moves1 only contains a single move with a single checker, the bigger die wins.
-                    moves1
+                    },
                 }
             } else {
-                // die2 can't enter
-                moves1
+                moves_after_entering_big.unwrap_or(vec![enter_big])
             }
         } else {
-            // die1 can't enter
+            // bigger die can't enter
             if self.can_enter(dice.small) {
                 let position = self.clone_and_enter_single_checker(dice.small);
-                position.one_checker_moves(dice.big, 0, Some(X_BAR))
+                let moved_twice = position.one_checker_moves(dice.big);
+                moved_twice.unwrap_or(vec![position])
             } else {
-                // Neither die1 nor die2 allow entering - return the identity move.
-                Vec::from([([None, None], self.clone())])
+                // Neither big nor small die allow entering - return the identity move.
+                vec![self.clone()]
             }
         }
     }
@@ -74,42 +61,30 @@ impl Position {
 
         match self.move_possibilities(dice) {
             MovePossibilities::None => vec![self.clone()],
-            MovePossibilities::One { die } => {
-                let index = if die == dice.big { 0 } else { 1 };
-                self.one_checker_moves(die, index, None)
-                    .iter()
-                    .map(|element| element.1.clone())
-                    .collect()
-            }
+            MovePossibilities::One { die } => self
+                .one_checker_moves(die)
+                .expect("We already checked that moving one checker is possible"),
             MovePossibilities::Two => self.two_checker_moves(dice),
         }
     }
 
-    /// All moves where one die/pip is already fixed.
-    /// `index` is the position in the array from where the new `die` should be moved.
-    fn one_checker_moves(
-        &self,
-        die: usize,
-        index: usize,
-        other_value: Option<usize>,
-    ) -> Vec<([Option<usize>; 2], Position)> {
+    /// All positions after moving a single checker once. If no move is possible it returns `None`.
+    /// So if the return value is not `None`, the Vector is not empty.
+    fn one_checker_moves(&self, die: usize) -> Option<Vec<Position>> {
         debug_assert!(self.pips[X_BAR] == 0);
 
-        let mut moves: Vec<([Option<usize>; 2], Position)> = Vec::new();
+        let mut moves: Vec<Position> = Vec::new();
         for i in (1..X_BAR).rev() {
             if self.can_move_in_board(i, die) {
                 let position = self.clone_and_move_single_checker(i, die);
-                let mut the_move = [other_value, other_value];
-                the_move[index] = Some(i);
-                moves.push((the_move, position));
+                moves.push(position);
             }
         }
         if moves.is_empty() {
-            let mut the_move = [other_value, other_value];
-            the_move[index] = None;
-            moves.push((the_move, self.clone()));
+            None
+        } else {
+            Some(moves)
         }
-        moves
     }
 
     // All moves with no checkers on the bar where two checkers can be moved.
