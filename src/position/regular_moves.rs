@@ -99,7 +99,7 @@ impl Position {
 
         let mut moves: Vec<([Option<usize>; 2], Position)> = Vec::new();
         for i in (1..X_BAR).rev() {
-            if self.can_move(i, die) {
+            if self.can_move_in_board(i, die) {
                 let position = self.clone_and_move_single_checker(i, die);
                 let mut the_move = [other_value, other_value];
                 the_move[index] = Some(i);
@@ -121,10 +121,10 @@ impl Position {
         let mut moves: Vec<([Option<usize>; 2], Position)> = Vec::new();
         for i in (1..X_BAR).rev() {
             // Looking at moves where die1 *can* be used first
-            if self.can_move(i, dice.big) {
+            if self.can_move_in_board(i, dice.big) {
                 let position = self.clone_and_move_single_checker(i, dice.big);
                 for j in (1..X_BAR).rev() {
-                    if position.can_move(j, dice.small) {
+                    if position.can_move_in_board(j, dice.small) {
                         let final_position = position.clone_and_move_single_checker(j, dice.small);
                         moves.push(([Some(i), Some(j)], final_position));
                     }
@@ -135,11 +135,11 @@ impl Position {
             // 1. We make two movements with the same checker, but for die1 it's initially blocked.
             // 2. We make two movements with the same checker and hit something with the first movement, either with die1 or die2.
             // 3. After moving die2, we now can bear off with die1, which was illegal before.
-            if self.can_move(i, dice.small) {
+            if self.can_move_in_board(i, dice.small) {
                 let position = self.clone_and_move_single_checker(i, dice.small);
                 // We have to look at all pips in the home board, in case bearing off just became possible. This is why the 7 appears in the max function.
                 for j in (1..max(7, i + 1)).rev() {
-                    if position.can_move(j, dice.big) {
+                    if position.can_move_in_board(j, dice.big) {
                         // This describes cases 1 and 2:
                         let two_movements_with_same_checker_and_different_outcome = i
                             == j + dice.small
@@ -196,12 +196,12 @@ impl Position {
 
         // Move die1 first
         for i in (1..X_BAR).rev() {
-            if self.can_move(i, dice.big) {
+            if self.can_move_in_board(i, dice.big) {
                 can_move_die1 = true;
                 let position = self.clone_and_move_single_checker(i, dice.big);
                 // We have to look at all pips in the home board, in case bearing off just became possible. This is why the 7 appears in the max function.
                 for j in (1..max(7, i + 1)).rev() {
-                    if position.can_move(j, dice.small) {
+                    if position.can_move_in_board(j, dice.small) {
                         return MovePossibilities::Two;
                     }
                 }
@@ -210,17 +210,17 @@ impl Position {
 
         // Move die2 first, assuming die1 cannot be moved first
         for i in (1..X_BAR).rev() {
-            if self.can_move(i, dice.small) {
+            if self.can_move_in_board(i, dice.small) {
                 can_move_die2 = true;
                 let position = self.clone_and_move_single_checker(i, dice.small);
                 // If die1 and die2 could be used with different checkers without bearing off, then we would not get here.
                 // So, we only need to check if die1 can be moved with the same checker as die2.
-                if i > dice.small && position.can_move(i - dice.small, dice.big) {
+                if i > dice.small && position.can_move_in_board(i - dice.small, dice.big) {
                     return MovePossibilities::Two;
                 }
                 // Now checking bearing off
                 for j in (1..7).rev() {
-                    if position.can_move(j, dice.big) {
+                    if position.can_move_in_board(j, dice.big) {
                         return MovePossibilities::Two;
                     }
                 }

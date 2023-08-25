@@ -63,28 +63,28 @@ impl Position {
         }
         let mut moves: Vec<([usize; 4], Position)> = Vec::new();
         for i1 in (1..X_BAR).rev() {
-            if self.can_move(i1, die) {
+            if self.can_move_in_board(i1, die) {
                 let pos = self.clone_and_move_single_checker(i1, die);
                 if nr_movable_checkers == 1 {
                     moves.push(([i1, O_BAR, O_BAR, O_BAR], pos));
                     continue;
                 }
                 for i2 in (1..i1 + 1).rev() {
-                    if pos.can_move(i2, die) {
+                    if pos.can_move_in_board(i2, die) {
                         let pos = pos.clone_and_move_single_checker(i2, die);
                         if nr_movable_checkers == 2 {
                             moves.push(([i1, i2, O_BAR, O_BAR], pos));
                             continue;
                         }
                         for i3 in (1..i2 + 1).rev() {
-                            if pos.can_move(i3, die) {
+                            if pos.can_move_in_board(i3, die) {
                                 let pos = pos.clone_and_move_single_checker(i3, die);
                                 if nr_movable_checkers == 3 {
                                     moves.push(([i1, i2, i3, O_BAR], pos));
                                     continue;
                                 }
                                 for i4 in (1..i3 + 1).rev() {
-                                    if pos.can_move(i4, die) {
+                                    if pos.can_move_in_board(i4, die) {
                                         let pos = pos.clone_and_move_single_checker(i4, die);
                                         moves.push(([i1, i2, i3, i4], pos));
                                     }
@@ -106,7 +106,7 @@ impl Position {
         let mut pip = 24;
         let mut position = self.clone();
         while number_of_checkers < 4 - number_of_entered_checkers && pip > 0 {
-            if position.can_move(pip, die) {
+            if position.can_move_in_board(pip, die) {
                 position.move_single_checker(pip, die);
                 number_of_checkers += 1;
             } else {
