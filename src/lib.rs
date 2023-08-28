@@ -1,3 +1,4 @@
+pub mod bg_move;
 pub mod dice_gen;
 pub mod duel;
 pub mod evaluator;

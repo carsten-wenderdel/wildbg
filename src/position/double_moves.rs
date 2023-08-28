@@ -3,29 +3,18 @@ use std::cmp::min;
 
 impl Position {
     /// Returns a vector of all possible moves when rolling a double.
-    /// The return value both contains the moves and the resulting positions.
-    /// The move is encoded in an array of 4 numbers, representing the pip from where to move.
-    /// If a checker cannot be moved, the corresponding number in the array is `O_BAR`.
-    pub(super) fn all_double_moves(&self, die: usize) -> Vec<([usize; 4], Position)> {
+    pub(super) fn all_positions_after_double_move(&self, die: usize) -> Vec<Position> {
         if self.pips[X_BAR] > 0 && self.pips[X_BAR - die] < -1 {
             // Has at least one checker on the bar but can't move it
-            return Vec::from([([O_BAR, O_BAR, O_BAR, O_BAR], self.clone())]);
+            return vec![self.clone()];
         }
 
         let (position, number_of_entered_checkers) = self.position_after_entering_checkers(die);
         if number_of_entered_checkers == 4 {
-            return Vec::from([([X_BAR, X_BAR, X_BAR, X_BAR], position.clone())]);
+            return vec![position.clone()];
         }
 
-        let mut moves = position.double_moves_after_entering(die, number_of_entered_checkers);
-        if number_of_entered_checkers != 0 {
-            for x in moves.iter_mut() {
-                x.0.rotate_right(number_of_entered_checkers as usize);
-                for i in 0..number_of_entered_checkers as usize {
-                    x.0[i] = X_BAR;
-                }
-            }
-        }
+        let moves = position.double_moves_after_entering(die, number_of_entered_checkers);
         debug_assert!(!moves.is_empty());
         moves
     }
@@ -56,37 +45,37 @@ impl Position {
         &self,
         die: usize,
         number_of_entered_checkers: u32,
-    ) -> Vec<([usize; 4], Position)> {
+    ) -> Vec<Position> {
         let nr_movable_checkers = self.number_of_movable_checkers(die, number_of_entered_checkers);
         if nr_movable_checkers == 0 {
-            return Vec::from([([O_BAR, O_BAR, O_BAR, O_BAR], self.clone())]);
+            return vec![self.clone()];
         }
-        let mut moves: Vec<([usize; 4], Position)> = Vec::new();
+        let mut moves: Vec<Position> = Vec::new();
         for i1 in (1..X_BAR).rev() {
-            if self.can_move(i1, die) {
+            if self.can_move_in_board(i1, die) {
                 let pos = self.clone_and_move_single_checker(i1, die);
                 if nr_movable_checkers == 1 {
-                    moves.push(([i1, O_BAR, O_BAR, O_BAR], pos));
+                    moves.push(pos);
                     continue;
                 }
                 for i2 in (1..i1 + 1).rev() {
-                    if pos.can_move(i2, die) {
+                    if pos.can_move_in_board(i2, die) {
                         let pos = pos.clone_and_move_single_checker(i2, die);
                         if nr_movable_checkers == 2 {
-                            moves.push(([i1, i2, O_BAR, O_BAR], pos));
+                            moves.push(pos);
                             continue;
                         }
                         for i3 in (1..i2 + 1).rev() {
-                            if pos.can_move(i3, die) {
+                            if pos.can_move_in_board(i3, die) {
                                 let pos = pos.clone_and_move_single_checker(i3, die);
                                 if nr_movable_checkers == 3 {
-                                    moves.push(([i1, i2, i3, O_BAR], pos));
+                                    moves.push(pos);
                                     continue;
                                 }
                                 for i4 in (1..i3 + 1).rev() {
-                                    if pos.can_move(i4, die) {
+                                    if pos.can_move_in_board(i4, die) {
                                         let pos = pos.clone_and_move_single_checker(i4, die);
-                                        moves.push(([i1, i2, i3, i4], pos));
+                                        moves.push(pos);
                                     }
                                 }
                             }
@@ -106,7 +95,7 @@ impl Position {
         let mut pip = 24;
         let mut position = self.clone();
         while number_of_checkers < 4 - number_of_entered_checkers && pip > 0 {
-            if position.can_move(pip, die) {
+            if position.can_move_in_board(pip, die) {
                 position.move_single_checker(pip, die);
                 number_of_checkers += 1;
             } else {
@@ -128,11 +117,9 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:4; o 22:2);
         // When
-        let moves = position.all_double_moves(3);
+        let resulting_positions = position.all_positions_after_double_move(3);
         // Then
-        assert_eq!(moves.len(), 1);
-        assert_eq!(moves[0].0, [O_BAR, O_BAR, O_BAR, O_BAR]);
-        assert_eq!(moves[0].1, position);
+        assert_eq!(resulting_positions, vec![position]);
     }
 
     #[test]
@@ -140,10 +127,10 @@ mod tests {
         // Given
         let actual = pos!(x X_BAR:4; o 22:2, 20:2);
         // When
-        let moves = actual.all_double_moves(4);
+        let resulting_positions = actual.all_positions_after_double_move(4);
         // Then
         let expected = pos!(x 21:4; o 22:2, 20:2);
-        assert_eq!(moves, Vec::from([([X_BAR, X_BAR, X_BAR, X_BAR], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -151,10 +138,10 @@ mod tests {
         // Given
         let actual = pos!(x X_BAR:1, 15:1, 10:1, 4:1; o 22:2, 20:2, 17:3, 11:2, 6:1, 2:2);
         // When
-        let moves = actual.all_double_moves(4);
+        let resulting_positions = actual.all_positions_after_double_move(4);
         // Then
         let expected = pos!(x 21:1, 15:1, 6:1, 4:1; o 22:2, 20:2, 17:3, 11:2, 2:2, O_BAR:1);
-        assert_eq!(moves, Vec::from([([X_BAR, 10, O_BAR, O_BAR], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -162,13 +149,12 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:2, 4:1, 3:1; o 24:2);
         // When
-        let moves = position.all_double_moves(3);
+        let resulting_positions = position.all_positions_after_double_move(3);
         // Then
-        let expected1 = ([X_BAR, X_BAR, 22, 22], pos!(x 19:2, 4:1, 3:1; o 24:2));
-        let expected2 = ([X_BAR, X_BAR, 22, 19], pos!(x 22:1, 16:1, 4:1, 3:1; o 24:2));
-        let expected3 = ([X_BAR, X_BAR, 22, 4], pos!(x 22:1, 19:1, 3:1, 1:1; o 24:2));
-        assert_eq!(moves.len(), 3);
-        assert_eq!(moves, Vec::from([expected1, expected2, expected3]));
+        let expected1 = pos!(x 19:2, 4:1, 3:1; o 24:2);
+        let expected2 = pos!(x 22:1, 16:1, 4:1, 3:1; o 24:2);
+        let expected3 = pos!(x 22:1, 19:1, 3:1, 1:1; o 24:2);
+        assert_eq!(resulting_positions, vec![expected1, expected2, expected3]);
     }
 
     #[test]
@@ -176,16 +162,15 @@ mod tests {
         // Given
         let position = pos!(x 4:1, 3:1, 2:4; o 22:2);
         // When
-        let moves = position.all_double_moves(2);
+        let resulting_positions = position.all_positions_after_double_move(2);
         // Then
-        let expected1 = ([4, 3, 2, 2], pos!(x 2:3, 1:1; o 22:2));
-        let expected2 = ([4, 2, 2, 2], pos!(x 3:1, 2:2; o 22:2));
-        let expected3 = ([3, 2, 2, 2], pos!(x 4:1, 2:1, 1:1; o 22:2));
-        let expected4 = ([2, 2, 2, 2], pos!(x 4:1, 3:1; o 22:2));
-        assert_eq!(moves.len(), 4);
+        let expected1 = pos!(x 2:3, 1:1; o 22:2);
+        let expected2 = pos!(x 3:1, 2:2; o 22:2);
+        let expected3 = pos!(x 4:1, 2:1, 1:1; o 22:2);
+        let expected4 = pos!(x 4:1, 3:1; o 22:2);
         assert_eq!(
-            moves,
-            Vec::from([expected1, expected2, expected3, expected4])
+            resulting_positions,
+            vec![expected1, expected2, expected3, expected4],
         );
     }
 
@@ -194,10 +179,10 @@ mod tests {
         // Given
         let actual = pos!(x 10:4; o 22:1, 4:2);
         // When
-        let moves = actual.all_double_moves(3);
+        let resulting_positions = actual.all_positions_after_double_move(3);
         // Then
         let expected = pos!(x 7:4; o 22:1, 4:2);
-        assert_eq!(moves, Vec::from([([10, 10, 10, 10], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -205,10 +190,10 @@ mod tests {
         // Given
         let actual = pos!(x X_BAR:2; o 22:1, 19:2);
         // When
-        let moves = actual.all_double_moves(3);
+        let resulting_positions = actual.all_positions_after_double_move(3);
         // Then
         let expected = pos!(x 22:2; o 19:2, O_BAR:1);
-        assert_eq!(moves, Vec::from([([X_BAR, X_BAR, O_BAR, O_BAR], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 }
 

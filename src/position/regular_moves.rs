@@ -3,15 +3,9 @@ use crate::position::{Position, O_BAR, X_BAR};
 use std::cmp::max;
 
 impl Position {
-    /// Returns a vector of all possible moves when rolling a double.
-    /// The return value both contains the moves and the resulting positions.
-    /// The move is encoded in an array of 2 numbers, representing the pip from where to move.
-    /// Element '0' in that array is the pip from where to move with the first die,
-    /// element '1' is the pip from where to move with the second die.
-    pub(super) fn all_regular_moves(
-        &self,
-        dice: &RegularDice,
-    ) -> Vec<([Option<usize>; 2], Position)> {
+    /// Returns all legal positions after rolling a double and then moving.
+    /// The return values have not switched sides yet.
+    pub(super) fn all_positions_after_regular_move(&self, dice: &RegularDice) -> Vec<Position> {
         debug_assert!(dice.big > dice.small);
         match self.pips[X_BAR] {
             0 => self.moves_with_0_checkers_on_bar(dice),
@@ -20,126 +14,105 @@ impl Position {
         }
     }
 
-    /// Regular moves with no checkers on the bar.
-    fn moves_with_1_checker_on_bar(
-        &self,
-        dice: &RegularDice,
-    ) -> Vec<([Option<usize>; 2], Position)> {
+    /// Regular moves with exactly 1 checker on the bar.
+    fn moves_with_1_checker_on_bar(&self, dice: &RegularDice) -> Vec<Position> {
         debug_assert!(self.pips[X_BAR] == 1);
 
         if self.can_enter(dice.big) {
-            let position = self.clone_and_enter_single_checker(dice.big);
-            let mut moves1 = position.one_checker_moves(dice.small, 1, Some(X_BAR));
+            let enter_big = self.clone_and_enter_single_checker(dice.big);
+            let moves_after_entering_big = enter_big.one_checker_moves(dice.small);
             if self.can_enter(dice.small) {
-                let position = self.clone_and_enter_single_checker(dice.small);
-                let mut moves2 = position.one_checker_moves(dice.big, 0, Some(X_BAR));
-                if moves2.first().unwrap().0[0].is_some() {
-                    if moves1.first().unwrap().0[1].is_some() {
-                        // Both move vectors contain moves with both checkers
-                        if self.pips[X_BAR - dice.big] != -1 && self.pips[X_BAR - dice.small] != -1
-                        {
-                            // Moving the checker from X_BAR to (X_BAR - die1 - die2) is in both vectors
-                            // Nothing is hit, so it's a duplication that must be removed
-                            moves2.retain(|m| m.0[0] != Some(X_BAR - dice.small));
+                let enter_small = self.clone_and_enter_single_checker(dice.small);
+                let moves_after_entering_small = enter_small.one_checker_moves(dice.big);
+                match moves_after_entering_small {
+                    None => moves_after_entering_big.unwrap_or(vec![enter_big]),
+                    Some(small_moves) => match moves_after_entering_big {
+                        None => small_moves,
+                        Some(mut big_moves) => {
+                            for position in small_moves {
+                                if !big_moves.contains(&position) {
+                                    // Lets say 21 is rolled: bar/24/22 and bar/23/22 will appear in both vectors.
+                                    big_moves.push(position);
+                                }
+                            }
+                            big_moves
                         }
-                        moves1.append(&mut moves2);
-                        moves1
-                    } else {
-                        // Only moves2 contains moves with both checkers
-                        moves2
-                    }
-                } else {
-                    // moves2 does not contain moves with both checkers
-                    // We return moves1 - if it contains moves with both checkers, it's perfect.
-                    // If moves1 only contains a single move with a single checker, the bigger die wins.
-                    moves1
+                    },
                 }
             } else {
-                // die2 can't enter
-                moves1
+                moves_after_entering_big.unwrap_or(vec![enter_big])
             }
         } else {
-            // die1 can't enter
+            // bigger die can't enter
             if self.can_enter(dice.small) {
                 let position = self.clone_and_enter_single_checker(dice.small);
-                position.one_checker_moves(dice.big, 0, Some(X_BAR))
+                let moved_twice = position.one_checker_moves(dice.big);
+                moved_twice.unwrap_or(vec![position])
             } else {
-                // Neither die1 nor die2 allow entering - return the identity move.
-                Vec::from([([None, None], self.clone())])
+                // Neither big nor small die allow entering - return the identity move.
+                vec![self.clone()]
             }
         }
     }
 
     /// Regular moves with no checkers on the bar.
-    fn moves_with_0_checkers_on_bar(
-        &self,
-        dice: &RegularDice,
-    ) -> Vec<([Option<usize>; 2], Position)> {
+    fn moves_with_0_checkers_on_bar(&self, dice: &RegularDice) -> Vec<Position> {
         debug_assert!(self.pips[X_BAR] == 0);
 
         match self.move_possibilities(dice) {
-            MovePossibilities::None => Vec::from([([None, None], self.clone())]),
-            MovePossibilities::One { die } => {
-                let index = if die == dice.big { 0 } else { 1 };
-                self.one_checker_moves(die, index, None)
-            }
+            MovePossibilities::None => vec![self.clone()],
+            MovePossibilities::One { die } => self
+                .one_checker_moves(die)
+                .expect("We already checked that moving one checker is possible"),
             MovePossibilities::Two => self.two_checker_moves(dice),
         }
     }
 
-    /// All moves where one die/pip is already fixed.
-    /// `index` is the position in the array from where the new `die` should be moved.
-    fn one_checker_moves(
-        &self,
-        die: usize,
-        index: usize,
-        other_value: Option<usize>,
-    ) -> Vec<([Option<usize>; 2], Position)> {
+    /// All positions after moving a single checker once. If no move is possible it returns `None`.
+    /// So if the return value is not `None`, the Vector is not empty.
+    fn one_checker_moves(&self, die: usize) -> Option<Vec<Position>> {
         debug_assert!(self.pips[X_BAR] == 0);
 
-        let mut moves: Vec<([Option<usize>; 2], Position)> = Vec::new();
+        let mut moves: Vec<Position> = Vec::new();
         for i in (1..X_BAR).rev() {
-            if self.can_move(i, die) {
+            if self.can_move_in_board(i, die) {
                 let position = self.clone_and_move_single_checker(i, die);
-                let mut the_move = [other_value, other_value];
-                the_move[index] = Some(i);
-                moves.push((the_move, position));
+                moves.push(position);
             }
         }
         if moves.is_empty() {
-            let mut the_move = [other_value, other_value];
-            the_move[index] = None;
-            moves.push((the_move, self.clone()));
+            None
+        } else {
+            Some(moves)
         }
-        moves
     }
 
     // All moves with no checkers on the bar where two checkers can be moved.
-    fn two_checker_moves(&self, dice: &RegularDice) -> Vec<([Option<usize>; 2], Position)> {
+    fn two_checker_moves(&self, dice: &RegularDice) -> Vec<Position> {
         debug_assert!(self.pips[X_BAR] == 0);
 
-        let mut moves: Vec<([Option<usize>; 2], Position)> = Vec::new();
+        let mut moves: Vec<Position> = Vec::new();
         for i in (1..X_BAR).rev() {
-            // Looking at moves where die1 *can* be used first
-            if self.can_move(i, dice.big) {
+            // Looking at moves where the big die *can* be used first
+            if self.can_move_in_board(i, dice.big) {
                 let position = self.clone_and_move_single_checker(i, dice.big);
                 for j in (1..X_BAR).rev() {
-                    if position.can_move(j, dice.small) {
+                    if position.can_move_in_board(j, dice.small) {
                         let final_position = position.clone_and_move_single_checker(j, dice.small);
-                        moves.push(([Some(i), Some(j)], final_position));
+                        moves.push(final_position);
                     }
                 }
             }
-            // Looking at moves where die2 *must* be moved first
+            // Looking at moves where the small die *must* be moved first
             // This can be because of two reasons:
-            // 1. We make two movements with the same checker, but for die1 it's initially blocked.
-            // 2. We make two movements with the same checker and hit something with the first movement, either with die1 or die2.
-            // 3. After moving die2, we now can bear off with die1, which was illegal before.
-            if self.can_move(i, dice.small) {
+            // 1. We make two movements with the same checker, but for the big die it's initially blocked.
+            // 2. We make two movements with the same checker and hit something with the first movement, either with the big or the small die.
+            // 3. After moving the small die, we now can bear off with the big die, which was illegal before.
+            if self.can_move_in_board(i, dice.small) {
                 let position = self.clone_and_move_single_checker(i, dice.small);
                 // We have to look at all pips in the home board, in case bearing off just became possible. This is why the 7 appears in the max function.
                 for j in (1..max(7, i + 1)).rev() {
-                    if position.can_move(j, dice.big) {
+                    if position.can_move_in_board(j, dice.big) {
                         // This describes cases 1 and 2:
                         let two_movements_with_same_checker_and_different_outcome = i
                             == j + dice.small
@@ -155,7 +128,7 @@ impl Position {
                             || could_not_bear_off_because_die_bigger_than_pip_and_checker_was_on_bigger_pip
                         {
                             let final_position = position.clone_and_move_single_checker(j, dice.big);
-                            moves.push(([Some(j), Some(i)], final_position));
+                            moves.push( final_position);
                         }
                     }
                 }
@@ -166,24 +139,17 @@ impl Position {
     }
 
     /// All moves (well, exactly one) when at least two checkers are on the bar.
-    fn moves_with_2_checkers_on_bar(
-        &self,
-        dice: &RegularDice,
-    ) -> Vec<([Option<usize>; 2], Position)> {
+    fn moves_with_2_checkers_on_bar(&self, dice: &RegularDice) -> Vec<Position> {
         debug_assert!(self.pips[X_BAR] > 1);
 
         let mut position = self.clone();
-        let mut the_move = [None, None];
-
         if position.can_enter(dice.big) {
             position.enter_single_checker(dice.big);
-            the_move[0] = Some(X_BAR);
         }
         if position.can_enter(dice.small) {
             position.enter_single_checker(dice.small);
-            the_move[1] = Some(X_BAR);
         }
-        Vec::from([(the_move, position)])
+        vec![position]
     }
 
     /// Will return 2 if 2 or more checkers can be moved.
@@ -191,17 +157,17 @@ impl Position {
     fn move_possibilities(&self, dice: &RegularDice) -> MovePossibilities {
         debug_assert!(self.pips[X_BAR] == 0);
 
-        let mut can_move_die1 = false;
-        let mut can_move_die2 = false;
+        let mut can_move_big = false;
+        let mut can_move_small = false;
 
         // Move die1 first
         for i in (1..X_BAR).rev() {
-            if self.can_move(i, dice.big) {
-                can_move_die1 = true;
+            if self.can_move_in_board(i, dice.big) {
+                can_move_big = true;
                 let position = self.clone_and_move_single_checker(i, dice.big);
                 // We have to look at all pips in the home board, in case bearing off just became possible. This is why the 7 appears in the max function.
                 for j in (1..max(7, i + 1)).rev() {
-                    if position.can_move(j, dice.small) {
+                    if position.can_move_in_board(j, dice.small) {
                         return MovePossibilities::Two;
                     }
                 }
@@ -210,26 +176,26 @@ impl Position {
 
         // Move die2 first, assuming die1 cannot be moved first
         for i in (1..X_BAR).rev() {
-            if self.can_move(i, dice.small) {
-                can_move_die2 = true;
+            if self.can_move_in_board(i, dice.small) {
+                can_move_small = true;
                 let position = self.clone_and_move_single_checker(i, dice.small);
                 // If die1 and die2 could be used with different checkers without bearing off, then we would not get here.
                 // So, we only need to check if die1 can be moved with the same checker as die2.
-                if i > dice.small && position.can_move(i - dice.small, dice.big) {
+                if i > dice.small && position.can_move_in_board(i - dice.small, dice.big) {
                     return MovePossibilities::Two;
                 }
                 // Now checking bearing off
                 for j in (1..7).rev() {
-                    if position.can_move(j, dice.big) {
+                    if position.can_move_in_board(j, dice.big) {
                         return MovePossibilities::Two;
                     }
                 }
             }
         }
 
-        if can_move_die1 {
+        if can_move_big {
             MovePossibilities::One { die: dice.big }
-        } else if can_move_die2 {
+        } else if can_move_small {
             MovePossibilities::One { die: dice.small }
         } else {
             MovePossibilities::None
@@ -291,10 +257,10 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:2, 10:2; o 22:2, 20:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice { big: 5, small: 3 });
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice { big: 5, small: 3 });
         // Then
-        assert_eq!(moves.len(), 1);
-        assert_eq!(moves, Vec::from([([None, None], position)]));
+        assert_eq!(resulting_positions, vec![position]);
     }
 
     #[test]
@@ -302,11 +268,11 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:2, 10:2; o 22:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(5, 3));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(5, 3));
         // Then
         let expected = pos!(x X_BAR:1, 20:1, 10:2; o 22:2);
-        assert_eq!(moves.len(), 1);
-        assert_eq!(moves, Vec::from([([Some(X_BAR), None], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -314,11 +280,11 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:2, 10:2; o 22:1, 20:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(5, 3));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(5, 3));
         // Then
         let expected = pos!(x X_BAR:1, 22:1, 10:2; o 20:2, O_BAR:1);
-        assert_eq!(moves.len(), 1);
-        assert_eq!(moves, Vec::from([([None, Some(X_BAR)], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -326,11 +292,11 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:3, 10:2; o 20:1);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(5, 3));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(5, 3));
         // Then
         let expected = pos!(x X_BAR:1, 22:1, 20:1, 10:2; o O_BAR:1);
-        assert_eq!(moves.len(), 1);
-        assert_eq!(moves, Vec::from([([Some(X_BAR), Some(X_BAR)], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     // One checker on bar
@@ -340,9 +306,10 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1, 10:2; o 22:2, 20:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(5, 3));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(5, 3));
         // Then
-        assert_eq!(moves, Vec::from([([None, None], position)]));
+        assert_eq!(resulting_positions, vec![position]);
     }
 
     #[test]
@@ -350,10 +317,11 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1, 10:2; o 22:2, 20:1, 17:2, 7:3);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(5, 3));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(5, 3));
         // Then
         let expected = pos!(x 20:1, 10:2; o 22:2, 17:2, 7:3, O_BAR:1);
-        assert_eq!(moves, Vec::from([([Some(X_BAR), None], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -361,10 +329,11 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1; o 19:2, 14:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(6, 5));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(6, 5));
         // Then
         let expected = pos!(x 20:1; o 19:2, 14:2);
-        assert_eq!(moves, Vec::from([([None, Some(X_BAR)], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -372,10 +341,11 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1; o 20:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(3, 2));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(3, 2));
         // Then
         let expected = pos!(x 22:1; o 20:2);
-        assert_eq!(moves, Vec::from([([Some(X_BAR), None], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -383,10 +353,11 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1, 12:1; o 20:2, 10:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(3, 2));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(3, 2));
         // Then
         let expected = pos!(x 23:1, 9:1; o 20:2, 10:2);
-        assert_eq!(moves, Vec::from([([Some(12), Some(X_BAR)], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -394,10 +365,11 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1, 12:1; o 20:2, 9:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(3, 2));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(3, 2));
         // Then
         let expected = pos!(x 22:1, 10:1; o 20:2, 9:2);
-        assert_eq!(moves, Vec::from([([Some(X_BAR), Some(12)], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -405,10 +377,11 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1; o 9:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(3, 2));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(3, 2));
         // Then
         let expected = pos!(x 20:1; o 9:2);
-        assert_eq!(moves, Vec::from([([Some(X_BAR), Some(22)], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -416,11 +389,12 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1; o 22:1);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(3, 2));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(3, 2));
         // Then
-        let expected1 = ([Some(X_BAR), Some(22)], pos!(x 20:1; o O_BAR:1));
-        let expected2 = ([Some(23), Some(X_BAR)], pos!(x 20:1; o 22:1));
-        assert_eq!(moves, Vec::from([expected1, expected2]));
+        let expected1 = pos!(x 20:1; o O_BAR:1);
+        let expected2 = pos!(x 20:1; o 22:1);
+        assert_eq!(resulting_positions, vec![expected1, expected2]);
     }
 
     #[test]
@@ -428,11 +402,12 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1; o 23:1);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(3, 2));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(3, 2));
         // Then
-        let expected1 = ([Some(X_BAR), Some(22)], pos!(x 20:1; o 23:1));
-        let expected2 = ([Some(23), Some(X_BAR)], pos!(x 20:1; o O_BAR:1));
-        assert_eq!(moves, Vec::from([expected1, expected2]));
+        let expected1 = pos!(x 20:1; o 23:1);
+        let expected2 = pos!(x 20:1; o O_BAR:1);
+        assert_eq!(resulting_positions, vec![expected1, expected2]);
     }
 
     // No checkers on bar
@@ -442,10 +417,10 @@ mod tests {
         // Given
         let position = pos!(x 10:2, 2:3; o 8:2, 6:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(4, 2));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(4, 2));
         // Then
-        assert_eq!(moves.len(), 1);
-        assert_eq!(moves, Vec::from([([None, None], position)]));
+        assert_eq!(resulting_positions, vec![position]);
     }
 
     #[test]
@@ -453,10 +428,11 @@ mod tests {
         // Given
         let position = pos!(x 7:2; o 2:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(5, 2));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(5, 2));
         // Then
         let expected = pos!(x 7:1, 5:1; o 2:2);
-        assert_eq!(moves, Vec::from([([None, Some(7)], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -464,10 +440,11 @@ mod tests {
         // Given
         let position = pos!(x 8:1, 4:3; o 1:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(4, 3));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(4, 3));
         // Then
         let expected = pos!(x 5:1, 4:2; o 1:2);
-        assert_eq!(moves, Vec::from([([Some(4), Some(8)], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -475,10 +452,11 @@ mod tests {
         // Given
         let position = pos!(x 20:1; o 16:3);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(4, 3));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(4, 3));
         // Then
         let expected = pos!(x 13:1; o 16:3);
-        assert_eq!(moves, Vec::from([([Some(17), Some(20)], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -486,12 +464,13 @@ mod tests {
         // Given
         let position = pos!(x 9:1, 5:1; o 20:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(5, 3));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(5, 3));
         // Then
-        let expected1 = ([Some(9), Some(5)], pos!(x 4:1, 2:1; o 20:2));
-        let expected2 = ([Some(9), Some(4)], pos!(x 5:1, 1:1; o 20:2));
-        let expected3 = ([Some(5), Some(9)], pos!(x 6:1; o 20:2));
-        assert_eq!(moves, Vec::from([expected1, expected2, expected3]));
+        let expected1 = pos!(x 4:1, 2:1; o 20:2);
+        let expected2 = pos!(x 5:1, 1:1; o 20:2);
+        let expected3 = pos!(x 6:1; o 20:2);
+        assert_eq!(resulting_positions, vec![expected1, expected2, expected3]);
     }
 
     #[test]
@@ -499,17 +478,18 @@ mod tests {
         // Given
         let position = pos!(x 5:2, 4:3, 3:1; o 20:1);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(4, 3));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(4, 3));
         // Then
-        let expected1 = ([Some(5), Some(5)], pos!(x 4:3, 3:1, 2:1, 1:1; o 20:1));
-        let expected2 = ([Some(5), Some(4)], pos!(x 5:1, 4:2, 3:1, 1:2; o 20:1));
-        let expected3 = ([Some(5), Some(3)], pos!(x 5:1, 4:3, 1:1; o 20:1));
-        let expected4 = ([Some(4), Some(5)], pos!(x 5:1, 4:2, 3:1, 2:1; o 20:1));
-        let expected5 = ([Some(4), Some(4)], pos!(x 5:2, 4:1, 3:1, 1:1; o 20:1));
-        let expected6 = ([Some(4), Some(3)], pos!(x 5:2, 4:2; o 20:1));
+        let expected1 = pos!(x 4:3, 3:1, 2:1, 1:1; o 20:1);
+        let expected2 = pos!(x 5:1, 4:2, 3:1, 1:2; o 20:1);
+        let expected3 = pos!(x 5:1, 4:3, 1:1; o 20:1);
+        let expected4 = pos!(x 5:1, 4:2, 3:1, 2:1; o 20:1);
+        let expected5 = pos!(x 5:2, 4:1, 3:1, 1:1; o 20:1);
+        let expected6 = pos!(x 5:2, 4:2; o 20:1);
         assert_eq!(
-            moves,
-            Vec::from([expected1, expected2, expected3, expected4, expected5, expected6])
+            resulting_positions,
+            vec![expected1, expected2, expected3, expected4, expected5, expected6]
         );
     }
 
@@ -518,10 +498,11 @@ mod tests {
         // Given
         let position = pos!(x 20:1; o 22:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(4, 3));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(4, 3));
         // Then
         let expected = pos!(x 13:1; o 22:2);
-        assert_eq!(moves, Vec::from([([Some(20), Some(16)], expected)]),);
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -529,10 +510,11 @@ mod tests {
         // Given
         let position = pos!(x 5:1; o 22:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(2, 1));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(2, 1));
         // Then
         let expected = pos!(x 2:1; o 22:2);
-        assert_eq!(moves, Vec::from([([Some(5), Some(3)], expected)]),);
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -540,11 +522,12 @@ mod tests {
         // Given
         let position = pos!(x 10:1; o 6:1);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(4, 2));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(4, 2));
         // Then
-        let expected1 = ([Some(10), Some(6)], pos!(x 4:1; o O_BAR:1));
-        let expected2 = ([Some(8), Some(10)], pos!(x 4:1; o 6:1));
-        assert_eq!(moves, Vec::from([expected1, expected2]));
+        let expected1 = pos!(x 4:1; o O_BAR:1);
+        let expected2 = pos!(x 4:1; o 6:1);
+        assert_eq!(resulting_positions, vec![expected1, expected2]);
     }
 
     #[test]
@@ -552,11 +535,12 @@ mod tests {
         // Given
         let position = pos!(x 5:1; o 4:1);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(3, 1));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(3, 1));
         // Then
-        let expected1 = ([Some(5), Some(2)], pos!(x 1:1; o 4:1));
-        let expected2 = ([Some(4), Some(5)], pos!(x 1:1; o O_BAR:1));
-        assert_eq!(moves, Vec::from([expected1, expected2]));
+        let expected1 = pos!(x 1:1; o 4:1);
+        let expected2 = pos!(x 1:1; o O_BAR:1);
+        assert_eq!(resulting_positions, vec![expected1, expected2]);
     }
 
     #[test]
@@ -564,10 +548,11 @@ mod tests {
         // Given
         let position = pos!(x 1:5; o 24:8);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(6, 4));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(6, 4));
         // Then
         let expected = pos!(x 1:3; o 24:8);
-        assert_eq!(moves, Vec::from([([Some(1), Some(1)], expected)]));
+        assert_eq!(resulting_positions, vec![expected]);
     }
 
     #[test]
@@ -575,11 +560,12 @@ mod tests {
         // Given
         let position = pos!(x 2:1, 1:5; o);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(6, 1));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(6, 1));
         // Then
-        let expected1 = ([Some(2), Some(1)], pos!(x 1:4; o));
-        let expected2 = ([Some(1), Some(2)], pos!(x 1:5; o));
-        assert_eq!(moves, Vec::from([expected1, expected2]));
+        let expected1 = pos!(x 1:4; o);
+        let expected2 = pos!(x 1:5; o);
+        assert_eq!(resulting_positions, vec![expected1, expected2]);
     }
 
     #[test]
@@ -587,9 +573,10 @@ mod tests {
         // Given
         let position = pos!(x 7:1, 6:3; o 2:2);
         // When
-        let moves = position.all_regular_moves(&RegularDice::new(5, 4));
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(5, 4));
         // Then
-        let expected = ([Some(6), Some(7)], pos!(x 6:2, 3:1, 1:1; o 2:2));
-        assert_eq!(moves, Vec::from([expected]));
+        let expected = pos!(x 6:2, 3:1, 1:1; o 2:2);
+        assert_eq!(resulting_positions, vec![expected]);
     }
 }
