@@ -41,6 +41,11 @@ Currently, most needed is:
 - Documentation of backgammon metrics / neural net inputs: https://github.com/carsten-wenderdel/wildbg/issues/4
 - Implementation of a bearoff database: https://github.com/carsten-wenderdel/wildbg/issues/1
 
+### Installation of python environment
+
+Make an editable install by targeting the training directory:
+``` pip install -e "training/[dev]"```
+
 ## License
 
 Licensed under either of
