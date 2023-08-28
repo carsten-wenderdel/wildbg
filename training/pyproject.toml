@@ -3,9 +3,6 @@ name = "wildbg"
 requires-python = ">=3.11"
 dynamic = ["dependencies", "optional-dependencies", "version"]
 
-[tool.setuptools]
-license-files = ["../LICENSES*"]
-
 
 [project.urls]
 Repository = "https://github.com/carsten-wenderdel/wildbg/"
