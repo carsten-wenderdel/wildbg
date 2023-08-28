@@ -1,19 +1,6 @@
 [project]
 name = "wildbg"
-description = "Rust-based backgammon engine based on neural networks."
-readme = "../README.md"
 requires-python = ">=3.11"
-license = {file = "../LICENSES-MIT"}
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "Environment :: Console",
-    "Development Status :: 2 - Pre-Alpha",
-    "License :: OSI Approved :: MIT License",
-    "License :: OSI Approved :: Apache Software License",
-    "Natural Language :: English",
-    "Topic :: Games/Entertainment :: Board Games",
-    "Typing :: Typed"
-]
 dynamic = ["dependencies", "optional-dependencies", "version"]
 
 [tool.setuptools]
