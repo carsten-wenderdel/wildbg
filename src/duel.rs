@@ -1,4 +1,4 @@
-use crate::dice_gen::{DiceGen, FastrandDice};
+use crate::dice::{DiceGen, FastrandDice};
 use crate::evaluator::{Evaluator, Probabilities};
 use crate::position::GameState::{GameOver, Ongoing};
 use crate::position::STARTING;

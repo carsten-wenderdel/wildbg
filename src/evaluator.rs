@@ -1,4 +1,4 @@
-use crate::dice_gen::Dice;
+use crate::dice::Dice;
 use crate::position::GameResult::{LoseBg, LoseGammon, LoseNormal, WinBg, WinGammon, WinNormal};
 use crate::position::Position;
 use std::fmt;
@@ -250,7 +250,7 @@ mod probabilities_tests {
 }
 #[cfg(test)]
 mod evaluator_trait_tests {
-    use crate::dice_gen::Dice;
+    use crate::dice::Dice;
     use crate::evaluator::{Evaluator, Probabilities};
     use crate::pos;
     use crate::position::Position;

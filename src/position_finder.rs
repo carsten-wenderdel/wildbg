@@ -1,4 +1,4 @@
-use crate::dice_gen::{DiceGen, FastrandDice};
+use crate::dice::{DiceGen, FastrandDice};
 use crate::evaluator::Evaluator;
 use crate::position::GameState::Ongoing;
 use crate::position::{Position, STARTING};

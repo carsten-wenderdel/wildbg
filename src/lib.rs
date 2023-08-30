@@ -1,5 +1,5 @@
 pub mod bg_move;
-pub mod dice_gen;
+pub mod dice;
 pub mod duel;
 pub mod evaluator;
 pub mod inputs;

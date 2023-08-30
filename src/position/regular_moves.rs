@@ -1,4 +1,4 @@
-use crate::dice_gen::RegularDice;
+use crate::dice::RegularDice;
 use crate::position::{Position, O_BAR, X_BAR};
 use std::cmp::max;
 
@@ -245,7 +245,7 @@ enum MovePossibilities {
 
 #[cfg(test)]
 mod tests {
-    use crate::dice_gen::RegularDice;
+    use crate::dice::RegularDice;
     use crate::pos;
     use crate::position::{Position, O_BAR, X_BAR};
     use std::collections::HashMap;

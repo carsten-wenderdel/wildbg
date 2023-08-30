@@ -110,7 +110,7 @@ impl FastrandDice {
 
 #[cfg(test)]
 mod dice_tests {
-    use crate::dice_gen::Dice;
+    use crate::dice::Dice;
 
     #[test]
     fn all_36() {
@@ -182,7 +182,7 @@ impl DiceGenMock {
 
 #[cfg(test)]
 mod fastrand_dice_tests {
-    use crate::dice_gen::{Dice, DiceGen, FastrandDice};
+    use crate::dice::{Dice, DiceGen, FastrandDice};
     use std::cmp::Ordering;
 
     #[test]
@@ -226,7 +226,7 @@ mod fastrand_dice_tests {
 
 #[cfg(test)]
 mod dice_gen_mock_tests {
-    use crate::dice_gen::{Dice, DiceGen, DiceGenMock};
+    use crate::dice::{Dice, DiceGen, DiceGenMock};
 
     #[test]
     // #[should_panic]

@@ -1,5 +1,5 @@
 use crate::bg_move::{BgMove, MoveDetail};
-use crate::dice_gen::RegularDice;
+use crate::dice::RegularDice;
 use crate::position::Position;
 
 impl BgMove {
@@ -96,7 +96,7 @@ impl Position {
 #[cfg(test)]
 mod tests {
     use crate::bg_move::{BgMove, MoveDetail};
-    use crate::dice_gen::RegularDice;
+    use crate::dice::RegularDice;
     use crate::pos;
     use crate::position::{Position, O_BAR, X_BAR};
     use std::collections::HashMap;

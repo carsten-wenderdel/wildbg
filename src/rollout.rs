@@ -1,4 +1,4 @@
-use crate::dice_gen::{Dice, DiceGen, FastrandDice, ALL_1296};
+use crate::dice::{Dice, DiceGen, FastrandDice, ALL_1296};
 use crate::evaluator::{Evaluator, Probabilities, RandomEvaluator};
 use crate::position::GameState::{GameOver, Ongoing};
 use crate::position::{GameResult, Position};
@@ -144,7 +144,7 @@ mod tests {
 
 #[cfg(test)]
 mod private_tests {
-    use crate::dice_gen::{Dice, DiceGenMock, FastrandDice};
+    use crate::dice::{Dice, DiceGenMock, FastrandDice};
     use crate::evaluator::RandomEvaluator;
     use crate::pos;
     use crate::position::GameResult::{

@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use wildbg::dice_gen::Dice;
+use wildbg::dice::Dice;
 use wildbg::evaluator::Evaluator;
 use wildbg::onnx::OnnxEvaluator;
 use wildbg::pos;

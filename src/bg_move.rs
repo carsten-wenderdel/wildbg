@@ -1,4 +1,4 @@
-use crate::dice_gen::Dice;
+use crate::dice::Dice;
 use crate::position::Position;
 use std::cmp::max;
 
@@ -50,7 +50,7 @@ impl BgMove {
 #[cfg(test)]
 mod tests {
     use crate::bg_move::{BgMove, MoveDetail};
-    use crate::dice_gen::RegularDice;
+    use crate::dice::RegularDice;
     use crate::pos;
     use crate::position::Position;
     use std::collections::HashMap;

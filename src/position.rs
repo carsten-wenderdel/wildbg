@@ -1,7 +1,7 @@
 mod double_moves;
 mod regular_moves;
 
-use crate::dice_gen::Dice;
+use crate::dice::Dice;
 use crate::position::GameResult::*;
 use crate::position::GameState::*;
 use std::collections::HashMap;
