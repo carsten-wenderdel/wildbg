@@ -5,6 +5,9 @@ edition = "2021"
 license = "Apache-2.0 OR MIT"
 
 [dependencies]
+axum = "0.6.20"
 fastrand = "2.0.0"
+hyper = "0.14.27"
 rayon = "1.7.0"
+tokio = { version = "1.32.0", features = ["full"] }
 tract-onnx = "0.20.7"
