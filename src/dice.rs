@@ -1,9 +1,11 @@
+/// Contains a legal pair of dice (values between 1 and 6).
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Dice {
     Regular(RegularDice),
     Double(usize),
 }
 
+/// Contains two different values between 1 and six. `big` is bigger than `small`.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct RegularDice {
     pub(crate) big: usize,
@@ -74,7 +76,7 @@ impl RegularDice {
 }
 
 pub(crate) trait DiceGen {
-    /// Returns two random dice with values each between 1 and 6. Not sorted by size.
+    /// Returns dice
     fn roll(&mut self) -> Dice;
 }
 
@@ -83,7 +85,7 @@ pub(crate) struct FastrandDice {
 }
 
 impl DiceGen for FastrandDice {
-    /// Returns two random dice with values each between 1 and 6. Not sorted by size.
+    /// Returns random dice
     fn roll(&mut self) -> Dice {
         let random = self.generator.usize(0..36);
         let die1 = random / 6 + 1;
