@@ -178,13 +178,35 @@ impl Position {
             debug_assert!(pips[*i] == 0);
             pips[*i] = -(*v as i8);
         }
-        let x_sum = x.values().sum::<u8>();
-        let o_sum = o.values().sum::<u8>();
-        debug_assert!(x_sum <= NO_OF_CHECKERS && o_sum <= NO_OF_CHECKERS);
-        Position {
-            pips,
-            x_off: NO_OF_CHECKERS - x_sum,
-            o_off: NO_OF_CHECKERS - o_sum,
+        Position::try_from(pips).expect("Need legal position")
+    }
+}
+
+impl TryFrom<[i8; 26]> for Position {
+    type Error = &'static str;
+
+    /// Use positive numbers for checkers of `x`. Use negative number for checkers of `o`.
+    /// Index `25` is the bar for `x`, index `0` is the the bar for `o`.
+    /// Checkers already off the board are calculated based on the input array.
+    /// Will return an error if the sum of checkers for `x` or `o` is bigger than 15.
+    fn try_from(pips: [i8; 26]) -> Result<Self, Self::Error> {
+        let x_off: i8 = 15 - pips.iter().filter(|p| p.is_positive()).sum::<i8>();
+        let o_off: i8 = 15 + pips.iter().filter(|p| p.is_negative()).sum::<i8>();
+
+        if x_off < 0 {
+            Err("Player x has more than 15 checkers on the board.")
+        } else if o_off < 0 {
+            Err("Player o has more than 15 checkers on the board.")
+        } else if pips[X_BAR].is_negative() {
+            Err("Index 25 is the bar for player x, number of checkers needs to be positive.")
+        } else if pips[O_BAR].is_positive() {
+            Err("Index 0 is the bar for player o, number of checkers needs to be negative.")
+        } else {
+            Ok(Position {
+                pips,
+                x_off: x_off as u8,
+                o_off: o_off as u8,
+            })
         }
     }
 }
@@ -448,6 +470,90 @@ mod tests {
             o_off: 0,
         };
         assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn try_from_legal() {
+        // Given
+        let mut pips = [0_i8; 26];
+        pips[X_BAR] = 2;
+        pips[10] = 10;
+        pips[11] = -11;
+        pips[O_BAR] = -3;
+        // When
+        let position = Position::try_from(pips);
+        // Then
+        let position = position.unwrap();
+        assert_eq!(position.x_bar(), 2);
+        assert_eq!(position.pip(10), 10);
+        assert_eq!(position.x_off, 3);
+        assert_eq!(position.pip(11), -11);
+        assert_eq!(position.o_bar(), 3);
+        assert_eq!(position.o_off, 1);
+    }
+
+    #[test]
+    fn try_from_fails_too_many_x_checkers() {
+        // Given
+        let mut pips = [0_i8; 26];
+        pips[X_BAR] = 10;
+        pips[10] = 10;
+        pips[11] = -10;
+        // When
+        let position = Position::try_from(pips);
+        // Then
+        assert_eq!(
+            position,
+            Err("Player x has more than 15 checkers on the board.")
+        );
+    }
+
+    #[test]
+    fn try_from_fails_too_many_o_checkers() {
+        // Given
+        let mut pips = [0_i8; 26];
+        pips[10] = 10;
+        pips[11] = -10;
+        pips[O_BAR] = -10;
+        // When
+        let position = Position::try_from(pips);
+        // Then
+        assert_eq!(
+            position,
+            Err("Player o has more than 15 checkers on the board.")
+        );
+    }
+
+    #[test]
+    fn try_from_fails_o_checker_on_x_bar() {
+        // Given
+        let mut pips = [0_i8; 26];
+        pips[X_BAR] = -10;
+        pips[10] = 1;
+        pips[11] = -1;
+        // When
+        let position = Position::try_from(pips);
+        // Then
+        assert_eq!(
+            position,
+            Err("Index 25 is the bar for player x, number of checkers needs to be positive.")
+        );
+    }
+
+    #[test]
+    fn try_from_fails_x_checker_on_o_bar() {
+        // Given
+        let mut pips = [0_i8; 26];
+        pips[10] = 1;
+        pips[11] = -1;
+        pips[O_BAR] = 10;
+        // When
+        let position = Position::try_from(pips);
+        // Then
+        assert_eq!(
+            position,
+            Err("Index 0 is the bar for player o, number of checkers needs to be negative.")
+        );
     }
 
     #[test]

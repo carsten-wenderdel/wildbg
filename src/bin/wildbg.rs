@@ -1,4 +1,4 @@
-use axum::extract::State;
+use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::{routing::get, Json, Router, Server};
 use hyper::Error;
@@ -6,12 +6,14 @@ use serde::Serialize;
 use std::net::{Ipv4Addr, SocketAddr};
 use std::sync::Arc;
 use wildbg::bg_move::MoveDetail;
-use wildbg::web_api::WebApi;
+use wildbg::web_api::{DiceParams, PipParams, WebApi};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    println!("You can access the server via:");
-    println!("http://localhost:8080/move");
+    println!("You can access the server for example via");
+    println!(
+        "http://localhost:8080/move?die1=3&die2=1&p24=2&p19=-5&p17=-3&p13=5&p12=-5&p8=3&p6=5&p1=-2"
+    );
 
     let web_api = Arc::new(WebApi::try_default()) as DynWebApi;
     let address = SocketAddr::from((Ipv4Addr::UNSPECIFIED, 8080));
@@ -50,6 +52,8 @@ async fn get_cube() -> Result<String, (StatusCode, Json<ErrorMessage>)> {
 }
 
 async fn get_move(
+    Query(dice): Query<DiceParams>,
+    Query(pips): Query<PipParams>,
     State(web_api): State<DynWebApi>,
 ) -> Result<Json<Vec<MoveDetail>>, (StatusCode, Json<ErrorMessage>)> {
     match web_api.as_ref() {
@@ -57,7 +61,10 @@ async fn get_move(
             StatusCode::INTERNAL_SERVER_ERROR,
             ErrorMessage::json("Neural net could not be constructed."),
         )),
-        Some(web_api) => Ok(Json(web_api.get_move())),
+        Some(web_api) => match web_api.get_move(pips, dice) {
+            Err((status_code, message)) => Err((status_code, ErrorMessage::json(message.as_str()))),
+            Ok(move_details) => Ok(Json(move_details)),
+        },
     }
 }
 
@@ -95,7 +102,12 @@ mod tests {
     async fn get_move_missing_neural_net() {
         let web_api = Arc::new(None) as DynWebApi;
         let response = router(web_api)
-            .oneshot(Request::builder().uri("/move").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/move?die1=3&die2=1&p24=2&p19=-5")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
 
@@ -110,10 +122,83 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn get_move() {
+    async fn get_move_no_arguments() {
         let web_api = Arc::new(WebApi::try_default()) as DynWebApi;
         let response = router(web_api)
             .oneshot(Request::builder().uri("/move").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        assert_eq!(
+            response.headers()[CONTENT_TYPE],
+            "text/plain; charset=utf-8"
+        );
+
+        let body = body_string(response).await;
+        // TODO: JSON would be a better response than plain text
+        assert_eq!(
+            body,
+            "Failed to deserialize query string: missing field `die1`"
+        );
+    }
+
+    #[tokio::test]
+    async fn get_move_illegal_dice() {
+        let web_api = Arc::new(WebApi::try_default()) as DynWebApi;
+        let response = router(web_api)
+            .oneshot(
+                Request::builder()
+                    .uri("/move?die1=2&die2=0&p4=4&p5=-5")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        assert_eq!(response.headers()[CONTENT_TYPE], "application/json");
+
+        let body = body_string(response).await;
+        assert_eq!(
+            body,
+            r#"{"message":"Dice values must be between 1 and 6."}"#
+        );
+    }
+
+    #[tokio::test]
+    async fn get_move_wrong_checkers_on_bar() {
+        let web_api = Arc::new(WebApi::try_default()) as DynWebApi;
+        let response = router(web_api)
+            .oneshot(
+                Request::builder()
+                    .uri("/move?die1=2&die2=0&p4=4&p5=-5&p25=-2")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        assert_eq!(response.headers()[CONTENT_TYPE], "application/json");
+
+        let body = body_string(response).await;
+        assert_eq!(
+            body,
+            r#"{"message":"Index 25 is the bar for player x, number of checkers needs to be positive."}"#
+        );
+    }
+
+    #[tokio::test]
+    async fn get_move_starting_position() {
+        let web_api = Arc::new(WebApi::try_default()) as DynWebApi;
+        let response = router(web_api)
+            .oneshot(
+                Request::builder()
+                    .uri("/move?die1=3&die2=1&p24=2&p19=-5&p17=-3&p13=5&p12=-5&p8=3&p6=5&p1=-2")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
 

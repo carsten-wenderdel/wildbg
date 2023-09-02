@@ -63,6 +63,18 @@ impl Dice {
     }
 }
 
+impl TryFrom<(usize, usize)> for Dice {
+    type Error = &'static str;
+
+    fn try_from(value: (usize, usize)) -> Result<Self, Self::Error> {
+        if value.0 < 1 || value.0 > 6 || value.1 < 1 || value.1 > 6 {
+            Err("Dice values must be between 1 and 6.")
+        } else {
+            Ok(Dice::new(value.0, value.1))
+        }
+    }
+}
+
 impl RegularDice {
     #[inline(always)]
     pub(crate) const fn new(die1: usize, die2: usize) -> Self {
