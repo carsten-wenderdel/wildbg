@@ -1,5 +1,6 @@
 use crate::dice::Dice;
 use crate::position::Position;
+use serde::Serialize;
 use std::cmp::max;
 
 mod double;
@@ -7,23 +8,26 @@ mod regular;
 
 /// `BgMove` is not used during rollouts or evaluation but only when returning moves via an API
 /// This is why a new `BgMove` is always calculated based on a `old` and a resulting `new` position.
-#[allow(dead_code)]
-struct BgMove {
+pub(crate) struct BgMove {
     details: Vec<MoveDetail>,
 }
 
-#[derive(Debug, PartialEq)]
-struct MoveDetail {
+#[derive(Debug, PartialEq, Serialize)]
+pub struct MoveDetail {
     from: usize,
     to: usize,
 }
 
 impl BgMove {
-    #[allow(dead_code)]
-    pub(crate) fn new(old: &Position, new: &Position, dice: Dice) -> BgMove {
+    #[inline(always)]
+    pub(crate) fn into_details(self) -> Vec<MoveDetail> {
+        self.details
+    }
+
+    pub(crate) fn new(old: &Position, new: &Position, dice: &Dice) -> BgMove {
         match dice {
-            Dice::Regular(dice) => Self::new_regular(old, new, &dice),
-            Dice::Double(die) => Self::new_double(old, new, die),
+            Dice::Regular(dice) => Self::new_regular(old, new, dice),
+            Dice::Double(die) => Self::new_double(old, new, *die),
         }
     }
 

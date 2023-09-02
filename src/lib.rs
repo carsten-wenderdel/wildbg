@@ -7,3 +7,4 @@ pub mod onnx;
 pub mod position;
 pub mod position_finder;
 pub mod rollout;
+pub mod web_api;

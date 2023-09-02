@@ -3,6 +3,8 @@ use axum::{routing::get, Json, Router, Server};
 use hyper::Error;
 use serde::Serialize;
 use std::net::{Ipv4Addr, SocketAddr};
+use wildbg::bg_move::MoveDetail;
+use wildbg::web_api::WebApi;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -16,7 +18,9 @@ async fn main() -> Result<(), Error> {
 }
 
 fn router() -> Router {
-    Router::new().route("/move", get(get_move))
+    Router::new()
+        .route("/cube", get(get_cube))
+        .route("/move", get(get_move))
 }
 
 #[derive(Serialize)]
@@ -32,12 +36,17 @@ impl ErrorMessage {
     }
 }
 
-async fn get_move() -> Result<String, (StatusCode, Json<ErrorMessage>)> {
-    // Ok("Hello, World".to_string())
+async fn get_cube() -> Result<String, (StatusCode, Json<ErrorMessage>)> {
     Err((
         StatusCode::NOT_IMPLEMENTED,
         ErrorMessage::json("Will be implemented later on."),
     ))
+}
+
+async fn get_move() -> Result<Json<Vec<MoveDetail>>, (StatusCode, Json<ErrorMessage>)> {
+    let web_api = WebApi::try_default().unwrap();
+    let best_move = web_api.get_move();
+    Ok(Json(best_move))
 }
 
 #[cfg(test)]
@@ -54,9 +63,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn get_move_error() {
+    async fn get_cube_error() {
         let response = router()
-            .oneshot(Request::builder().uri("/move").body(Body::empty()).unwrap())
+            .oneshot(Request::builder().uri("/cube").body(Body::empty()).unwrap())
             .await
             .unwrap();
 
@@ -65,5 +74,19 @@ mod tests {
 
         let body = body_string(response).await;
         assert_eq!(body, "{\"message\":\"Will be implemented later on.\"}");
+    }
+
+    #[tokio::test]
+    async fn get_move() {
+        let response = router()
+            .oneshot(Request::builder().uri("/move").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.headers()[CONTENT_TYPE], "application/json");
+
+        let body = body_string(response).await;
+        assert_eq!(body, r#"[{"from":8,"to":5},{"from":6,"to":5}]"#);
     }
 }
