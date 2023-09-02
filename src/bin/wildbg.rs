@@ -1,8 +1,10 @@
+use axum::extract::State;
 use axum::http::StatusCode;
 use axum::{routing::get, Json, Router, Server};
 use hyper::Error;
 use serde::Serialize;
 use std::net::{Ipv4Addr, SocketAddr};
+use std::sync::Arc;
 use wildbg::bg_move::MoveDetail;
 use wildbg::web_api::WebApi;
 
@@ -11,17 +13,21 @@ async fn main() -> Result<(), Error> {
     println!("You can access the server via:");
     println!("http://localhost:8080/move");
 
+    let web_api = Arc::new(WebApi::try_default()) as DynWebApi;
     let address = SocketAddr::from((Ipv4Addr::UNSPECIFIED, 8080));
     Server::bind(&address)
-        .serve(router().into_make_service())
+        .serve(router(web_api).into_make_service())
         .await
 }
 
-fn router() -> Router {
+fn router(web_api: DynWebApi) -> Router {
     Router::new()
         .route("/cube", get(get_cube))
         .route("/move", get(get_move))
+        .with_state(web_api)
 }
+
+type DynWebApi = Arc<Option<WebApi>>;
 
 #[derive(Serialize)]
 struct ErrorMessage {
@@ -43,18 +49,26 @@ async fn get_cube() -> Result<String, (StatusCode, Json<ErrorMessage>)> {
     ))
 }
 
-async fn get_move() -> Result<Json<Vec<MoveDetail>>, (StatusCode, Json<ErrorMessage>)> {
-    let web_api = WebApi::try_default().unwrap();
-    let best_move = web_api.get_move();
-    Ok(Json(best_move))
+async fn get_move(
+    State(web_api): State<DynWebApi>,
+) -> Result<Json<Vec<MoveDetail>>, (StatusCode, Json<ErrorMessage>)> {
+    match web_api.as_ref() {
+        None => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            ErrorMessage::json("Neural net could not be constructed."),
+        )),
+        Some(web_api) => Ok(Json(web_api.get_move())),
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::router;
+    use crate::{router, DynWebApi};
     use axum::http::header::CONTENT_TYPE;
     use hyper::{Body, Request, StatusCode};
+    use std::sync::Arc;
     use tower::ServiceExt; // for `oneshot
+    use wildbg::web_api::WebApi;
 
     /// Consumes the response, so use it at the end of the test
     async fn body_string(response: axum::response::Response) -> String {
@@ -64,7 +78,8 @@ mod tests {
 
     #[tokio::test]
     async fn get_cube_error() {
-        let response = router()
+        let web_api = Arc::new(None) as DynWebApi;
+        let response = router(web_api)
             .oneshot(Request::builder().uri("/cube").body(Body::empty()).unwrap())
             .await
             .unwrap();
@@ -77,8 +92,27 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn get_move_missing_neural_net() {
+        let web_api = Arc::new(None) as DynWebApi;
+        let response = router(web_api)
+            .oneshot(Request::builder().uri("/move").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(response.headers()[CONTENT_TYPE], "application/json");
+
+        let body = body_string(response).await;
+        assert_eq!(
+            body,
+            "{\"message\":\"Neural net could not be constructed.\"}"
+        );
+    }
+
+    #[tokio::test]
     async fn get_move() {
-        let response = router()
+        let web_api = Arc::new(WebApi::try_default()) as DynWebApi;
+        let response = router(web_api)
             .oneshot(Request::builder().uri("/move").body(Body::empty()).unwrap())
             .await
             .unwrap();
