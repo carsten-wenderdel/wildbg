@@ -55,3 +55,73 @@ impl OnnxEvaluator {
         Ok(model)
     }
 }
+
+/// The following tests mainly test the quality of the neural nets
+#[cfg(test)]
+mod tests {
+    use crate::evaluator::Evaluator;
+    use crate::onnx::OnnxEvaluator;
+    use crate::pos;
+    use crate::position::Position;
+    use std::collections::HashMap;
+
+    #[test]
+    fn eval_certain_win_normal() {
+        let onnx = OnnxEvaluator::with_default_model().unwrap();
+        let position = pos![x 1:1; o 24:1];
+
+        let probabilities = onnx.eval(&position);
+        assert!(probabilities.win_normal > 0.85);
+        assert!(probabilities.win_normal < 0.9); // This should be wrong, let's improve the nets.
+    }
+
+    #[test]
+    fn eval_certain_win_gammon() {
+        let onnx = OnnxEvaluator::with_default_model().unwrap();
+        let position = pos![x 1:1; o 18:15];
+
+        let probabilities = onnx.eval(&position);
+        assert!(probabilities.win_gammon > 0.85);
+        assert!(probabilities.win_gammon < 0.9); // This should be wrong, let's improve the nets.
+    }
+
+    #[test]
+    fn eval_certain_win_bg() {
+        let onnx = OnnxEvaluator::with_default_model().unwrap();
+        let position = pos![x 1:1; o 6:15];
+
+        let probabilities = onnx.eval(&position);
+        assert!(probabilities.win_bg > 0.27);
+        assert!(probabilities.win_bg < 0.32); // This should be wrong, let's improve the nets.
+    }
+
+    #[test]
+    fn eval_certain_lose_normal() {
+        let onnx = OnnxEvaluator::with_default_model().unwrap();
+        let position = pos![x 1:6; o 24:1];
+
+        let probabilities = onnx.eval(&position);
+        assert!(probabilities.lose_normal > 0.77);
+        assert!(probabilities.lose_normal < 0.82); // This should be wrong, let's improve the nets.
+    }
+
+    #[test]
+    fn eval_certain_lose_gammon() {
+        let onnx = OnnxEvaluator::with_default_model().unwrap();
+        let position = pos![x 7:15; o 24:1];
+
+        let probabilities = onnx.eval(&position);
+        assert!(probabilities.lose_gammon > 0.92);
+        assert!(probabilities.lose_gammon < 0.98); // This should be wrong, let's improve the nets.
+    }
+
+    #[test]
+    fn eval_certain_lose_bg() {
+        let onnx = OnnxEvaluator::with_default_model().unwrap();
+        let position = pos![x 19:15; o 24:1];
+
+        let probabilities = onnx.eval(&position);
+        assert!(probabilities.lose_bg > 0.02);
+        assert!(probabilities.lose_bg < 0.05); // This should be wrong, let's improve the nets.
+    }
+}
