@@ -17,7 +17,13 @@ print(f"Using {device} device")
 
 class WildBgDataSet(Dataset):
     def __init__(self):
-        self.data = pd.read_csv("../training-data/rollouts.csv", sep = ';')
+        # If you want to combine several CSV files from another folder, use the following: 
+        # csv_files = [
+        #     "../../wildbg-training/data/0006/rollouts.csv",
+        #     "../../wildbg-training/data/0007/rollouts.csv",
+        # ]
+        csv_files = ["../training-data/rollouts.csv"]
+        self.data = pd.concat([pd.read_csv(f, sep=';') for f in csv_files ], ignore_index=True)
 
     def __len__(self):
         return self.data.shape[0]
@@ -30,23 +36,28 @@ class WildBgDataSet(Dataset):
 
 
 class Network(nn.Module):
-# Stolen from https://towardsdatascience.com/building-neural-network-using-pytorch-84f6e75f9a
-# Number of input/output adapted to our use case
     def __init__(self):
         super().__init__()
         
         # Inputs to hidden layer linear transformation
-        self.hidden = nn.Linear(202, 150)
+        self.hidden1 = nn.Linear(202, 300)
+        self.hidden2 = nn.Linear(300, 250)
+        self.hidden3 = nn.Linear(250, 200)
+
         # Output layer, 6 outputs for win/lose - normal/gammon/bg
-        self.output = nn.Linear(150, 6)
+        self.output = nn.Linear(200, 6)
         
-        # Define sigmoid activation and softmax output 
-        self.activation = nn.Tanh()
+        # Define activation function and softmax output 
+        self.activation = nn.ReLU()
         self.softmax = nn.Softmax(dim=1)
         
     def forward(self, x):
         # Pass the input tensor through each of our operations
-        x = self.hidden(x)
+        x = self.hidden1(x)
+        x = self.activation(x)
+        x = self.hidden2(x)
+        x = self.activation(x)
+        x = self.hidden3(x)
         x = self.activation(x)
         x = self.output(x)
         x = self.softmax(x)
@@ -61,7 +72,9 @@ trainloader = DataLoader(traindata, batch_size=64, shuffle=True)
 criterion = nn.MSELoss()
 
 # Optimizer based on model, adjust the learning rate
-optimizer = torch.optim.SGD(model.parameters(), lr=4.0)
+# 4.0 has worked well for Tanh(), one layer and 100k positions
+# 3.0 has worked well for ReLu(), three layers and 200k positions
+optimizer = torch.optim.SGD(model.parameters(), lr=3.0)
 
 epochs = 20
 
