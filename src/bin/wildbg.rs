@@ -5,8 +5,7 @@ use hyper::Error;
 use serde::Serialize;
 use std::net::{Ipv4Addr, SocketAddr};
 use std::sync::Arc;
-use wildbg::bg_move::MoveDetail;
-use wildbg::web_api::{DiceParams, PipParams, WebApi};
+use wildbg::web_api::{DiceParams, MoveResponse, PipParams, WebApi};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -55,7 +54,7 @@ async fn get_move(
     Query(dice): Query<DiceParams>,
     Query(pips): Query<PipParams>,
     State(web_api): State<DynWebApi>,
-) -> Result<Json<Vec<MoveDetail>>, (StatusCode, Json<ErrorMessage>)> {
+) -> Result<Json<MoveResponse>, (StatusCode, Json<ErrorMessage>)> {
     match web_api.as_ref() {
         None => Err((
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -63,7 +62,7 @@ async fn get_move(
         )),
         Some(web_api) => match web_api.get_move(pips, dice) {
             Err((status_code, message)) => Err((status_code, ErrorMessage::json(message.as_str()))),
-            Ok(move_details) => Ok(Json(move_details)),
+            Ok(move_response) => Ok(Json(move_response)),
         },
     }
 }
@@ -190,12 +189,12 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn get_move_starting_position() {
+    async fn get_move_body_forced_move() {
         let web_api = Arc::new(WebApi::try_default()) as DynWebApi;
         let response = router(web_api)
             .oneshot(
                 Request::builder()
-                    .uri("/move?die1=3&die2=1&p24=2&p19=-5&p17=-3&p13=5&p12=-5&p8=3&p6=5&p1=-2")
+                    .uri("/move?die1=3&die2=1&p5=1&p24=-1")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -206,6 +205,35 @@ mod tests {
         assert_eq!(response.headers()[CONTENT_TYPE], "application/json");
 
         let body = body_string(response).await;
-        assert_eq!(body, r#"[{"from":8,"to":5},{"from":6,"to":5}]"#);
+        // The probabilities need to be adapted when the neural net is changed.
+        assert_eq!(
+            body,
+            r#"{"moves":[{"play":[{"from":5,"to":4},{"from":4,"to":1}],"probabilities":{"win":0.12966351,"winG":0.000012590854,"winBg":0.0000037218406,"lose":0.8703365,"loseG":0.000004657087,"loseBg":8.185937e-8}}]}"#
+        );
+    }
+
+    #[tokio::test]
+    async fn get_move_double_roll() {
+        let web_api = Arc::new(WebApi::try_default()) as DynWebApi;
+        let response = router(web_api)
+            .oneshot(
+                Request::builder()
+                    .uri("/move?die1=1&die2=1&p5=2&p24=-1")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.headers()[CONTENT_TYPE], "application/json");
+
+        let body = body_string(response).await;
+        // serde::json
+        // The probabilities need to be adapted when the neural net is changed.
+        assert_eq!(
+            body,
+            r#"{"moves":[{"play":[{"from":5,"to":4},{"from":5,"to":4},{"from":4,"to":3},{"from":3,"to":2}],"probabilities":{"win":0.13635689,"winG":0.000007560333,"winBg":0.0000020810992,"lose":0.8636431,"loseG":0.000005637916,"loseBg":9.32699e-8}},{"play":[{"from":5,"to":4},{"from":4,"to":3},{"from":3,"to":2},{"from":2,"to":1}],"probabilities":{"win":0.100783594,"winG":0.0000063406314,"winBg":0.0000019900037,"lose":0.8992164,"loseG":0.000004664952,"loseBg":1.2349493e-7}},{"play":[{"from":5,"to":4},{"from":5,"to":4},{"from":4,"to":3},{"from":4,"to":3}],"probabilities":{"win":0.07513183,"winG":0.000009337691,"winBg":0.0000035386754,"lose":0.92486817,"loseG":0.0000036242066,"loseBg":6.4324674e-8}}]}"#
+        );
     }
 }

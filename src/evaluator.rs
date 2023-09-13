@@ -5,6 +5,7 @@ use std::fmt;
 use std::fmt::Formatter;
 
 /// Sum of all six fields will always be 1.0
+#[derive(PartialEq)]
 pub struct Probabilities {
     pub(crate) win_normal: f32,
     pub(crate) win_gammon: f32,
@@ -65,6 +66,17 @@ impl Probabilities {
         }
     }
 
+    fn switch_sides(&self) -> Self {
+        Self {
+            win_normal: self.lose_normal,
+            win_gammon: self.lose_gammon,
+            win_bg: self.lose_bg,
+            lose_normal: self.win_normal,
+            lose_gammon: self.win_gammon,
+            lose_bg: self.win_bg,
+        }
+    }
+
     /// Cubeless equity
     pub fn equity(&self) -> f32 {
         self.win_normal - self.lose_normal
@@ -95,6 +107,28 @@ pub trait Evaluator {
             .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
             .unwrap()
             .0
+    }
+
+    /// All legal positions after moving with the given dice.
+    /// Sorted, the best move/position is first in the vector.
+    /// The positions are again from the perspective of player `x`.
+    /// The probabilities have switched sides, so they are from the perspective of player `x` who has to move.
+    fn positions_and_probabilities_by_equity(
+        &self,
+        position: &Position,
+        dice: &Dice,
+    ) -> Vec<(Position, Probabilities)> {
+        let after_moving = position.all_positions_after_moving(dice);
+        let mut pos_and_probs: Vec<(Position, Probabilities)> = after_moving
+            .into_iter()
+            .map(|pos| {
+                let probabilities = self.eval(&pos).switch_sides();
+                let pos = pos.switch_sides();
+                (pos, probabilities)
+            })
+            .collect();
+        pos_and_probs.sort_unstable_by(|a, b| b.1.equity().partial_cmp(&a.1.equity()).unwrap());
+        pos_and_probs
     }
 }
 
@@ -295,6 +329,23 @@ mod evaluator_trait_tests {
         let best_pos = evaluator.best_position(&given_pos, &Dice::new(4, 2));
         // Then
         assert_eq!(best_pos, expected_pos());
+    }
+
+    #[test]
+    fn positions_and_probabilities_by_equity() {
+        // Given
+        let given_pos = pos!(x 7:2; o 20:2);
+        let evaluator = EvaluatorFake {};
+        // When
+        let values = evaluator.positions_and_probabilities_by_equity(&given_pos, &Dice::new(4, 2));
+        // Then
+        let (best_pos, best_probability) = values.first().unwrap();
+        let best_pos = best_pos.switch_sides();
+        assert_eq!(
+            &best_pos,
+            &evaluator.best_position(&given_pos, &Dice::new(4, 2))
+        );
+        assert_eq!(best_probability.switch_sides(), evaluator.eval(&best_pos));
     }
 }
 

@@ -4,7 +4,7 @@ use crate::evaluator::Evaluator;
 use crate::onnx::OnnxEvaluator;
 use crate::position::Position;
 use hyper::StatusCode;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 pub struct WebApi {
     evaluator: OnnxEvaluator,
@@ -20,7 +20,7 @@ impl WebApi {
         &self,
         pip_params: PipParams,
         dice_params: DiceParams,
-    ) -> Result<Vec<MoveDetail>, (StatusCode, String)> {
+    ) -> Result<MoveResponse, (StatusCode, String)> {
         let position = Position::try_from(pip_params);
         let dice = Dice::try_from((dice_params.die1, dice_params.die2));
         match position {
@@ -28,11 +28,65 @@ impl WebApi {
             Ok(position) => match dice {
                 Err(error) => Err((StatusCode::BAD_REQUEST, error.to_string())),
                 Ok(dice) => {
-                    let new = self.evaluator.best_position(&position, &dice);
-                    let bg_move = BgMove::new(&position, &new.switch_sides(), &dice);
-                    Ok(bg_move.into_details())
+                    let pos_and_probs = self
+                        .evaluator
+                        .positions_and_probabilities_by_equity(&position, &dice);
+                    let moves: Vec<MoveInfo> = pos_and_probs
+                        .into_iter()
+                        .map(|(new_pos, probabilities)| {
+                            let bg_move = BgMove::new(&position, &new_pos, &dice);
+                            let play = bg_move.into_details();
+                            let probabilities = probabilities.into(); // convert model into view model
+                            MoveInfo {
+                                play,
+                                probabilities,
+                            }
+                        })
+                        .collect();
+                    Ok(MoveResponse { moves })
                 }
             },
+        }
+    }
+}
+
+#[derive(Serialize)]
+pub struct MoveResponse {
+    moves: Vec<MoveInfo>,
+}
+
+#[derive(Serialize)]
+pub struct MoveInfo {
+    play: Vec<MoveDetail>,
+    probabilities: Probabilities,
+}
+
+// This is similar to evaluator::Probabilities. But while the former serves
+// as a model for calculations, this is more like a view model for the web API.
+// While in evaluator::Probabilities all 6 numbers add up to 1.0, this is different.
+// Here `win` and `lose` add up to 1.0 and winG also includes the chances to win BG.
+// This way we use the same format as earlier engines like GnuBG have done.
+#[derive(Serialize)]
+#[allow(non_snake_case)]
+pub struct Probabilities {
+    pub(crate) win: f32,
+    pub(crate) winG: f32,
+    pub(crate) winBg: f32,
+    pub(crate) lose: f32,
+    pub(crate) loseG: f32,
+    pub(crate) loseBg: f32,
+}
+
+impl From<crate::evaluator::Probabilities> for Probabilities {
+    fn from(value: crate::evaluator::Probabilities) -> Self {
+        let win = value.win_normal + value.win_gammon + value.win_bg;
+        Self {
+            win,
+            winG: value.win_gammon + value.win_bg,
+            winBg: value.win_bg,
+            lose: (1.0 - win),
+            loseG: value.lose_gammon + value.lose_bg,
+            loseBg: value.lose_bg,
         }
     }
 }
@@ -109,5 +163,28 @@ impl TryFrom<PipParams> for Position {
             params.p25.unwrap_or_default(),
         ];
         Position::try_from(pips)
+    }
+}
+
+#[cfg(test)]
+mod probabilities_tests {
+    #[test]
+    fn from() {
+        let model_probs = crate::evaluator::Probabilities {
+            win_normal: 0.32,
+            win_gammon: 0.26,
+            win_bg: 0.12,
+            lose_normal: 0.15,
+            lose_gammon: 0.1,
+            lose_bg: 0.05,
+        };
+
+        let view_probs: crate::web_api::Probabilities = model_probs.into();
+        assert_eq!(view_probs.win, 0.7);
+        assert_eq!(view_probs.winG, 0.38);
+        assert_eq!(view_probs.winBg, 0.12);
+        assert_eq!(view_probs.win + view_probs.lose, 1.0);
+        assert_eq!(view_probs.loseG, 0.15);
+        assert_eq!(view_probs.loseBg, 0.05);
     }
 }
