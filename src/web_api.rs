@@ -6,16 +6,21 @@ use crate::position::Position;
 use hyper::StatusCode;
 use serde::{Deserialize, Serialize};
 
-pub struct WebApi {
-    evaluator: OnnxEvaluator,
+pub struct WebApi<T: Evaluator> {
+    evaluator: T,
 }
 
-impl WebApi {
+impl WebApi<OnnxEvaluator> {
     pub fn try_default() -> Option<Self> {
         OnnxEvaluator::with_default_model().map(|evaluator| Self { evaluator })
     }
+}
 
-    /// Currently this returns a static move. Work in progress
+impl<T: Evaluator> WebApi<T> {
+    pub fn new(evaluator: T) -> Self {
+        Self { evaluator }
+    }
+
     pub fn get_move(
         &self,
         pip_params: PipParams,

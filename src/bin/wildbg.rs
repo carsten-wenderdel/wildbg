@@ -5,6 +5,8 @@ use hyper::Error;
 use serde::Serialize;
 use std::net::{Ipv4Addr, SocketAddr};
 use std::sync::Arc;
+use wildbg::evaluator::Evaluator;
+use wildbg::onnx::OnnxEvaluator;
 use wildbg::web_api::{DiceParams, MoveResponse, PipParams, WebApi};
 
 #[tokio::main]
@@ -14,21 +16,21 @@ async fn main() -> Result<(), Error> {
         "http://localhost:8080/move?die1=3&die2=1&p24=2&p19=-5&p17=-3&p13=5&p12=-5&p8=3&p6=5&p1=-2"
     );
 
-    let web_api = Arc::new(WebApi::try_default()) as DynWebApi;
+    let web_api = Arc::new(WebApi::try_default()) as DynWebApi<OnnxEvaluator>;
     let address = SocketAddr::from((Ipv4Addr::UNSPECIFIED, 8080));
     Server::bind(&address)
         .serve(router(web_api).into_make_service())
         .await
 }
 
-fn router(web_api: DynWebApi) -> Router {
+fn router<T: Evaluator + Send + Sync + 'static>(web_api: DynWebApi<T>) -> Router {
     Router::new()
         .route("/cube", get(get_cube))
         .route("/move", get(get_move))
         .with_state(web_api)
 }
 
-type DynWebApi = Arc<Option<WebApi>>;
+type DynWebApi<T> = Arc<Option<WebApi<T>>>;
 
 #[derive(Serialize)]
 struct ErrorMessage {
@@ -50,10 +52,10 @@ async fn get_cube() -> Result<String, (StatusCode, Json<ErrorMessage>)> {
     ))
 }
 
-async fn get_move(
+async fn get_move<T: Evaluator>(
     Query(dice): Query<DiceParams>,
     Query(pips): Query<PipParams>,
-    State(web_api): State<DynWebApi>,
+    State(web_api): State<DynWebApi<T>>,
 ) -> Result<Json<MoveResponse>, (StatusCode, Json<ErrorMessage>)> {
     match web_api.as_ref() {
         None => Err((
@@ -72,9 +74,44 @@ mod tests {
     use crate::{router, DynWebApi};
     use axum::http::header::CONTENT_TYPE;
     use hyper::{Body, Request, StatusCode};
+    use std::collections::HashMap;
     use std::sync::Arc;
     use tower::ServiceExt; // for `oneshot
+    use wildbg::evaluator::{Evaluator, Probabilities};
+    use wildbg::onnx::OnnxEvaluator;
+    use wildbg::pos;
+    use wildbg::position::Position;
     use wildbg::web_api::WebApi;
+
+    struct EvaluatorFake {}
+    /// Because of different floating point implementations on different CPUs we don't want to
+    /// use a real neural net evaluator in unit tests. Instead we we use a fake evaluator.
+    /// This fake evaluator _knows_ evaluations for all given positions.
+    /// Based on that we later verify the rendered json.
+    /// Note: The probabilities used here are a different type compared to those in the json.
+    /// For internal probabilities all six values later add up to 1, for the json `win` and `lose`
+    /// will add up to 1.
+    /// Also sides are switched, so winning and losing values are switched.
+    impl Evaluator for EvaluatorFake {
+        fn eval(&self, position: &Position) -> Probabilities {
+            let forced_move = pos!(x 1:1; o 24:1).switch_sides();
+            let double_roll_1 = pos!(x 4:1, 2:1; o 24:1).switch_sides();
+            let double_roll_2 = pos!(x 5:1, 1:1; o 24:1).switch_sides();
+            let double_roll_3 = pos!(x 3:2; o 24:1).switch_sides();
+
+            if position == &forced_move {
+                Probabilities::new(&[874, 1, 1, 130, 1, 1])
+            } else if position == &double_roll_1 {
+                Probabilities::new(&[865, 1, 0, 137, 1, 1])
+            } else if position == &double_roll_2 {
+                Probabilities::new(&[12, 1, 1, 16, 3, 1])
+            } else if position == &double_roll_3 {
+                Probabilities::new(&[925, 1, 0, 75, 1, 1])
+            } else {
+                unreachable!("All evaluated positions should be listed here");
+            }
+        }
+    }
 
     /// Consumes the response, so use it at the end of the test
     async fn body_string(response: axum::response::Response) -> String {
@@ -84,7 +121,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_cube_error() {
-        let web_api = Arc::new(None) as DynWebApi;
+        let web_api = Arc::new(None) as DynWebApi<OnnxEvaluator>;
         let response = router(web_api)
             .oneshot(Request::builder().uri("/cube").body(Body::empty()).unwrap())
             .await
@@ -99,7 +136,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_move_missing_neural_net() {
-        let web_api = Arc::new(None) as DynWebApi;
+        let web_api = Arc::new(None) as DynWebApi<OnnxEvaluator>;
         let response = router(web_api)
             .oneshot(
                 Request::builder()
@@ -122,7 +159,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_move_no_arguments() {
-        let web_api = Arc::new(WebApi::try_default()) as DynWebApi;
+        let web_api = Arc::new(WebApi::try_default()) as DynWebApi<OnnxEvaluator>;
         let response = router(web_api)
             .oneshot(Request::builder().uri("/move").body(Body::empty()).unwrap())
             .await
@@ -144,7 +181,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_move_illegal_dice() {
-        let web_api = Arc::new(WebApi::try_default()) as DynWebApi;
+        let web_api = Arc::new(WebApi::try_default()) as DynWebApi<OnnxEvaluator>;
         let response = router(web_api)
             .oneshot(
                 Request::builder()
@@ -167,7 +204,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_move_wrong_checkers_on_bar() {
-        let web_api = Arc::new(WebApi::try_default()) as DynWebApi;
+        let web_api = Arc::new(WebApi::try_default()) as DynWebApi<OnnxEvaluator>;
         let response = router(web_api)
             .oneshot(
                 Request::builder()
@@ -190,7 +227,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_move_body_forced_move() {
-        let web_api = Arc::new(WebApi::try_default()) as DynWebApi;
+        let web_api = Arc::new(Some(WebApi::new(EvaluatorFake {})));
         let response = router(web_api)
             .oneshot(
                 Request::builder()
@@ -208,13 +245,13 @@ mod tests {
         // The probabilities need to be adapted when the neural net is changed.
         assert_eq!(
             body,
-            r#"{"moves":[{"play":[{"from":5,"to":4},{"from":4,"to":1}],"probabilities":{"win":0.12966351,"winG":0.000012590854,"winBg":0.0000037218406,"lose":0.8703365,"loseG":0.000004657087,"loseBg":8.185937e-8}}]}"#
+            r#"{"moves":[{"play":[{"from":5,"to":4},{"from":4,"to":1}],"probabilities":{"win":0.13095237,"winG":0.001984127,"winBg":0.0009920635,"lose":0.86904764,"loseG":0.001984127,"loseBg":0.0009920635}}]}"#
         );
     }
 
     #[tokio::test]
     async fn get_move_double_roll() {
-        let web_api = Arc::new(WebApi::try_default()) as DynWebApi;
+        let web_api = Arc::new(Some(WebApi::new(EvaluatorFake {})));
         let response = router(web_api)
             .oneshot(
                 Request::builder()
@@ -233,7 +270,7 @@ mod tests {
         // The probabilities need to be adapted when the neural net is changed.
         assert_eq!(
             body,
-            r#"{"moves":[{"play":[{"from":5,"to":4},{"from":5,"to":4},{"from":4,"to":3},{"from":3,"to":2}],"probabilities":{"win":0.13635689,"winG":0.000007560333,"winBg":0.0000020810992,"lose":0.8636431,"loseG":0.000005637916,"loseBg":9.32699e-8}},{"play":[{"from":5,"to":4},{"from":4,"to":3},{"from":3,"to":2},{"from":2,"to":1}],"probabilities":{"win":0.100783594,"winG":0.0000063406314,"winBg":0.0000019900037,"lose":0.8992164,"loseG":0.000004664952,"loseBg":1.2349493e-7}},{"play":[{"from":5,"to":4},{"from":5,"to":4},{"from":4,"to":3},{"from":4,"to":3}],"probabilities":{"win":0.07513183,"winG":0.000009337691,"winBg":0.0000035386754,"lose":0.92486817,"loseG":0.0000036242066,"loseBg":6.4324674e-8}}]}"#
+            r#"{"moves":[{"play":[{"from":5,"to":4},{"from":4,"to":3},{"from":3,"to":2},{"from":2,"to":1}],"probabilities":{"win":0.5882353,"winG":0.11764706,"winBg":0.029411765,"lose":0.41176468,"loseG":0.05882353,"loseBg":0.029411765}},{"play":[{"from":5,"to":4},{"from":5,"to":4},{"from":4,"to":3},{"from":3,"to":2}],"probabilities":{"win":0.13830847,"winG":0.0019900498,"winBg":0.0009950249,"lose":0.86169153,"loseG":0.0009950249,"loseBg":0.0}},{"play":[{"from":5,"to":4},{"from":5,"to":4},{"from":4,"to":3},{"from":4,"to":3}],"probabilities":{"win":0.07676969,"winG":0.001994018,"winBg":0.000997009,"lose":0.9232303,"loseG":0.000997009,"loseBg":0.0}}]}"#
         );
     }
 }

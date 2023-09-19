@@ -54,7 +54,7 @@ impl Probabilities {
     /// Typically used from rollouts.
     /// The index within the array has to correspond to the discriminant of the `Probabilities` enum.
     /// Input integer values will be normalized so that the sum in the return value is 1.0
-    pub(crate) fn new(results: &[u32; 6]) -> Self {
+    pub fn new(results: &[u32; 6]) -> Self {
         let sum = results.iter().sum::<u32>() as f32;
         Probabilities {
             win_normal: results[WinNormal as usize] as f32 / sum,
