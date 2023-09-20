@@ -5,6 +5,7 @@ use crate::onnx::OnnxEvaluator;
 use crate::position::Position;
 use hyper::StatusCode;
 use serde::{Deserialize, Serialize};
+use utoipa::{IntoParams, ToSchema};
 
 pub struct WebApi<T: Evaluator> {
     evaluator: T,
@@ -55,12 +56,12 @@ impl<T: Evaluator> WebApi<T> {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct MoveResponse {
     moves: Vec<MoveInfo>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct MoveInfo {
     play: Vec<MoveDetail>,
     probabilities: Probabilities,
@@ -73,7 +74,7 @@ pub struct MoveInfo {
 // `lose` is not given, you can calculate it by through `1 - win`.
 // `winG` includes the chances to win BG and `loseG` includes the chance to lose BG.
 // This way we use the same format as earlier engines like GnuBG have done.
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct Probabilities {
     pub(crate) win: f32,
@@ -95,13 +96,13 @@ impl From<crate::evaluator::Probabilities> for Probabilities {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, IntoParams)]
 pub struct DiceParams {
     die1: usize,
     die2: usize,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, IntoParams)]
 pub struct PipParams {
     /// Bar for player `o`.
     p0: Option<i8>,

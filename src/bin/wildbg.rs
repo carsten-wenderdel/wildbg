@@ -5,16 +5,20 @@ use hyper::Error;
 use serde::Serialize;
 use std::net::{Ipv4Addr, SocketAddr};
 use std::sync::Arc;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 use wildbg::evaluator::Evaluator;
 use wildbg::onnx::OnnxEvaluator;
 use wildbg::web_api::{DiceParams, MoveResponse, PipParams, WebApi};
 
+/// This file should handle all axum related code and know as little about backgammon as possible.
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     println!("You can access the server for example via");
     println!(
         "http://localhost:8080/move?die1=3&die2=1&p24=2&p19=-5&p17=-3&p13=5&p12=-5&p8=3&p6=5&p1=-2"
     );
+    println!("http://localhost:8080/swagger-ui");
 
     let web_api = Arc::new(WebApi::try_default()) as DynWebApi<OnnxEvaluator>;
     let address = SocketAddr::from((Ipv4Addr::UNSPECIFIED, 8080));
@@ -24,7 +28,26 @@ async fn main() -> Result<(), Error> {
 }
 
 fn router<T: Evaluator + Send + Sync + 'static>(web_api: DynWebApi<T>) -> Router {
+    #[derive(OpenApi)]
+    #[openapi(
+        paths(
+            crate::get_move,
+        ),
+        components(
+            schemas(
+                wildbg::bg_move::MoveDetail,
+                wildbg::web_api::MoveInfo,
+                wildbg::web_api::MoveResponse,
+                wildbg::web_api::Probabilities,
+            )
+        ),
+        tags(
+            (name = "wildbg", description = "Backgammon Engine based on neural networks")
+        )
+    )]
+    struct ApiDoc;
     Router::new()
+        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .route("/cube", get(get_cube))
         .route("/move", get(get_move))
         .with_state(web_api)
@@ -52,6 +75,18 @@ async fn get_cube() -> Result<String, (StatusCode, Json<ErrorMessage>)> {
     ))
 }
 
+#[utoipa::path(
+    get,
+    path = "/move",
+    tag = "endpoints",
+    params(
+        DiceParams,
+        PipParams,
+    ),
+    responses(
+        (status = 200, description = "List of legal moves ordered by match equity. First move is the best one", body = MoveResponse)
+    )
+)]
 async fn get_move<T: Evaluator>(
     Query(dice): Query<DiceParams>,
     Query(pips): Query<PipParams>,

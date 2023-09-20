@@ -2,6 +2,7 @@ use crate::dice::Dice;
 use crate::position::Position;
 use serde::Serialize;
 use std::cmp::max;
+use utoipa::ToSchema;
 
 mod double;
 mod regular;
@@ -12,7 +13,7 @@ pub(crate) struct BgMove {
     details: Vec<MoveDetail>,
 }
 
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, ToSchema)]
 pub struct MoveDetail {
     from: usize,
     to: usize,
