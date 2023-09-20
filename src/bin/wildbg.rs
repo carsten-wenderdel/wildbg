@@ -245,7 +245,7 @@ mod tests {
         // The probabilities need to be adapted when the neural net is changed.
         assert_eq!(
             body,
-            r#"{"moves":[{"play":[{"from":5,"to":4},{"from":4,"to":1}],"probabilities":{"win":0.13095237,"winG":0.001984127,"winBg":0.0009920635,"lose":0.86904764,"loseG":0.001984127,"loseBg":0.0009920635}}]}"#
+            r#"{"moves":[{"play":[{"from":5,"to":4},{"from":4,"to":1}],"probabilities":{"win":0.13095237,"winG":0.001984127,"winBg":0.0009920635,"loseG":0.001984127,"loseBg":0.0009920635}}]}"#
         );
     }
 
@@ -270,7 +270,7 @@ mod tests {
         // The probabilities need to be adapted when the neural net is changed.
         assert_eq!(
             body,
-            r#"{"moves":[{"play":[{"from":5,"to":4},{"from":4,"to":3},{"from":3,"to":2},{"from":2,"to":1}],"probabilities":{"win":0.5882353,"winG":0.11764706,"winBg":0.029411765,"lose":0.41176468,"loseG":0.05882353,"loseBg":0.029411765}},{"play":[{"from":5,"to":4},{"from":5,"to":4},{"from":4,"to":3},{"from":3,"to":2}],"probabilities":{"win":0.13830847,"winG":0.0019900498,"winBg":0.0009950249,"lose":0.86169153,"loseG":0.0009950249,"loseBg":0.0}},{"play":[{"from":5,"to":4},{"from":5,"to":4},{"from":4,"to":3},{"from":4,"to":3}],"probabilities":{"win":0.07676969,"winG":0.001994018,"winBg":0.000997009,"lose":0.9232303,"loseG":0.000997009,"loseBg":0.0}}]}"#
+            r#"{"moves":[{"play":[{"from":5,"to":4},{"from":4,"to":3},{"from":3,"to":2},{"from":2,"to":1}],"probabilities":{"win":0.5882353,"winG":0.11764706,"winBg":0.029411765,"loseG":0.05882353,"loseBg":0.029411765}},{"play":[{"from":5,"to":4},{"from":5,"to":4},{"from":4,"to":3},{"from":3,"to":2}],"probabilities":{"win":0.13830847,"winG":0.0019900498,"winBg":0.0009950249,"loseG":0.0009950249,"loseBg":0.0}},{"play":[{"from":5,"to":4},{"from":5,"to":4},{"from":4,"to":3},{"from":4,"to":3}],"probabilities":{"win":0.07676969,"winG":0.001994018,"winBg":0.000997009,"loseG":0.000997009,"loseBg":0.0}}]}"#
         );
     }
 }

@@ -69,7 +69,9 @@ pub struct MoveInfo {
 // This is similar to evaluator::Probabilities. But while the former serves
 // as a model for calculations, this is more like a view model for the web API.
 // While in evaluator::Probabilities all 6 numbers add up to 1.0, this is different.
-// Here `win` and `lose` add up to 1.0 and winG also includes the chances to win BG.
+// `win` includes the chances to win gammon or BG.
+// `lose` is not given, you can calculate it by through `1 - win`.
+// `winG` includes the chances to win BG and `loseG` includes the chance to lose BG.
 // This way we use the same format as earlier engines like GnuBG have done.
 #[derive(Serialize)]
 #[allow(non_snake_case)]
@@ -77,19 +79,16 @@ pub struct Probabilities {
     pub(crate) win: f32,
     pub(crate) winG: f32,
     pub(crate) winBg: f32,
-    pub(crate) lose: f32,
     pub(crate) loseG: f32,
     pub(crate) loseBg: f32,
 }
 
 impl From<crate::evaluator::Probabilities> for Probabilities {
     fn from(value: crate::evaluator::Probabilities) -> Self {
-        let win = value.win_normal + value.win_gammon + value.win_bg;
         Self {
-            win,
+            win: value.win_normal + value.win_gammon + value.win_bg,
             winG: value.win_gammon + value.win_bg,
             winBg: value.win_bg,
-            lose: (1.0 - win),
             loseG: value.lose_gammon + value.lose_bg,
             loseBg: value.lose_bg,
         }
@@ -188,7 +187,6 @@ mod probabilities_tests {
         assert_eq!(view_probs.win, 0.7);
         assert_eq!(view_probs.winG, 0.38);
         assert_eq!(view_probs.winBg, 0.12);
-        assert_eq!(view_probs.win + view_probs.lose, 1.0);
         assert_eq!(view_probs.loseG, 0.15);
         assert_eq!(view_probs.loseBg, 0.05);
     }
