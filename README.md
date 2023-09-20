@@ -15,9 +15,9 @@ A graphical user interface (GUI) is not part of this project.
 #### Topic 1: Neural nets
 
 The training process consists of three steps, which are repeated in a loop:
-1. Find lots positions for later rollout. Currently, rather random self play is used; later we want to make sure to find all kind of positions, including backgames.
+1. Find lots of positions for a later rollout. Currently, rather random self play is used; later we want to make sure to find all kind of positions, including backgames.
 2. Roll out these positions. Currently, only 1-ply rollouts are possible.
-3. Train neural networks based on the rollout data. Currently, a single net with one hidden layer is supported; later different (and deeper) nets for different game phases are planned.
+3. Train neural networks based on the rollout data. Currently, a single net with several hidden layers is supported; later different nets for different game phases are planned.
 
 Already implemented is:
 * Roll out a certain position 1296 times, multithreaded.
@@ -26,7 +26,7 @@ Already implemented is:
 * Train a single neural net with one hidden layer via PyTorch and save the result as an ONNX file. The net has six outputs for winning/losing 1, 2 or 3 points.
 * Inference of that neural net in Rust via [tract](https://github.com/sonos/tract).
 
-No neural network is committed to this repository.  You can find the training progress and early rather weak networks here: https://github.com/carsten-wenderdel/wildbg-training
+An older, weaker neural network is committed to this repository.  You can find the latest training progress and networks here: https://github.com/carsten-wenderdel/wildbg-training
 
 #### Topic 2: Backgammon logic
 Currently only cubeless equities and moves are implemented. Cubes and cubeful equities are missing.
@@ -34,17 +34,17 @@ Currently only cubeless equities and moves are implemented. Cubes and cubeful eq
 #### Topic 3: HTTP/json API
 Ideation phase.
 
+### Installation of python environment
+
+Make an editable install by targeting the training directory:
+``` pip install -e "training/[dev]"```
+
 ## Contributing
 
 Help is more than welcome! There are some smaller tasks but also bigger ones, see https://github.com/carsten-wenderdel/wildbg/issues.
 Currently, most needed is:
 - Documentation of backgammon metrics / neural net inputs: https://github.com/carsten-wenderdel/wildbg/issues/4
 - Implementation of a bearoff database: https://github.com/carsten-wenderdel/wildbg/issues/1
-
-### Installation of python environment
-
-Make an editable install by targeting the training directory:
-``` pip install -e "training/[dev]"```
 
 ## License
 
