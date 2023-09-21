@@ -11,6 +11,8 @@ fastrand = "2.0.0"
 hyper = "0.14.27"
 rayon = "1.8.0"
 serde = { version = "1.0.188", features = ["derive"] }
+shuttle-axum = "0.27.0"
+shuttle-runtime = "0.27.0"
 tokio = { version = "1.32.0", features = ["full"] }
 tower = "0.4.13"
 tract-onnx = "0.20.18"

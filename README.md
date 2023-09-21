@@ -2,6 +2,19 @@
 
 `wildbg` is a backgammon engine based on neural networks. Currently, it's in a pre-alpha phase.
 
+## Try it out
+
+#### Online
+
+You can access the API and see yourself how `wildbg` would move: https://wildbg.shuttleapp.rs/swagger-ui/
+
+An example for the starting position and rolling 3 and 1: https://wildbg.shuttleapp.rs/move?die1=3&die2=1&p24=2&p19=-5&p17=-3&p13=5&p12=-5&p8=3&p6=5&p1=-2
+
+#### Locally
+
+Install Rust on your machine and then execute `cargo run` or `cargo run --release`.
+A web server will be started which you can access via http://localhost:8080/swagger-ui/
+
 ## Goals
 
 1. Provide source code and documentation to train neural nets from zero to super human strength.
@@ -10,7 +23,7 @@
 
 A graphical user interface (GUI) is not part of this project.
 
-## Current state:
+## Current state
 
 #### Topic 1: Neural nets
 
@@ -32,7 +45,8 @@ An older, weaker neural network is committed to this repository.  You can find t
 Currently only cubeless equities and moves are implemented. Cubes and cubeful equities are missing.
 
 #### Topic 3: HTTP/json API
-Ideation phase.
+
+Getting the best move is already implemented: https://wildbg.shuttleapp.rs/swagger-ui/
 
 ### Installation of python environment
 
