@@ -1,44 +1,29 @@
+use crate::evaluator::Evaluator;
+use crate::web_api::{DiceParams, MoveResponse, PipParams, WebApi};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
-use axum::{routing::get, Json, Router, Server};
-use hyper::Error;
+use axum::{routing::get, Json, Router};
 use serde::Serialize;
-use std::net::{Ipv4Addr, SocketAddr};
 use std::sync::Arc;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
-use wildbg::evaluator::Evaluator;
-use wildbg::onnx::OnnxEvaluator;
-use wildbg::web_api::{DiceParams, MoveResponse, PipParams, WebApi};
 
-/// This file should handle all axum related code and know as little about backgammon as possible.
-#[tokio::main]
-async fn main() -> Result<(), Error> {
-    println!("You can access the server for example via");
-    println!(
-        "http://localhost:8080/move?die1=3&die2=1&p24=2&p19=-5&p17=-3&p13=5&p12=-5&p8=3&p6=5&p1=-2"
-    );
-    println!("http://localhost:8080/swagger-ui");
+// This file should handle all axum/tokio related code and know as little about backgammon as possible.
 
-    let web_api = Arc::new(WebApi::try_default()) as DynWebApi<OnnxEvaluator>;
-    let address = SocketAddr::from((Ipv4Addr::UNSPECIFIED, 8080));
-    Server::bind(&address)
-        .serve(router(web_api).into_make_service())
-        .await
-}
+type DynWebApi<T> = Arc<Option<WebApi<T>>>;
 
-fn router<T: Evaluator + Send + Sync + 'static>(web_api: DynWebApi<T>) -> Router {
+pub fn router<T: Evaluator + Send + Sync + 'static>(web_api: DynWebApi<T>) -> Router {
     #[derive(OpenApi)]
     #[openapi(
         paths(
-            crate::get_move,
+            crate::axum::get_move,
         ),
         components(
             schemas(
-                wildbg::bg_move::MoveDetail,
-                wildbg::web_api::MoveInfo,
-                wildbg::web_api::MoveResponse,
-                wildbg::web_api::Probabilities,
+                crate::bg_move::MoveDetail,
+                crate::web_api::MoveInfo,
+                crate::web_api::MoveResponse,
+                crate::web_api::Probabilities,
             )
         ),
         tags(
@@ -53,10 +38,8 @@ fn router<T: Evaluator + Send + Sync + 'static>(web_api: DynWebApi<T>) -> Router
         .with_state(web_api)
 }
 
-type DynWebApi<T> = Arc<Option<WebApi<T>>>;
-
 #[derive(Serialize)]
-struct ErrorMessage {
+pub struct ErrorMessage {
     message: String,
 }
 
@@ -68,7 +51,7 @@ impl ErrorMessage {
     }
 }
 
-async fn get_cube() -> Result<String, (StatusCode, Json<ErrorMessage>)> {
+pub async fn get_cube() -> Result<String, (StatusCode, Json<ErrorMessage>)> {
     Err((
         StatusCode::NOT_IMPLEMENTED,
         ErrorMessage::json("Will be implemented later on."),
@@ -106,17 +89,19 @@ async fn get_move<T: Evaluator>(
 
 #[cfg(test)]
 mod tests {
-    use crate::{router, DynWebApi};
+    // use crate::{router, DynWebApi};
+    use crate::axum::router;
+    use crate::axum::DynWebApi;
+    use crate::evaluator::{Evaluator, Probabilities};
+    use crate::onnx::OnnxEvaluator;
+    use crate::pos;
+    use crate::position::Position;
+    use crate::web_api::WebApi;
     use axum::http::header::CONTENT_TYPE;
     use hyper::{Body, Request, StatusCode};
     use std::collections::HashMap;
     use std::sync::Arc;
     use tower::ServiceExt; // for `oneshot
-    use wildbg::evaluator::{Evaluator, Probabilities};
-    use wildbg::onnx::OnnxEvaluator;
-    use wildbg::pos;
-    use wildbg::position::Position;
-    use wildbg::web_api::WebApi;
 
     struct EvaluatorFake {}
     /// Because of different floating point implementations on different CPUs we don't want to
@@ -194,7 +179,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_move_no_arguments() {
-        let web_api = Arc::new(WebApi::try_default()) as DynWebApi<OnnxEvaluator>;
+        let web_api = Arc::new(WebApi::try_default());
         let response = router(web_api)
             .oneshot(Request::builder().uri("/move").body(Body::empty()).unwrap())
             .await
@@ -216,7 +201,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_move_illegal_dice() {
-        let web_api = Arc::new(WebApi::try_default()) as DynWebApi<OnnxEvaluator>;
+        let web_api = Arc::new(WebApi::try_default());
         let response = router(web_api)
             .oneshot(
                 Request::builder()
@@ -239,7 +224,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_move_wrong_checkers_on_bar() {
-        let web_api = Arc::new(WebApi::try_default()) as DynWebApi<OnnxEvaluator>;
+        let web_api = Arc::new(WebApi::try_default());
         let response = router(web_api)
             .oneshot(
                 Request::builder()
@@ -277,7 +262,6 @@ mod tests {
         assert_eq!(response.headers()[CONTENT_TYPE], "application/json");
 
         let body = body_string(response).await;
-        // The probabilities need to be adapted when the neural net is changed.
         assert_eq!(
             body,
             r#"{"moves":[{"play":[{"from":5,"to":4},{"from":4,"to":1}],"probabilities":{"win":0.13095237,"winG":0.001984127,"winBg":0.0009920635,"loseG":0.001984127,"loseBg":0.0009920635}}]}"#
@@ -301,8 +285,6 @@ mod tests {
         assert_eq!(response.headers()[CONTENT_TYPE], "application/json");
 
         let body = body_string(response).await;
-        // serde::json
-        // The probabilities need to be adapted when the neural net is changed.
         assert_eq!(
             body,
             r#"{"moves":[{"play":[{"from":5,"to":4},{"from":4,"to":3},{"from":3,"to":2},{"from":2,"to":1}],"probabilities":{"win":0.5882353,"winG":0.11764706,"winBg":0.029411765,"loseG":0.05882353,"loseBg":0.029411765}},{"play":[{"from":5,"to":4},{"from":5,"to":4},{"from":4,"to":3},{"from":3,"to":2}],"probabilities":{"win":0.13830847,"winG":0.0019900498,"winBg":0.0009950249,"loseG":0.0009950249,"loseBg":0.0}},{"play":[{"from":5,"to":4},{"from":5,"to":4},{"from":4,"to":3},{"from":4,"to":3}],"probabilities":{"win":0.07676969,"winG":0.001994018,"winBg":0.000997009,"loseG":0.000997009,"loseBg":0.0}}]}"#

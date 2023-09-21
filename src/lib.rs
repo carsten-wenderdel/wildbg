@@ -1,3 +1,4 @@
+pub mod axum;
 pub mod bg_move;
 pub mod dice;
 pub mod duel;
