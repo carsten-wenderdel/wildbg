@@ -9,10 +9,10 @@ default-run = "wildbg"
 axum = "0.6.20"
 fastrand = "2.0.0"
 hyper = "0.14.27"
-rayon = "1.7.0"
+rayon = "1.8.0"
 serde = { version = "1.0.188", features = ["derive"] }
 tokio = { version = "1.32.0", features = ["full"] }
 tower = "0.4.13"
-tract-onnx = "0.20.7"
+tract-onnx = "0.20.18"
 utoipa = {version = "3.5.0", features = ["axum_extras"]}
 utoipa-swagger-ui = {version = "3.1.5", features = ["axum"]}
