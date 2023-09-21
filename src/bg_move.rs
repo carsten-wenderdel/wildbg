@@ -14,8 +14,15 @@ pub(crate) struct BgMove {
 }
 
 #[derive(Debug, PartialEq, Serialize, ToSchema)]
+/// Single movement of one checker. We always move from bigger pips to smaller pips.
+/// If the same checker is moved more than once, multiple `MoveDetail`s are given.
+/// Therefore: `from > to` and `from - to <= 6`.
 pub struct MoveDetail {
+    /// The bar is represented by `25`.
+    #[schema(minimum = 1, maximum = 25)]
     from: usize,
+    /// bear off is represented by `0`.
+    #[schema(minimum = 0, maximum = 24)]
     to: usize,
 }
 

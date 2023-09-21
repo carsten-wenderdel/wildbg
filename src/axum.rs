@@ -5,7 +5,7 @@ use axum::http::StatusCode;
 use axum::{routing::get, Json, Router};
 use serde::Serialize;
 use std::sync::Arc;
-use utoipa::OpenApi;
+use utoipa::{OpenApi, ToSchema};
 use utoipa_swagger_ui::SwaggerUi;
 
 // This file should handle all axum/tokio related code and know as little about backgammon as possible.
@@ -21,13 +21,14 @@ pub fn router<T: Evaluator + Send + Sync + 'static>(web_api: DynWebApi<T>) -> Ro
         components(
             schemas(
                 crate::bg_move::MoveDetail,
+                crate::axum::ErrorMessage,
                 crate::web_api::MoveInfo,
                 crate::web_api::MoveResponse,
                 crate::web_api::Probabilities,
             )
         ),
         tags(
-            (name = "wildbg", description = "Backgammon Engine based on neural networks")
+            (description = "Backgammon engine based on neural networks. Source code from [https://github.com/carsten-wenderdel/wildbg](https://github.com/carsten-wenderdel/wildbg), neural networks from [https://github.com/carsten-wenderdel/wildbg-training](https://github.com/carsten-wenderdel/wildbg-training).")
         )
     )]
     struct ApiDoc;
@@ -38,8 +39,10 @@ pub fn router<T: Evaluator + Send + Sync + 'static>(web_api: DynWebApi<T>) -> Ro
         .with_state(web_api)
 }
 
-#[derive(Serialize)]
+/// Returned as body along a 4xx or 5xx HTTP status code.
+#[derive(Serialize, ToSchema)]
 pub struct ErrorMessage {
+    #[schema(example = "Failed to deserialize query string: missing field `die1`")]
     message: String,
 }
 
@@ -58,6 +61,17 @@ pub async fn get_cube() -> Result<String, (StatusCode, Json<ErrorMessage>)> {
     ))
 }
 
+/// Evaluate moves for position/dice.
+/// Returns a list of legal moves for a certain position and pair of dice, ordered by match equity.
+///
+/// Parameters are a pair of dice and a position.
+/// For the position each pip with checkers on it has to be specified via the parameters `p0` through `p25`; pips without checkers can be skipped.
+/// We always move from pip 24 to pip 1, so `p1` to `p6` represent the player's (`x`) home board.
+///
+/// Positive values represent checkers of `x` (you), negative values represent checkers of `o`, the opponent.
+/// Checkers already born off don't have to be given, that information is derived from the other arguments.
+///
+/// As example in the API documentation the starting position with dice 3 and 1 is given.
 #[utoipa::path(
     get,
     path = "/move",
@@ -67,7 +81,15 @@ pub async fn get_cube() -> Result<String, (StatusCode, Json<ErrorMessage>)> {
         PipParams,
     ),
     responses(
-        (status = 200, description = "List of legal moves ordered by match equity. First move is the best one", body = MoveResponse)
+        (status = 200, description = "Successful request. Response includes the best move and other data.", body = MoveResponse,
+            example = json!({"moves": [{"play": [{"from": 5, "to": 2}, {"from": 2, "to": 0}], "probabilities": {"win": 0.14432532, "winG": 0.0000012345678, "winBg": 8.311909e-9, "loseG": 0.26282439, "loseBg": 0.024352359}},{"play": [{"from": 5, "to": 2}, {"from": 5, "to": 3}], "probabilities": {"win": 0.74432532, "winG": 0.223456782, "winBg": 0.12345678, "loseG": 0.012345678, "loseBg": 5.311909e-7}}]})
+        ),
+        (status = 400, description = "Client error, parameters don't represent legal position/dice", body = ErrorMessage,
+            example = json!({"message": "Player x has more than 15 checkers on the board."})
+        ),
+        (status = 500, description = "Server error", body = ErrorMessage,
+            example = json!({"message": "Neural net could not be constructed."})
+        )
     )
 )]
 async fn get_move<T: Evaluator>(

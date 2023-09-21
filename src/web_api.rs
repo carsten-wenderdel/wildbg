@@ -57,12 +57,23 @@ impl<T: Evaluator> WebApi<T> {
 }
 
 #[derive(Serialize, ToSchema)]
+/// The whole body of the HTTP response. Contains the list of all legal moves.
 pub struct MoveResponse {
+    /// The array is ordered by match equity. First move is the best one.
+    /// If moving checkers is not possible, the array contains exactly one move
+    /// and the `play` array is empty.
+    #[schema(minimum = 0)]
     moves: Vec<MoveInfo>,
 }
 
 #[derive(Serialize, ToSchema)]
+/// This represents one complete move.
 pub struct MoveInfo {
+    /// Contains 0 to 4 elements for moving a single checker.
+    /// If no move is possible because everything is blocked, the array is empty.
+    /// If the dice are different, the array contains up to 2 elements.
+    /// If the dice are identical (double roll), the array contains up to 4 elements.
+    #[schema(minimum = 0, maximum = 4)]
     play: Vec<MoveDetail>,
     probabilities: Probabilities,
 }
@@ -70,17 +81,27 @@ pub struct MoveInfo {
 // This is similar to evaluator::Probabilities. But while the former serves
 // as a model for calculations, this is more like a view model for the web API.
 // While in evaluator::Probabilities all 6 numbers add up to 1.0, this is different.
-// `win` includes the chances to win gammon or BG.
-// `lose` is not given, you can calculate it by through `1 - win`.
-// `winG` includes the chances to win BG and `loseG` includes the chance to lose BG.
-// This way we use the same format as earlier engines like GnuBG have done.
+/// `win` includes the chances to win gammon or BG.
+/// `winG` includes the chances to win BG and `loseG` includes the chance to lose BG.
+/// This way we use the same format as earlier engines like GnuBG have done.
+/// `lose` is not given, you can calculate it through `1 - win`.
 #[derive(Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct Probabilities {
+    /// Probability to win normal, gammon or backgammon
+    #[schema(minimum = 0, maximum = 1)]
     pub(crate) win: f32,
+    /// Probability to win gammon or backgammon
+    #[schema(minimum = 0, maximum = 1)]
     pub(crate) winG: f32,
+    /// Probability to win backgammon
+    #[schema(minimum = 0, maximum = 1)]
     pub(crate) winBg: f32,
+    /// Probability to lose gammon or backgammon
+    #[schema(minimum = 0, maximum = 1)]
     pub(crate) loseG: f32,
+    /// Probability to lose backgammon
+    #[schema(minimum = 0, maximum = 1)]
     pub(crate) loseBg: f32,
 }
 
@@ -98,39 +119,67 @@ impl From<crate::evaluator::Probabilities> for Probabilities {
 
 #[derive(Debug, Deserialize, IntoParams)]
 pub struct DiceParams {
+    #[param(minimum = 1, maximum = 6, example = 3)]
     die1: usize,
+    #[param(minimum = 1, maximum = 6, example = 1)]
     die2: usize,
 }
 
 #[derive(Debug, Deserialize, IntoParams)]
 pub struct PipParams {
-    /// Bar for player `o`.
+    /// Bar for the opponent `o`.
+    #[param(minimum = -15, maximum = 0)]
     p0: Option<i8>,
+    #[param(minimum = -15, maximum = 15, example = -2)]
     p1: Option<i8>,
+    #[param(minimum = -15, maximum = 15)]
     p2: Option<i8>,
+    #[param(minimum = -15, maximum = 15)]
     p3: Option<i8>,
+    #[param(minimum = -15, maximum = 15)]
     p4: Option<i8>,
+    #[param(minimum = -15, maximum = 15)]
     p5: Option<i8>,
+    #[param(minimum = -15, maximum = 15, example = 5)]
     p6: Option<i8>,
+    #[param(minimum = -15, maximum = 15)]
     p7: Option<i8>,
+    #[param(minimum = -15, maximum = 15, example = 3)]
     p8: Option<i8>,
+    #[param(minimum = -15, maximum = 15)]
     p9: Option<i8>,
+    #[param(minimum = -15, maximum = 15)]
     p10: Option<i8>,
+    #[param(minimum = -15, maximum = 15)]
     p11: Option<i8>,
+    #[param(minimum = -15, maximum = 15, example = -5)]
     p12: Option<i8>,
+    #[param(minimum = -15, maximum = 15, example = 5)]
     p13: Option<i8>,
+    #[param(minimum = -15, maximum = 15)]
     p14: Option<i8>,
+    #[param(minimum = -15, maximum = 15)]
     p15: Option<i8>,
+    #[param(minimum = -15, maximum = 15)]
     p16: Option<i8>,
+    #[param(minimum = -15, maximum = 15, example = -3)]
     p17: Option<i8>,
+    #[param(minimum = -15, maximum = 15)]
     p18: Option<i8>,
+    #[param(minimum = -15, maximum = 15, example = -5)]
     p19: Option<i8>,
+    #[param(minimum = -15, maximum = 15)]
     p20: Option<i8>,
+    #[param(minimum = -15, maximum = 15)]
     p21: Option<i8>,
+    #[param(minimum = -15, maximum = 15)]
     p22: Option<i8>,
+    #[param(minimum = -15, maximum = 15)]
     p23: Option<i8>,
+    #[param(minimum = -15, maximum = 15, example = 2)]
     p24: Option<i8>,
-    /// Bar for player `x`.
+    /// Bar for your player `x`.
+    #[param(minimum = 0, maximum = 15)]
     p25: Option<i8>,
 }
 
