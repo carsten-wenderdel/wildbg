@@ -1,5 +1,6 @@
 pub mod axum;
 pub mod bg_move;
+pub mod cube;
 pub mod dice;
 pub mod duel;
 pub mod evaluator;

@@ -1,4 +1,5 @@
 use crate::bg_move::{BgMove, MoveDetail};
+use crate::cube::CubeInfo;
 use crate::dice::Dice;
 use crate::evaluator::Evaluator;
 use crate::onnx::OnnxEvaluator;
@@ -20,6 +21,22 @@ impl WebApi<OnnxEvaluator> {
 impl<T: Evaluator> WebApi<T> {
     pub fn new(evaluator: T) -> Self {
         Self { evaluator }
+    }
+
+    pub fn get_eval(&self, pip_params: PipParams) -> Result<EvalResponse, (StatusCode, String)> {
+        let position = Position::try_from(pip_params);
+        match position {
+            Err(error) => Err((StatusCode::BAD_REQUEST, error.to_string())),
+            Ok(position) => {
+                let evaluation = self.evaluator.eval(&position);
+                let cube = CubeInfo::from(&evaluation);
+                let probabilities = Probabilities::from(evaluation);
+                Ok(EvalResponse {
+                    cube,
+                    probabilities,
+                })
+            }
+        }
     }
 
     pub fn get_move(
@@ -54,6 +71,14 @@ impl<T: Evaluator> WebApi<T> {
             },
         }
     }
+}
+
+#[derive(Serialize, ToSchema)]
+/// The whole body of the HTTP response.
+/// Contains the probabilities for this position and cube decisions.
+pub struct EvalResponse {
+    cube: CubeInfo,
+    probabilities: Probabilities,
 }
 
 #[derive(Serialize, ToSchema)]

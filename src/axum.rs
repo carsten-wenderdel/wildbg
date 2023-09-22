@@ -1,5 +1,5 @@
 use crate::evaluator::Evaluator;
-use crate::web_api::{DiceParams, MoveResponse, PipParams, WebApi};
+use crate::web_api::{DiceParams, EvalResponse, MoveResponse, PipParams, WebApi};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::{routing::get, Json, Router};
@@ -16,12 +16,15 @@ pub fn router<T: Evaluator + Send + Sync + 'static>(web_api: DynWebApi<T>) -> Ro
     #[derive(OpenApi)]
     #[openapi(
         paths(
+            crate::axum::get_eval,
             crate::axum::get_move,
         ),
         components(
             schemas(
                 crate::bg_move::MoveDetail,
                 crate::axum::ErrorMessage,
+                crate::cube::CubeInfo,
+                crate::web_api::EvalResponse,
                 crate::web_api::MoveInfo,
                 crate::web_api::MoveResponse,
                 crate::web_api::Probabilities,
@@ -34,7 +37,7 @@ pub fn router<T: Evaluator + Send + Sync + 'static>(web_api: DynWebApi<T>) -> Ro
     struct ApiDoc;
     Router::new()
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
-        .route("/cube", get(get_cube))
+        .route("/eval", get(get_eval))
         .route("/move", get(get_move))
         .with_state(web_api)
 }
@@ -42,7 +45,7 @@ pub fn router<T: Evaluator + Send + Sync + 'static>(web_api: DynWebApi<T>) -> Ro
 /// Returned as body along a 4xx or 5xx HTTP status code.
 #[derive(Serialize, ToSchema)]
 pub struct ErrorMessage {
-    #[schema(example = "Failed to deserialize query string: missing field `die1`")]
+    #[schema(example = "Player x has more than 15 checkers on the board.")]
     message: String,
 }
 
@@ -54,14 +57,64 @@ impl ErrorMessage {
     }
 }
 
-pub async fn get_cube() -> Result<String, (StatusCode, Json<ErrorMessage>)> {
-    Err((
-        StatusCode::NOT_IMPLEMENTED,
-        ErrorMessage::json("Will be implemented later on."),
-    ))
+/// Probabilities and cube decision for a position.
+///
+/// Parameters are a pair of dice and a position.
+/// For the position each pip with checkers on it has to be specified via the parameters `p0` through `p25`; pips without checkers can be skipped.
+/// We always move from pip 24 to pip 1, so `p1` to `p6` represent the player's (`x`) home board.
+///
+/// Positive values represent checkers of `x` (you), negative values represent checkers of `o`, the opponent.
+/// Checkers already born off don't have to be given, that information is derived from the other arguments.
+///
+/// As example in the API documentation the starting position is given.
+#[utoipa::path(
+    get,
+    path = "/eval",
+    tag = "endpoints",
+    params(
+        PipParams,
+    ),
+    responses(
+        (status = 200, description = "Successful request. Response includes game outcome probabilities and cube decisions.", body = EvalResponse,
+            example = json!({
+                "cube": {
+                    "double": false,
+                    "accept": true
+                },
+                "probabilities": {
+                    "win": 0.62668705,
+                    "winG": 0.2308145,
+                    "winBg": 0.026135292,
+                    "loseG": 0.11035034,
+                    "loseBg": 0.015331022
+                }
+            })
+        ),
+        (status = 400, description = "Client error, parameters don't represent legal position", body = ErrorMessage,
+            example = json!({"message": "Player x has more than 15 checkers on the board."})
+        ),
+        (status = 500, description = "Server error", body = ErrorMessage,
+            example = json!({"message": "Neural net could not be constructed."})
+        )
+    )
+)]
+async fn get_eval<T: Evaluator>(
+    Query(pips): Query<PipParams>,
+    State(web_api): State<DynWebApi<T>>,
+) -> Result<Json<EvalResponse>, (StatusCode, Json<ErrorMessage>)> {
+    match web_api.as_ref() {
+        None => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            ErrorMessage::json("Neural net could not be constructed."),
+        )),
+        Some(web_api) => match web_api.get_eval(pips) {
+            Err((status_code, message)) => Err((status_code, ErrorMessage::json(message.as_str()))),
+            Ok(eval_response) => Ok(Json(eval_response)),
+        },
+    }
 }
 
-/// Evaluate moves for position/dice.
+/// Moves for position/dice.
 /// Returns a list of legal moves for a certain position and pair of dice, ordered by match equity.
 ///
 /// Parameters are a pair of dice and a position.
@@ -162,18 +215,49 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn get_cube_error() {
-        let web_api = Arc::new(None) as DynWebApi<OnnxEvaluator>;
+    async fn get_eval_wrong_checkers_on_bar() {
+        let web_api = Arc::new(WebApi::try_default());
         let response = router(web_api)
-            .oneshot(Request::builder().uri("/cube").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/eval?p0=1&p4=4&p5=-5")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::NOT_IMPLEMENTED);
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
         assert_eq!(response.headers()[CONTENT_TYPE], "application/json");
 
         let body = body_string(response).await;
-        assert_eq!(body, "{\"message\":\"Will be implemented later on.\"}");
+        assert_eq!(
+            body,
+            r#"{"message":"Index 0 is the bar for player o, number of checkers needs to be negative."}"#
+        );
+    }
+
+    #[tokio::test]
+    async fn get_eval_success() {
+        let web_api = Arc::new(Some(WebApi::new(EvaluatorFake {})));
+        let response = router(web_api)
+            .oneshot(
+                Request::builder()
+                    .uri("/eval?p1=1&p20=-1&p24=-1") // this position was specified in EvaluatorFake
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.headers()[CONTENT_TYPE], "application/json");
+
+        let body = body_string(response).await;
+        assert_eq!(
+            body,
+            r#"{"cube":{"double":false,"accept":true},"probabilities":{"win":0.4117647,"winG":0.05882353,"winBg":0.029411765,"loseG":0.11764706,"loseBg":0.029411765}}"#
+        );
     }
 
     #[tokio::test]
@@ -250,7 +334,7 @@ mod tests {
         let response = router(web_api)
             .oneshot(
                 Request::builder()
-                    .uri("/move?die1=2&die2=0&p4=4&p5=-5&p25=-2")
+                    .uri("/move?die1=2&die2=1&p4=4&p5=-5&p25=-2")
                     .body(Body::empty())
                     .unwrap(),
             )
