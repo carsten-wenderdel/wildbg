@@ -167,10 +167,11 @@ mod tests {
     // use crate::{router, DynWebApi};
     use crate::axum::router;
     use crate::axum::DynWebApi;
-    use crate::evaluator::{Evaluator, Probabilities};
+    use crate::evaluator::Evaluator;
     use crate::onnx::OnnxEvaluator;
     use crate::pos;
     use crate::position::Position;
+    use crate::probabilities::Probabilities;
     use crate::web_api::WebApi;
     use axum::http::header::CONTENT_TYPE;
     use hyper::{Body, Request, StatusCode};

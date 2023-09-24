@@ -1,6 +1,7 @@
-use crate::evaluator::{Evaluator, Probabilities};
+use crate::evaluator::Evaluator;
 use crate::inputs::Inputs;
 use crate::position::Position;
+use crate::probabilities::Probabilities;
 use tract_onnx::prelude::*;
 
 pub struct OnnxEvaluator {

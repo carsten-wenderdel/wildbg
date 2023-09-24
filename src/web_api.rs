@@ -130,8 +130,8 @@ pub struct Probabilities {
     pub(crate) loseBg: f32,
 }
 
-impl From<crate::evaluator::Probabilities> for Probabilities {
-    fn from(value: crate::evaluator::Probabilities) -> Self {
+impl From<crate::probabilities::Probabilities> for Probabilities {
+    fn from(value: crate::probabilities::Probabilities) -> Self {
         Self {
             win: value.win_normal + value.win_gammon + value.win_bg,
             winG: value.win_gammon + value.win_bg,
@@ -249,7 +249,7 @@ impl TryFrom<PipParams> for Position {
 mod probabilities_tests {
     #[test]
     fn from() {
-        let model_probs = crate::evaluator::Probabilities {
+        let model_probs = crate::probabilities::Probabilities {
             win_normal: 0.32,
             win_gammon: 0.26,
             win_bg: 0.12,

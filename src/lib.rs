@@ -8,5 +8,6 @@ pub mod inputs;
 pub mod onnx;
 pub mod position;
 pub mod position_finder;
+pub mod probabilities;
 pub mod rollout;
 pub mod web_api;

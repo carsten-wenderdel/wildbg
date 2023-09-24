@@ -1,7 +1,8 @@
 use crate::dice::{Dice, DiceGen, FastrandDice, ALL_1296};
-use crate::evaluator::{Evaluator, Probabilities, RandomEvaluator};
+use crate::evaluator::{Evaluator, RandomEvaluator};
 use crate::position::GameState::{GameOver, Ongoing};
 use crate::position::{GameResult, Position};
+use crate::probabilities::Probabilities;
 use rayon::prelude::*;
 
 pub struct RolloutEvaluator<T: Evaluator> {

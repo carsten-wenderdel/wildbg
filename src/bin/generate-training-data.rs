@@ -1,11 +1,12 @@
 use std::fs::File;
 use std::io::{stdout, Write};
 use std::time::Instant;
-use wildbg::evaluator::{Evaluator, Probabilities, RandomEvaluator};
+use wildbg::evaluator::{Evaluator, RandomEvaluator};
 use wildbg::inputs::Inputs;
 use wildbg::onnx::OnnxEvaluator;
 use wildbg::position::Position;
 use wildbg::position_finder::PositionFinder;
+use wildbg::probabilities::Probabilities;
 use wildbg::rollout::RolloutEvaluator;
 
 const AMOUNT: usize = 100;

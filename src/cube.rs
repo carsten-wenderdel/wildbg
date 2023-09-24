@@ -1,4 +1,4 @@
-use crate::evaluator::Probabilities;
+use crate::probabilities::Probabilities;
 use serde::Serialize;
 use utoipa::ToSchema;
 
