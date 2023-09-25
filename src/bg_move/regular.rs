@@ -9,18 +9,7 @@ impl BgMove {
             [None, None] => Vec::new(),
             [None, Some(_)] => panic!("BgMove: If index 0 is None, index 1 must also be None."),
             [Some(from_pip), None] => {
-                // Let's see whether one checker as only moved once:
-                for die in [dice.small, dice.big] {
-                    if let Some(position) = old.try_move_single_checker(from_pip, die) {
-                        if position == *new {
-                            let to = from_pip.saturating_sub(die);
-                            return BgMove {
-                                details: vec![MoveDetail { from: from_pip, to }],
-                            };
-                        }
-                    }
-                }
-                // One checker was moved twice. Where was the stopover?
+                // Let's assume ne checker was moved twice. Where was the stopover?
                 for (die1, die2) in [(dice.small, dice.big), (dice.big, dice.small)] {
                     if let Some(position) = old.can_move_both(from_pip, die1, from_pip - die1, die2)
                     {
@@ -38,6 +27,17 @@ impl BgMove {
                                         to,
                                     },
                                 ],
+                            };
+                        }
+                    }
+                }
+                // We couldn't find one checker being moved twice. So it must have been a checker only moved once.
+                for die in [dice.small, dice.big] {
+                    if let Some(position) = old.try_move_single_checker(from_pip, die) {
+                        if position == *new {
+                            let to = from_pip.saturating_sub(die);
+                            return BgMove {
+                                details: vec![MoveDetail { from: from_pip, to }],
                             };
                         }
                     }
@@ -188,6 +188,20 @@ mod tests {
         assert_eq!(
             bg_move.details,
             vec![MoveDetail { from: 4, to: 0 }, MoveDetail { from: 3, to: 0 }]
+        );
+    }
+
+    #[test]
+    fn two_partial_moves_look_like_one_bearoff() {
+        // Given
+        let old = pos!(x 4:1, 2:1; o 24:2);
+        let new = pos!(x 2:1; o 24:2);
+        // When
+        let bg_move = BgMove::new_regular(&old, &new, &RegularDice::new(4, 2));
+        // then
+        assert_eq!(
+            bg_move.details,
+            vec![MoveDetail { from: 4, to: 2 }, MoveDetail { from: 2, to: 0 }]
         );
     }
 }
