@@ -1,6 +1,6 @@
+use coach::duel::Duel;
+use engine::onnx::OnnxEvaluator;
 use std::io::{stdout, Write};
-use wildbg::duel::Duel;
-use wildbg::onnx::OnnxEvaluator;
 
 fn main() {
     let evaluator1 = OnnxEvaluator::from_file_path("neural-nets/wildbg.onnx").unwrap();

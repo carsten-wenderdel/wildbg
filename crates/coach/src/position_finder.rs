@@ -1,7 +1,7 @@
-use crate::dice::{DiceGen, FastrandDice};
-use crate::evaluator::Evaluator;
-use crate::position::GameState::Ongoing;
-use crate::position::{Position, STARTING};
+use engine::dice::{DiceGen, FastrandDice};
+use engine::evaluator::Evaluator;
+use engine::position::GameState::Ongoing;
+use engine::position::{Position, STARTING};
 use std::collections::HashSet;
 
 /// Finds random positions for later rollout.

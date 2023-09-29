@@ -1,5 +1,5 @@
-use crate::dice::Dice;
-use crate::position::Position;
+use engine::dice::Dice;
+use engine::position::Position;
 use serde::Serialize;
 use std::cmp::max;
 use utoipa::ToSchema;
@@ -9,7 +9,7 @@ mod regular;
 
 /// `BgMove` is not used during rollouts or evaluation but only when returning moves via an API
 /// This is why a new `BgMove` is always calculated based on a `old` and a resulting `new` position.
-pub(crate) struct BgMove {
+pub struct BgMove {
     details: Vec<MoveDetail>,
 }
 
@@ -28,11 +28,11 @@ pub struct MoveDetail {
 
 impl BgMove {
     #[inline(always)]
-    pub(crate) fn into_details(self) -> Vec<MoveDetail> {
+    pub fn into_details(self) -> Vec<MoveDetail> {
         self.details
     }
 
-    pub(crate) fn new(old: &Position, new: &Position, dice: &Dice) -> BgMove {
+    pub fn new(old: &Position, new: &Position, dice: &Dice) -> BgMove {
         match dice {
             Dice::Regular(dice) => Self::new_regular(old, new, dice),
             Dice::Double(die) => Self::new_double(old, new, *die),
@@ -62,9 +62,9 @@ impl BgMove {
 #[cfg(test)]
 mod tests {
     use crate::bg_move::{BgMove, MoveDetail};
-    use crate::dice::RegularDice;
-    use crate::pos;
-    use crate::position::Position;
+    use engine::dice::RegularDice;
+    use engine::pos;
+    use engine::position::Position;
     use std::collections::HashMap;
 
     #[test]
@@ -84,7 +84,7 @@ mod tests {
         let old = pos!(x 20:2; o 12:2);
         let new = pos!(x 18:1, 15:1; o 12:2);
         // When
-        let bg_move = BgMove::new_regular(&old, &new, &RegularDice { big: 5, small: 2 });
+        let bg_move = BgMove::new_regular(&old, &new, &RegularDice::new(5, 2));
         // Then
         assert_eq!(
             bg_move.details,

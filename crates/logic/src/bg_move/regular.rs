@@ -1,6 +1,6 @@
 use crate::bg_move::{BgMove, MoveDetail};
-use crate::dice::RegularDice;
-use crate::position::Position;
+use engine::dice::RegularDice;
+use engine::position::Position;
 
 impl BgMove {
     pub(super) fn new_regular(old: &Position, new: &Position, dice: &RegularDice) -> BgMove {
@@ -9,9 +9,10 @@ impl BgMove {
             [None, None] => Vec::new(),
             [None, Some(_)] => panic!("BgMove: If index 0 is None, index 1 must also be None."),
             [Some(from_pip), None] => {
-                // Let's assume ne checker was moved twice. Where was the stopover?
-                for (die1, die2) in [(dice.small, dice.big), (dice.big, dice.small)] {
-                    if let Some(position) = old.can_move_both(from_pip, die1, from_pip - die1, die2)
+                // Let's assume one checker was moved twice. Where was the stopover?
+                for (die1, die2) in [(dice.small(), dice.big()), (dice.big(), dice.small())] {
+                    if let Some(position) =
+                        can_move_both(old, from_pip, die1, from_pip - die1, die2)
                     {
                         if position == *new {
                             // In case of bear off, we want 0, not negative numbers
@@ -32,7 +33,7 @@ impl BgMove {
                     }
                 }
                 // We couldn't find one checker being moved twice. So it must have been a checker only moved once.
-                for die in [dice.small, dice.big] {
+                for die in [dice.small(), dice.big()] {
                     if let Some(position) = old.try_move_single_checker(from_pip, die) {
                         if position == *new {
                             let to = from_pip.saturating_sub(die);
@@ -48,15 +49,15 @@ impl BgMove {
                 // Two different checkers were moved. But how exactly?
                 // There are four different combinations, let's try them out:
                 let combinations: [(usize, usize, usize, usize); 4] = [
-                    (from_pip_1, dice.big, from_pip_2, dice.small),
-                    (from_pip_1, dice.small, from_pip_2, dice.big),
-                    (from_pip_2, dice.big, from_pip_1, dice.small),
-                    (from_pip_2, dice.small, from_pip_1, dice.big),
+                    (from_pip_1, dice.big(), from_pip_2, dice.small()),
+                    (from_pip_1, dice.small(), from_pip_2, dice.big()),
+                    (from_pip_2, dice.big(), from_pip_1, dice.small()),
+                    (from_pip_2, dice.small(), from_pip_1, dice.big()),
                 ];
                 let (from1, die1, from2, die2) = combinations
                     .into_iter()
                     .find(|(from1, die1, from2, die2)| {
-                        old.can_move_both(*from1, *die1, *from2, *die2) == Some(new.clone())
+                        can_move_both(old, *from1, *die1, *from2, *die2) == Some(new.clone())
                     })
                     .expect("some move combination should work");
                 let to1 = from1.saturating_sub(die1);
@@ -79,26 +80,25 @@ impl BgMove {
 
 /// Checks whether it's legal to move from `from1` with `die1` and after that from `from2`
 /// with `die2`. Returns the resulting position if legal.
-impl Position {
-    fn can_move_both(
-        &self,
-        from1: usize,
-        die1: usize,
-        from2: usize,
-        die2: usize,
-    ) -> Option<Position> {
-        debug_assert!(die1 != die2);
-        self.try_move_single_checker(from1, die1)
-            .and_then(|p| p.try_move_single_checker(from2, die2))
-    }
+pub fn can_move_both(
+    position: &Position,
+    from1: usize,
+    die1: usize,
+    from2: usize,
+    die2: usize,
+) -> Option<Position> {
+    debug_assert!(die1 != die2);
+    position
+        .try_move_single_checker(from1, die1)
+        .and_then(|p| p.try_move_single_checker(from2, die2))
 }
 
 #[cfg(test)]
 mod tests {
     use crate::bg_move::{BgMove, MoveDetail};
-    use crate::dice::RegularDice;
-    use crate::pos;
-    use crate::position::{Position, O_BAR, X_BAR};
+    use engine::dice::RegularDice;
+    use engine::pos;
+    use engine::position::{Position, O_BAR, X_BAR};
     use std::collections::HashMap;
 
     #[test]

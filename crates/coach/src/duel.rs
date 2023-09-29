@@ -1,8 +1,8 @@
-use crate::dice::{DiceGen, FastrandDice};
-use crate::evaluator::Evaluator;
-use crate::position::GameState::{GameOver, Ongoing};
-use crate::position::STARTING;
-use crate::probabilities::Probabilities;
+use engine::dice::{DiceGen, FastrandDice};
+use engine::evaluator::Evaluator;
+use engine::position::GameState::{GameOver, Ongoing};
+use engine::position::STARTING;
+use engine::probabilities::Probabilities;
 
 pub struct Duel<T: Evaluator, U: Evaluator> {
     evaluator1: T,

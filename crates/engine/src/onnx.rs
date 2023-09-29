@@ -32,9 +32,18 @@ impl Evaluator for OnnxEvaluator {
     }
 }
 
+const NETWORK_FILE_PATH: &str = "neural-nets/wildbg.onnx";
+
 impl OnnxEvaluator {
     pub fn with_default_model() -> Option<Self> {
-        OnnxEvaluator::from_file_path("neural-nets/wildbg.onnx")
+        OnnxEvaluator::from_file_path(NETWORK_FILE_PATH)
+    }
+
+    #[cfg(test)]
+    fn with_default_model_for_tests() -> Self {
+        // Tests are executed from a different path than binary crates - so we need to slightly change the folder for them.
+        OnnxEvaluator::from_file_path(&("../../".to_owned() + NETWORK_FILE_PATH))
+            .expect("onnx file should exist at that path.")
     }
 
     pub fn from_file_path(file_path: &str) -> Option<OnnxEvaluator> {
@@ -68,7 +77,7 @@ mod tests {
 
     #[test]
     fn eval_certain_win_normal() {
-        let onnx = OnnxEvaluator::with_default_model().unwrap();
+        let onnx = OnnxEvaluator::with_default_model_for_tests();
         let position = pos![x 1:1; o 24:1];
 
         let probabilities = onnx.eval(&position);
@@ -78,7 +87,7 @@ mod tests {
 
     #[test]
     fn eval_certain_win_gammon() {
-        let onnx = OnnxEvaluator::with_default_model().unwrap();
+        let onnx = OnnxEvaluator::with_default_model_for_tests();
         let position = pos![x 1:1; o 18:15];
 
         let probabilities = onnx.eval(&position);
@@ -88,7 +97,7 @@ mod tests {
 
     #[test]
     fn eval_certain_win_bg() {
-        let onnx = OnnxEvaluator::with_default_model().unwrap();
+        let onnx = OnnxEvaluator::with_default_model_for_tests();
         let position = pos![x 1:1; o 6:15];
 
         let probabilities = onnx.eval(&position);
@@ -98,7 +107,7 @@ mod tests {
 
     #[test]
     fn eval_certain_lose_normal() {
-        let onnx = OnnxEvaluator::with_default_model().unwrap();
+        let onnx = OnnxEvaluator::with_default_model_for_tests();
         let position = pos![x 1:6; o 24:1];
 
         let probabilities = onnx.eval(&position);
@@ -108,7 +117,7 @@ mod tests {
 
     #[test]
     fn eval_certain_lose_gammon() {
-        let onnx = OnnxEvaluator::with_default_model().unwrap();
+        let onnx = OnnxEvaluator::with_default_model_for_tests();
         let position = pos![x 7:15; o 24:1];
 
         let probabilities = onnx.eval(&position);
@@ -118,7 +127,7 @@ mod tests {
 
     #[test]
     fn eval_certain_lose_bg() {
-        let onnx = OnnxEvaluator::with_default_model().unwrap();
+        let onnx = OnnxEvaluator::with_default_model_for_tests();
         let position = pos![x 19:15; o 24:1];
 
         let probabilities = onnx.eval(&position);

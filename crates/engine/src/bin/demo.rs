@@ -1,10 +1,10 @@
+use engine::dice::Dice;
+use engine::evaluator::Evaluator;
+use engine::onnx::OnnxEvaluator;
+use engine::pos;
+use engine::position::Position;
+use engine::position::STARTING;
 use std::collections::HashMap;
-use wildbg::dice::Dice;
-use wildbg::evaluator::Evaluator;
-use wildbg::onnx::OnnxEvaluator;
-use wildbg::pos;
-use wildbg::position::Position;
-use wildbg::position::STARTING;
 
 fn main() {
     let onnx = OnnxEvaluator::with_default_model().unwrap();

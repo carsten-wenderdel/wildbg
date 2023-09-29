@@ -1,5 +1,5 @@
 use crate::bg_move::{BgMove, MoveDetail};
-use crate::position::Position;
+use engine::position::Position;
 
 impl BgMove {
     pub(super) fn new_double(old: &Position, new: &Position, die: usize) -> BgMove {
@@ -23,8 +23,8 @@ impl BgMove {
 #[cfg(test)]
 mod tests {
     use crate::bg_move::{BgMove, MoveDetail};
-    use crate::pos;
-    use crate::position::Position;
+    use engine::pos;
+    use engine::position::Position;
     use std::collections::HashMap;
 
     #[test]

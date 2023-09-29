@@ -1,8 +1,8 @@
-use crate::evaluator::Evaluator;
 use crate::web_api::{DiceParams, EvalResponse, MoveResponse, PipParams, WebApi};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::{routing::get, Json, Router};
+use engine::evaluator::Evaluator;
 use serde::Serialize;
 use std::sync::Arc;
 use utoipa::{OpenApi, ToSchema};
@@ -15,23 +15,19 @@ type DynWebApi<T> = Arc<Option<WebApi<T>>>;
 pub fn router<T: Evaluator + Send + Sync + 'static>(web_api: DynWebApi<T>) -> Router {
     #[derive(OpenApi)]
     #[openapi(
-        paths(
-            crate::axum::get_eval,
-            crate::axum::get_move,
-        ),
-        components(
-            schemas(
-                crate::bg_move::MoveDetail,
-                crate::axum::ErrorMessage,
-                crate::cube::CubeInfo,
-                crate::web_api::EvalResponse,
-                crate::web_api::MoveInfo,
-                crate::web_api::MoveResponse,
-                crate::web_api::Probabilities,
-            )
-        ),
-        tags(
-            (description = "Backgammon engine based on neural networks. Source code from [https://github.com/carsten-wenderdel/wildbg](https://github.com/carsten-wenderdel/wildbg), neural networks from [https://github.com/carsten-wenderdel/wildbg-training](https://github.com/carsten-wenderdel/wildbg-training).")
+        paths(crate::axum::get_eval, crate::axum::get_move,),
+        components(schemas(
+            logic::bg_move::MoveDetail,
+            crate::axum::ErrorMessage,
+            logic::cube::CubeInfo,
+            crate::web_api::EvalResponse,
+            crate::web_api::MoveInfo,
+            crate::web_api::MoveResponse,
+            crate::web_api::Probabilities,
+        )),
+        info(
+            title = "wildbg",
+            description = "Backgammon engine based on neural networks. Source code from [https://github.com/carsten-wenderdel/wildbg](https://github.com/carsten-wenderdel/wildbg)",
         )
     )]
     struct ApiDoc;
@@ -167,13 +163,13 @@ mod tests {
     // use crate::{router, DynWebApi};
     use crate::axum::router;
     use crate::axum::DynWebApi;
-    use crate::evaluator::Evaluator;
-    use crate::onnx::OnnxEvaluator;
-    use crate::pos;
-    use crate::position::Position;
-    use crate::probabilities::Probabilities;
     use crate::web_api::WebApi;
     use axum::http::header::CONTENT_TYPE;
+    use engine::evaluator::Evaluator;
+    use engine::onnx::OnnxEvaluator;
+    use engine::pos;
+    use engine::position::Position;
+    use engine::probabilities::Probabilities;
     use hyper::{Body, Request, StatusCode};
     use std::collections::HashMap;
     use std::sync::Arc;
@@ -217,7 +213,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_eval_wrong_checkers_on_bar() {
-        let web_api = Arc::new(WebApi::try_default());
+        let web_api = Arc::new(Some(WebApi::new(EvaluatorFake {})));
         let response = router(web_api)
             .oneshot(
                 Request::builder()
@@ -308,7 +304,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_move_illegal_dice() {
-        let web_api = Arc::new(WebApi::try_default());
+        let web_api = Arc::new(Some(WebApi::new(EvaluatorFake {})));
         let response = router(web_api)
             .oneshot(
                 Request::builder()
@@ -331,7 +327,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_move_wrong_checkers_on_bar() {
-        let web_api = Arc::new(WebApi::try_default());
+        let web_api = Arc::new(Some(WebApi::new(EvaluatorFake {})));
         let response = router(web_api)
             .oneshot(
                 Request::builder()

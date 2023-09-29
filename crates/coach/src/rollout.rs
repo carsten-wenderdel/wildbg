@@ -1,8 +1,8 @@
-use crate::dice::{Dice, DiceGen, FastrandDice, ALL_1296};
-use crate::evaluator::{Evaluator, RandomEvaluator};
-use crate::position::GameState::{GameOver, Ongoing};
-use crate::position::{GameResult, Position};
-use crate::probabilities::Probabilities;
+use engine::dice::{Dice, DiceGen, FastrandDice, ALL_1296};
+use engine::evaluator::{Evaluator, RandomEvaluator};
+use engine::position::GameState::{GameOver, Ongoing};
+use engine::position::{GameResult, Position};
+use engine::probabilities::Probabilities;
 use rayon::prelude::*;
 
 pub struct RolloutEvaluator<T: Evaluator> {
@@ -86,10 +86,10 @@ impl<T: Evaluator> RolloutEvaluator<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::evaluator::{Evaluator, RandomEvaluator};
-    use crate::pos;
-    use crate::position::Position;
     use crate::rollout::RolloutEvaluator;
+    use engine::evaluator::{Evaluator, RandomEvaluator};
+    use engine::pos;
+    use engine::position::Position;
     use std::collections::HashMap;
 
     #[test]
@@ -145,14 +145,14 @@ mod tests {
 
 #[cfg(test)]
 mod private_tests {
-    use crate::dice::{Dice, DiceGenMock, FastrandDice};
-    use crate::evaluator::RandomEvaluator;
-    use crate::pos;
-    use crate::position::GameResult::{
+    use crate::rollout::RolloutEvaluator;
+    use engine::dice::{Dice, DiceGenMock, FastrandDice};
+    use engine::evaluator::RandomEvaluator;
+    use engine::pos;
+    use engine::position::GameResult::{
         LoseBg, LoseGammon, LoseNormal, WinBg, WinGammon, WinNormal,
     };
-    use crate::position::Position;
-    use crate::rollout::RolloutEvaluator;
+    use engine::position::Position;
     use std::collections::HashMap;
 
     #[test]

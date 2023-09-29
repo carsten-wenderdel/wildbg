@@ -10,8 +10,8 @@ use std::fmt::Formatter;
 use std::fmt::Write;
 
 const NO_OF_CHECKERS: u8 = 15;
-pub(crate) const X_BAR: usize = 25;
-pub(crate) const O_BAR: usize = 0;
+pub const X_BAR: usize = 25;
+pub const O_BAR: usize = 0;
 
 pub const STARTING: Position = Position {
     pips: [
@@ -22,7 +22,7 @@ pub const STARTING: Position = Position {
 };
 
 #[derive(Debug, PartialEq)]
-pub(crate) enum GameResult {
+pub enum GameResult {
     WinNormal,
     WinGammon,
     WinBg,
@@ -32,8 +32,7 @@ pub(crate) enum GameResult {
 }
 
 impl GameResult {
-    #[allow(dead_code)]
-    pub(crate) fn reverse(&self) -> Self {
+    pub fn reverse(&self) -> Self {
         match self {
             WinNormal => LoseNormal,
             WinGammon => LoseGammon,
@@ -46,7 +45,7 @@ impl GameResult {
 }
 
 #[derive(Debug, PartialEq)]
-pub(crate) enum GameState {
+pub enum GameState {
     Ongoing,
     GameOver(GameResult),
 }
@@ -115,12 +114,12 @@ impl Position {
 
     #[inline(always)]
     /// Will return positive value for checkers of `x`, negative value for checkers of `o`.
-    pub(crate) fn pip(&self, pip: usize) -> i8 {
+    pub fn pip(&self, pip: usize) -> i8 {
         debug_assert!((1..=25).contains(&pip));
         self.pips[pip]
     }
 
-    pub(crate) fn game_state(&self) -> GameState {
+    pub fn game_state(&self) -> GameState {
         debug_assert!(
             self.x_off < 15 || self.o_off < 15,
             "Not both sides can win at the same time"
@@ -318,7 +317,7 @@ impl Position {
         }
     }
 
-    pub(crate) fn try_move_single_checker(&self, from: usize, die: usize) -> Option<Position> {
+    pub fn try_move_single_checker(&self, from: usize, die: usize) -> Option<Position> {
         if self.can_move(from, die) {
             Some(self.clone_and_move_single_checker(from, die))
         } else {

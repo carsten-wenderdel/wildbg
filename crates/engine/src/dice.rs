@@ -13,7 +13,7 @@ pub struct RegularDice {
 }
 
 pub(crate) const ALL_36: [Dice; 36] = Dice::all_36();
-pub(crate) const ALL_1296: [(Dice, Dice); 1296] = Dice::all_1296();
+pub const ALL_1296: [(Dice, Dice); 1296] = Dice::all_1296();
 
 impl Dice {
     #[inline(always)]
@@ -77,7 +77,16 @@ impl TryFrom<(usize, usize)> for Dice {
 
 impl RegularDice {
     #[inline(always)]
-    pub(crate) const fn new(die1: usize, die2: usize) -> Self {
+    pub fn small(&self) -> usize {
+        self.small
+    }
+
+    #[inline(always)]
+    pub fn big(&self) -> usize {
+        self.big
+    }
+    #[inline(always)]
+    pub const fn new(die1: usize, die2: usize) -> Self {
         let (big, small) = if die1 > die2 {
             (die1, die2)
         } else {
@@ -87,12 +96,12 @@ impl RegularDice {
     }
 }
 
-pub(crate) trait DiceGen {
+pub trait DiceGen {
     /// Returns dice
     fn roll(&mut self) -> Dice;
 }
 
-pub(crate) struct FastrandDice {
+pub struct FastrandDice {
     generator: fastrand::Rng,
 }
 
@@ -107,7 +116,7 @@ impl DiceGen for FastrandDice {
 }
 
 impl FastrandDice {
-    #[allow(dead_code)]
+    #[allow(clippy::new_without_default)]
     pub fn new() -> FastrandDice {
         FastrandDice {
             generator: fastrand::Rng::new(),
@@ -160,14 +169,12 @@ mod dice_tests {
     }
 }
 
-#[cfg(test)]
 /// Use this for unit tests where you want to control the dice.
-pub(crate) struct DiceGenMock {
+pub struct DiceGenMock {
     dice: Vec<Dice>,
     no_calls: usize, // how often `roll` has been called.
 }
 
-#[cfg(test)]
 impl DiceGen for DiceGenMock {
     fn roll(&mut self) -> Dice {
         let dice = self.dice[self.no_calls];
@@ -176,16 +183,15 @@ impl DiceGen for DiceGenMock {
     }
 }
 
-#[cfg(test)]
 impl DiceGenMock {
-    pub(crate) fn new(dice: &[Dice]) -> DiceGenMock {
+    pub fn new(dice: &[Dice]) -> DiceGenMock {
         DiceGenMock {
             dice: dice.to_vec(),
             no_calls: 0,
         }
     }
 
-    pub(crate) fn assert_all_dice_were_used(&self) {
+    pub fn assert_all_dice_were_used(&self) {
         assert_eq!(
             self.dice.len(),
             self.no_calls,

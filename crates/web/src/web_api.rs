@@ -1,10 +1,10 @@
-use crate::bg_move::{BgMove, MoveDetail};
-use crate::cube::CubeInfo;
-use crate::dice::Dice;
-use crate::evaluator::Evaluator;
-use crate::onnx::OnnxEvaluator;
-use crate::position::Position;
+use engine::dice::Dice;
+use engine::evaluator::Evaluator;
+use engine::onnx::OnnxEvaluator;
+use engine::position::Position;
 use hyper::StatusCode;
+use logic::bg_move::{BgMove, MoveDetail};
+use logic::cube::CubeInfo;
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 
@@ -130,8 +130,8 @@ pub struct Probabilities {
     pub(crate) loseBg: f32,
 }
 
-impl From<crate::probabilities::Probabilities> for Probabilities {
-    fn from(value: crate::probabilities::Probabilities) -> Self {
+impl From<engine::probabilities::Probabilities> for Probabilities {
+    fn from(value: engine::probabilities::Probabilities) -> Self {
         Self {
             win: value.win_normal + value.win_gammon + value.win_bg,
             winG: value.win_gammon + value.win_bg,
@@ -249,7 +249,7 @@ impl TryFrom<PipParams> for Position {
 mod probabilities_tests {
     #[test]
     fn from() {
-        let model_probs = crate::probabilities::Probabilities {
+        let model_probs = engine::probabilities::Probabilities {
             win_normal: 0.32,
             win_gammon: 0.26,
             win_bg: 0.12,

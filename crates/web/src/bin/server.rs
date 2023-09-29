@@ -2,8 +2,8 @@ use axum::Server;
 use hyper::Error;
 use std::net::{Ipv4Addr, SocketAddr};
 use std::sync::Arc;
-use wildbg::axum::router;
-use wildbg::web_api::WebApi;
+use web::axum::router;
+use web::web_api::WebApi;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {

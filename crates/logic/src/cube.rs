@@ -1,10 +1,10 @@
-use crate::probabilities::Probabilities;
+use engine::probabilities::Probabilities;
 use serde::Serialize;
 use utoipa::ToSchema;
 
 #[derive(Serialize, ToSchema)]
 /// Information about proper cube decisions. Currently quick and dirty calculations.
-pub(crate) struct CubeInfo {
+pub struct CubeInfo {
     /// `true` if the player `x` should double, `false` if no double yet or too good.
     double: bool,
     /// `true` if the opponent should take the cube, `false` if they should reject.

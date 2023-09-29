@@ -5,12 +5,12 @@ use std::fmt::Formatter;
 /// Sum of all six fields will always be 1.0
 #[derive(PartialEq)]
 pub struct Probabilities {
-    pub(crate) win_normal: f32,
-    pub(crate) win_gammon: f32,
-    pub(crate) win_bg: f32,
-    pub(crate) lose_normal: f32,
-    pub(crate) lose_gammon: f32,
-    pub(crate) lose_bg: f32,
+    pub win_normal: f32,
+    pub win_gammon: f32,
+    pub win_bg: f32,
+    pub lose_normal: f32,
+    pub lose_gammon: f32,
+    pub lose_bg: f32,
 }
 
 impl fmt::Debug for Probabilities {

@@ -1,6 +1,6 @@
 use std::sync::Arc;
-use wildbg::axum::router;
-use wildbg::web_api::WebApi;
+use web::axum::router;
+use web::web_api::WebApi;
 
 // This binary is for deploying wildbg at shuttle.rs
 // Currently it's available at:
