@@ -1,5 +1,6 @@
 mod double_moves;
 mod regular_moves;
+use base64::{engine::general_purpose, Engine as _};
 
 use crate::dice::Dice;
 use crate::position::GameResult::*;
@@ -8,6 +9,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Formatter;
 use std::fmt::Write;
+use std::ops::Add;
 
 const NO_OF_CHECKERS: u8 = 15;
 pub const X_BAR: usize = 25;
@@ -179,6 +181,17 @@ impl Position {
         }
         Position::try_from(pips).expect("Need legal position")
     }
+
+    pub fn position_id(&self) -> String {
+        let key = self.encode();
+        let b64 = general_purpose::STANDARD.encode(key);
+        b64[..14].to_string()
+    }
+
+    pub fn from_id(id: String) -> Position {
+        let key = general_purpose::STANDARD.decode(id.add("==")).unwrap();
+        Position::decode(key.try_into().unwrap())
+    }
 }
 
 impl TryFrom<[i8; 26]> for Position {
@@ -322,6 +335,89 @@ impl Position {
             Some(self.clone_and_move_single_checker(from, die))
         } else {
             None
+        }
+    }
+
+    fn encode(&self) -> [u8; 10] {
+        let mut key = [0u8; 10];
+        let mut bit_index = 0;
+
+        // Encoding the position for the player not on roll
+        for point in (1..=24).rev() {
+            for _ in 0..-self.pips[point] {
+                key[bit_index / 8] |= 1 << (bit_index % 8);
+                bit_index += 1; // Appending a 1
+            }
+            bit_index += 1; // Appending a 0
+        }
+        for _ in 0..self.pips[O_BAR] {
+            key[bit_index / 8] |= 1 << (bit_index % 8);
+            bit_index += 1; // Appending a 1
+        }
+        bit_index += 1; // Appending a 0
+
+        // Encoding the position for the player on roll
+        for point in 1..=24 {
+            for _ in 0..self.pips[point] {
+                key[bit_index / 8] |= 1 << (bit_index % 8);
+                bit_index += 1; // Appending a 1
+            }
+            bit_index += 1; // Appending a 0
+        }
+        for _ in 0..self.pips[X_BAR] {
+            key[bit_index / 8] |= 1 << (bit_index % 8);
+            bit_index += 1; // Appending a 1
+        }
+
+        key
+    }
+
+    fn decode(key: [u8; 10]) -> Position {
+        let mut bit_index = 0;
+        let mut pips = [0i8; 26];
+
+        let mut x_bar = 0;
+        let mut o_bar = 0;
+        let mut x_pieces = 0;
+        let mut o_pieces = 0;
+
+        for point in (0..24).rev() {
+            while (key[bit_index / 8] >> (bit_index % 8)) & 1 == 1 {
+                pips[point + 1] -= 1;
+                o_pieces += 1;
+                bit_index += 1;
+            }
+            bit_index += 1; // Appending a 0
+        }
+
+        while (key[bit_index / 8] >> (bit_index % 8)) & 1 == 1 {
+            o_bar += 1;
+            bit_index += 1;
+        }
+
+        bit_index += 1; // Appending a 0
+
+        for point in 0..24 {
+            while (key[bit_index / 8] >> (bit_index % 8)) & 1 == 1 {
+                pips[point + 1] += 1;
+                x_pieces += 1;
+                bit_index += 1;
+            }
+            bit_index += 1; // Appending a 0
+        }
+
+        while (key[bit_index / 8] >> (bit_index % 8)) & 1 == 1 {
+            x_bar += 1;
+            bit_index += 1;
+        }
+
+        pips[X_BAR] = x_bar;
+        pips[O_BAR] = -o_bar;
+
+        Position {
+            pips,
+            x_off: (15 - x_pieces - x_bar) as u8,
+            o_off: (15 - o_pieces - o_bar) as u8,
         }
     }
 }
@@ -560,6 +656,27 @@ mod tests {
         let actual = format!("{:?}", pos!(x X_BAR:2, 3:5, 1:1; o 24:7, 23:4, O_BAR:3),);
         let expected = "Position:\nx: {bar:2, 3:5, 1:1, off:7}\no: {off:1, 24:7, 23:4, bar:3}";
         assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn start_id() {
+        let game = STARTING;
+        let id = game.position_id();
+        assert_eq!(id, "4HPwATDgc/ABMA");
+    }
+
+    #[test]
+    fn matching_ids() {
+        let pids = [
+            "4HPwATDgc/ABMA", // starting position
+            "jGfkASjg8wcBMA", // random position
+            "zGbiIQgxH/AAWA", // X bar
+            "zGbiIYCYD3gALA", // O off
+        ];
+        for pid in pids {
+            let game = super::Position::from_id(pid.to_string());
+            assert_eq!(pid, game.position_id());
+        }
     }
 }
 

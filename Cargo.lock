@@ -519,6 +519,7 @@ dependencies = [
 name = "engine"
 version = "0.0.0"
 dependencies = [
+ "base64 0.21.4",
  "fastrand",
  "tract-onnx",
 ]
