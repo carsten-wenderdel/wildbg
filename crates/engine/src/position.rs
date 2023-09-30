@@ -184,7 +184,7 @@ impl Position {
 
     pub fn position_id(&self) -> String {
         let key = self.encode();
-        let b64 = String::from(general_purpose::STANDARD.encode(&key));
+        let b64 = general_purpose::STANDARD.encode(key);
         b64[..14].to_string()
     }
 
@@ -415,7 +415,7 @@ impl Position {
         pips[O_BAR] = -o_bar;
 
         Position {
-            pips: pips,
+            pips,
             x_off: (15 - x_pieces - x_bar) as u8,
             o_off: (15 - o_pieces - o_bar) as u8,
         }
