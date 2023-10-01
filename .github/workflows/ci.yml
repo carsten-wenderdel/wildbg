@@ -24,7 +24,7 @@ jobs:
       - name: Clippy
         env:
           TERM: xterm-256color
-        run: cargo clippy --all-targets --all-features --color always -- -D warnings
+        run: cargo clippy --all --all-targets --all-features --color always -- -D warnings
 
       - name: Unit tests
-        run: cargo test --color always
+        run: cargo test --all --color always
