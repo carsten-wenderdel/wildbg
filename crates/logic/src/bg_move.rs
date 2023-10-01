@@ -27,6 +27,16 @@ pub struct MoveDetail {
     pub(crate) to: usize,
 }
 
+impl MoveDetail {
+    pub fn from(&self) -> usize {
+        self.from
+    }
+
+    pub fn to(&self) -> usize {
+        self.to
+    }
+}
+
 impl BgMove {
     #[inline(always)]
     pub fn into_details(self) -> Vec<MoveDetail> {
