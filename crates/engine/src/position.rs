@@ -678,6 +678,80 @@ mod tests {
             assert_eq!(pid, game.position_id());
         }
     }
+
+    #[test]
+    fn number_of_moves_for_various_positions_and_dice() {
+        // Thanks to Øystein for his test positions
+        let positions = [
+            ("4HPwATDgc/ABMA", (4, 4), 52),
+            ("4HPwATDgc/ABMA", (3, 1), 16),
+            ("4HPwATDgc/ABMA", (1, 3), 16),
+            ("0HPwATDgc/ABMA", (6, 4), 15),
+            ("0HPwATDgc/ABMA", (4, 6), 15),
+            ("4DnyATDgc/ABMA", (6, 4), 14),
+            ("4DnyATDgc/ABMA", (4, 6), 14),
+            ("AACAkCRJqqoAAA", (1, 1), 2220),
+            /* From The Bar */
+            ("4HPwATDgc/ABUA", (6, 6), 0),
+            ("4HPwATDgc/ABUA", (5, 6), 4),
+            ("4HPwATDgc/ABUA", (5, 2), 7),
+            ("0HPwATDgc/ABUA", (5, 2), 8),
+            ("4HPwATDgc/ABYA", (5, 2), 1),
+            ("sHPwATDgc/ABYA", (5, 2), 1),
+            ("hnPwATDgc/ABYA", (5, 2), 1),
+            ("sHPwATDgc/ABYA", (2, 2), 12),
+            ("sHPwATDgOfgAcA", (2, 2), 4),
+            ("sHPwATDgHHwAeA", (2, 2), 1),
+            ("sHPwATDgHDwAfA", (2, 2), 1),
+            ("sHPwATDgHDwAfA", (2, 1), 1),
+            ("sHPwATDgHDwAfA", (6, 1), 1),
+            ("xOfgATDgc/ABUA", (4, 3), 10),
+            ("lOfgATDgc/ABUA", (4, 3), 10),
+            /* Unable to play full roll */
+            ("sNvBATBw38ABMA", (6, 6), 1),
+            ("YNsWADZsuzsAAA", (6, 5), 1),
+            ("YNsWADNm7zkAAA", (6, 5), 1),
+            ("4BwcMBvgAYABAA", (4, 3), 1),
+            ("4DgcMBvgAYABAA", (4, 3), 1),
+            ("wAYAMBsAAAQAAA", (4, 3), 1),
+            ("GBsAmA0EACAAAA", (4, 3), 2),
+            ("MBsAsA0EACAAAA", (4, 3), 2),
+            /* Bearoff */
+            ("2G4bADDOAgAAAA", (5, 1), 2),
+            ("2G4bADDObgAAAA", (4, 2), 7),
+            ("AwAACAAAAAAAAA", (4, 2), 1),
+            ("AwAAYDsAAAAAAA", (6, 5), 1),
+            ("AwAAYDsAAAAAAA", (6, 2), 3),
+            ("2+4OAADs3hcAAA", (4, 3), 12),
+            ("tN0dAATb3AMAAA", (4, 2), 9),
+            ("tN0dAATb3AMAAA", (2, 2), 38),
+            ("2L07AAC274YAAA", (6, 5), 3),
+            ("2L07AAC23wYBAA", (6, 5), 2),
+            ("27ZFAAR7swEAAA", (6, 2), 4),
+            ("27ZFAAR7swEAAA", (2, 6), 4),
+            ("v0MChgK7HwgAAA", (5, 6), 1),
+            ("u20DAAP77hEAAA", (6, 3), 3),
+            ("u20DYAD77hEAAA", (6, 3), 3),
+        ];
+        fn number_of_moves(position: &Position, dice: &Dice) -> usize {
+            let all = position.all_positions_after_moving(dice);
+            if all.len() == 1 && all.first().unwrap().switch_sides() == *position {
+                0
+            } else {
+                all.len()
+            }
+        }
+        for (id, dice, number) in positions {
+            let position = Position::from_id(id.to_string());
+            let dice = Dice::new(dice.0, dice.1);
+            assert_eq!(
+                number_of_moves(&position, &dice),
+                number,
+                "failing position is {}",
+                id
+            );
+        }
+    }
 }
 
 #[cfg(test)]

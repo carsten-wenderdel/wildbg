@@ -1,6 +1,6 @@
 use crate::dice::RegularDice;
 use crate::position::{Position, O_BAR, X_BAR};
-use std::cmp::max;
+use std::cmp::{max, min};
 
 impl Position {
     /// Returns all legal positions after rolling a double and then moving.
@@ -94,10 +94,12 @@ impl Position {
         let mut moves: Vec<Position> = Vec::new();
         for i in (1..X_BAR).rev() {
             // Looking at moves where the big die *can* be used first
-            if self.can_move_in_board(i, dice.big) {
+            let can_move_big_from_i = self.can_move_in_board(i, dice.big);
+            if can_move_big_from_i {
                 let position = self.clone_and_move_single_checker(i, dice.big);
                 for j in (1..X_BAR).rev() {
-                    if position.can_move_in_board(j, dice.small) {
+                    // Checking `j != i + dice.small`: in this case we could have moved the smaller first which will be handled later.
+                    if position.can_move_in_board(j, dice.small) && (j != i + dice.small) {
                         let final_position = position.clone_and_move_single_checker(j, dice.small);
                         moves.push(final_position);
                     }
@@ -107,28 +109,45 @@ impl Position {
             // This can be because of two reasons:
             // 1. We make two movements with the same checker, but for the big die it's initially blocked.
             // 2. We make two movements with the same checker and hit something with the first movement, either with the big or the small die.
-            // 3. After moving the small die, we now can bear off with the big die, which was illegal before.
+            // 3. We make two movements with the same checker, but we could have born off with the bigger die from the initial pip.
+            // 4. After moving the small die, we now can bear off with the big die, which was illegal before.
             if self.can_move_in_board(i, dice.small) {
                 let position = self.clone_and_move_single_checker(i, dice.small);
                 // We have to look at all pips in the home board, in case bearing off just became possible. This is why the 7 appears in the max function.
                 for j in (1..max(7, i + 1)).rev() {
                     if position.can_move_in_board(j, dice.big) {
-                        // This describes cases 1 and 2:
-                        let two_movements_with_same_checker_and_different_outcome = i
-                            == j + dice.small
-                            && i > dice.big
-                            && i > dice.small
-                            && (self.pips[i - dice.big] < 0 || self.pips[i - dice.small] < 0);
-                        // This describes case 3:
-                        let bear_off_was_illegal_but_not_anymore = i > 6 && j <= dice.big;
-                        let could_not_bear_off_because_die_bigger_than_pip_and_checker_was_on_bigger_pip =
-                            dice.big > j && i > j;
-                        if two_movements_with_same_checker_and_different_outcome
-                            || bear_off_was_illegal_but_not_anymore
-                            || could_not_bear_off_because_die_bigger_than_pip_and_checker_was_on_bigger_pip
-                        {
-                            let final_position = position.clone_and_move_single_checker(j, dice.big);
-                            moves.push( final_position);
+                        let two_movements_with_same_checker = i == j + dice.small;
+                        let must_move_small_first: bool = if two_movements_with_same_checker {
+                            // This describes cases 1 and 2:
+                            let different_outcomes = self.pips[i - min(i, dice.big)] < 0
+                                || self.pips[i - min(i, dice.small)] < 0;
+                            // This describes case 3:
+                            let bear_off_with_big = can_move_big_from_i && i <= dice.big;
+                            if different_outcomes || bear_off_with_big {
+                                true
+                            } else {
+                                // Now we look of a special case of case 4:
+                                // Can we bear off with the same checker after two movements, but it would not have possible if the big dice was used first?
+                                let bear_off_from_not_exact_pip = j < dice.big;
+                                // is there a checker between (i - dice.small) and (i - dice.big) that would prevent moving out if moving the big first?
+                                let checker_between = self.pips
+                                    [(i - dice.big + 1)..(i - dice.small)]
+                                    .iter()
+                                    .any(|p| *p > 0);
+                                bear_off_from_not_exact_pip && checker_between
+                            }
+                        } else {
+                            // This describes case 4:
+                            let bear_off_was_illegal_but_not_anymore = i > 6 && j <= dice.big;
+                            let could_not_bear_off_because_die_bigger_than_pip_and_checker_was_on_bigger_pip =
+                                dice.big > j && i > j;
+                            bear_off_was_illegal_but_not_anymore
+                                || could_not_bear_off_because_die_bigger_than_pip_and_checker_was_on_bigger_pip
+                        };
+                        if must_move_small_first {
+                            let final_position =
+                                position.clone_and_move_single_checker(j, dice.big);
+                            moves.push(final_position);
                         }
                     }
                 }
