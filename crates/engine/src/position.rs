@@ -194,6 +194,12 @@ impl Position {
     }
 }
 
+impl From<Position> for [i8; 26] {
+    fn from(value: Position) -> Self {
+        value.pips
+    }
+}
+
 impl TryFrom<[i8; 26]> for Position {
     type Error = &'static str;
 

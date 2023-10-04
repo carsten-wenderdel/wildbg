@@ -12,15 +12,28 @@ pub trait Evaluator {
     /// The returned `Position` has already switches sides.
     /// This means the returned position will have the *lowest* equity of possible positions.
     fn best_position_by_equity(&self, pos: &Position, dice: &Dice) -> Position {
-        self.worst_position(&pos.all_positions_after_moving(dice))
+        self.best_position(pos, dice, |probabilities| probabilities.equity())
+    }
+
+    /// Returns the position after applying the *best* move to `pos`.
+    /// The returned `Position` has already switches sides.
+    /// This means the returned position will have the *lowest* value of possible positions.
+    fn best_position<F>(&self, pos: &Position, dice: &Dice, value: F) -> Position
+    where
+        F: Fn(&Probabilities) -> f32,
+    {
+        self.worst_position(&pos.all_positions_after_moving(dice), value)
             .clone()
     }
 
     /// Worst position might be interesting, because when you switch sides, it's suddenly the best.
-    fn worst_position<'a>(&'a self, positions: &'a [Position]) -> &Position {
+    fn worst_position<'a, F>(&'a self, positions: &'a [Position], value: F) -> &Position
+    where
+        F: Fn(&Probabilities) -> f32,
+    {
         positions
             .iter()
-            .map(|pos| (pos, self.eval(pos).equity()))
+            .map(|pos| (pos, value(&self.eval(pos))))
             .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
             .unwrap()
             .0
@@ -83,7 +96,7 @@ mod evaluator_trait_tests {
     use crate::position::Position;
     use std::collections::HashMap;
 
-    fn expected_pos() -> Position {
+    fn position_with_lowest_equity() -> Position {
         pos!(x 5:1, 3:1; o 20:2).switch_sides()
     }
 
@@ -91,7 +104,7 @@ mod evaluator_trait_tests {
     struct EvaluatorFake {}
     impl Evaluator for EvaluatorFake {
         fn eval(&self, pos: &Position) -> Probabilities {
-            if pos == &expected_pos() {
+            if pos == &position_with_lowest_equity() {
                 Probabilities {
                     win_normal: 0.5,
                     win_gammon: 0.1,
@@ -102,10 +115,10 @@ mod evaluator_trait_tests {
                 }
             } else {
                 Probabilities {
-                    win_normal: 0.4,
+                    win_normal: 0.38,
                     win_gammon: 0.2,
                     win_bg: 0.1,
-                    lose_normal: 0.1,
+                    lose_normal: 0.12,
                     lose_gammon: 0.1,
                     lose_bg: 0.1,
                 }
@@ -114,14 +127,27 @@ mod evaluator_trait_tests {
     }
 
     #[test]
-    fn best_position() {
+    fn best_position_by_equity() {
         // Given
         let given_pos = pos!(x 7:2; o 20:2);
         let evaluator = EvaluatorFake {};
         // When
         let best_pos = evaluator.best_position_by_equity(&given_pos, &Dice::new(4, 2));
         // Then
-        assert_eq!(best_pos, expected_pos());
+        assert_eq!(best_pos, position_with_lowest_equity());
+    }
+
+    #[test]
+    /// This is basically the same test as the one above (best_position_by_equity), but with different outcome for 1 ptrs.
+    fn best_position_for_1ptr() {
+        // Given
+        let given_pos = pos!(x 7:2; o 20:2);
+        let evaluator = EvaluatorFake {};
+        // When
+        let best_pos = evaluator.best_position(&given_pos, &Dice::new(4, 2), |p| p.win());
+        // Then
+        let expected = pos!(x 7:1, 1:1; o 20: 2);
+        assert_eq!(best_pos, expected.switch_sides());
     }
 
     #[test]

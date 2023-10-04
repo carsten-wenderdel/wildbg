@@ -9,8 +9,9 @@ mod regular;
 
 /// `BgMove` is not used during rollouts or evaluation but only when returning moves via an API
 /// This is why a new `BgMove` is always calculated based on a `old` and a resulting `new` position.
+#[derive(Debug, PartialEq)]
 pub struct BgMove {
-    details: Vec<MoveDetail>,
+    pub(crate) details: Vec<MoveDetail>,
 }
 
 #[derive(Debug, PartialEq, Serialize, ToSchema)]
@@ -20,10 +21,10 @@ pub struct BgMove {
 pub struct MoveDetail {
     /// The bar is represented by `25`.
     #[schema(minimum = 1, maximum = 25)]
-    from: usize,
+    pub(crate) from: usize,
     /// bear off is represented by `0`.
     #[schema(minimum = 0, maximum = 24)]
-    to: usize,
+    pub(crate) to: usize,
 }
 
 impl BgMove {

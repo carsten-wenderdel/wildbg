@@ -64,6 +64,10 @@ impl Probabilities {
         }
     }
 
+    pub fn win(&self) -> f32 {
+        self.win_normal + self.win_gammon + self.win_bg
+    }
+
     pub(crate) fn switch_sides(&self) -> Self {
         Self {
             win_normal: self.lose_normal,
@@ -205,5 +209,18 @@ mod tests {
             lose_bg: 0.1,
         };
         assert_eq!(probabilities.equity(), 0.0);
+    }
+
+    #[test]
+    fn win() {
+        let probabilities = Probabilities {
+            win_normal: 0.5,
+            win_gammon: 0.2,
+            win_bg: 0.12,
+            lose_normal: 0.1,
+            lose_gammon: 0.07,
+            lose_bg: 0.1,
+        };
+        assert_eq!(probabilities.win(), 0.82);
     }
 }

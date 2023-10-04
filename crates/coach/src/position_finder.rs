@@ -42,7 +42,10 @@ impl<T: Evaluator> PositionFinder<T> {
             let dice = self.dice_gen.roll();
             let new_positions = pos.all_positions_after_moving(&dice);
             // Todo: remove cloning by implementing the Copy trait -> maybe better performance
-            pos = self.evaluator.worst_position(&new_positions).clone();
+            pos = self
+                .evaluator
+                .worst_position(&new_positions, |probabilities| probabilities.equity())
+                .clone();
             let mut ongoing_games: Vec<Position> = new_positions
                 .into_iter()
                 .filter(|p| p.game_state() == Ongoing)
