@@ -49,9 +49,9 @@ impl<T: Evaluator, U: Evaluator> Duel<T, U> {
             match pos1.game_state() {
                 Ongoing => {
                     pos1 = if iteration % 2 == 0 {
-                        self.evaluator1.best_position(&pos1, &dice)
+                        self.evaluator1.best_position_by_equity(&pos1, &dice)
                     } else {
-                        self.evaluator2.best_position(&pos1, &dice)
+                        self.evaluator2.best_position_by_equity(&pos1, &dice)
                     };
                 }
                 GameOver(result) => {
@@ -69,9 +69,9 @@ impl<T: Evaluator, U: Evaluator> Duel<T, U> {
             match pos2.game_state() {
                 Ongoing => {
                     pos2 = if iteration % 2 == 0 {
-                        self.evaluator2.best_position(&pos2, &dice)
+                        self.evaluator2.best_position_by_equity(&pos2, &dice)
                     } else {
-                        self.evaluator1.best_position(&pos2, &dice)
+                        self.evaluator1.best_position_by_equity(&pos2, &dice)
                     };
                 }
                 GameOver(result) => {

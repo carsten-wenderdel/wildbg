@@ -11,7 +11,7 @@ pub trait Evaluator {
     /// Returns the position after applying the *best* move to `pos`.
     /// The returned `Position` has already switches sides.
     /// This means the returned position will have the *lowest* equity of possible positions.
-    fn best_position(&self, pos: &Position, dice: &Dice) -> Position {
+    fn best_position_by_equity(&self, pos: &Position, dice: &Dice) -> Position {
         self.worst_position(&pos.all_positions_after_moving(dice))
             .clone()
     }
@@ -119,7 +119,7 @@ mod evaluator_trait_tests {
         let given_pos = pos!(x 7:2; o 20:2);
         let evaluator = EvaluatorFake {};
         // When
-        let best_pos = evaluator.best_position(&given_pos, &Dice::new(4, 2));
+        let best_pos = evaluator.best_position_by_equity(&given_pos, &Dice::new(4, 2));
         // Then
         assert_eq!(best_pos, expected_pos());
     }
@@ -136,7 +136,7 @@ mod evaluator_trait_tests {
         let best_pos = best_pos.switch_sides();
         assert_eq!(
             &best_pos,
-            &evaluator.best_position(&given_pos, &Dice::new(4, 2))
+            &evaluator.best_position_by_equity(&given_pos, &Dice::new(4, 2))
         );
         assert_eq!(best_probability.switch_sides(), evaluator.eval(&best_pos));
     }

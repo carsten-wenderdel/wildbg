@@ -66,7 +66,7 @@ impl<T: Evaluator> RolloutEvaluator<T> {
             } else {
                 dice_gen.roll()
             };
-            pos = self.evaluator.best_position(&pos, &dice);
+            pos = self.evaluator.best_position_by_equity(&pos, &dice);
             match pos.game_state() {
                 Ongoing => {
                     iteration += 1;
