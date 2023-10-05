@@ -1,6 +1,6 @@
 # wildbg
 
-`wildbg` is a backgammon engine based on neural networks. Currently, it's in a pre-alpha phase.
+`wildbg` is a backgammon engine based on neural networks. Currently, it's in alpha stage.
 
 ## Try it out
 
@@ -15,43 +15,32 @@ An example for the starting position and rolling 3 and 1: https://wildbg.shuttle
 Install Rust on your machine and then execute `cargo run` or `cargo run --release`.
 A web server will be started which you can access via http://localhost:8080/swagger-ui/
 
+Beware that the network committed to this repository is a bit older and weaker.
+You can find the latest training progress and networks here: https://github.com/carsten-wenderdel/wildbg-training
+
 ## Goals
 
 1. Provide source code and documentation to train neural nets from zero to super human strength.
 2. Implement logic to evaluate all kind of backgammon positions: cubeless and cubeful equities, multi-ply evaluation, rollouts, etc.
-3. Make the backgammon engine accessible via an easy-to-use HTTP/json API.
+3. Make the backgammon engine accessible via an easy-to-use HTTP JSON API.
 
 A graphical user interface (GUI) is not part of this project.
 
-## Current state
-
-#### Topic 1: Neural nets
+## Training process
 
 The training process consists of three steps, which are repeated in a loop:
-1. Find lots of positions for a later rollout. Currently, rather random self play is used; later we want to make sure to find all kind of positions, including backgames.
+1. Find lots of positions (at least 100,000) through self-play for a later rollout.
 2. Roll out these positions. Currently, only 1-ply rollouts are possible.
-3. Train neural networks based on the rollout data. Currently, a single net with several hidden layers is supported; later different nets for different game phases are planned.
+3. Train neural networks based on the rollout data. Currently, a single net with several hidden layers is supported; later different nets for different game phases are planned. This third step is the only one done in Python, everything else is implemented in Rust.
 
-Already implemented is:
-* Roll out a certain position 1296 times, multithreaded.
-* 202 neural net inputs similar to TD-Gammon, representing the raw board.
-* Find 100,000 random positions through self play for later rollouts.
-* Train a single neural net with one hidden layer via PyTorch and save the result as an ONNX file. The net has six outputs for winning/losing 1, 2 or 3 points.
-* Inference of that neural net in Rust via [tract](https://github.com/sonos/tract).
+## Documentation
 
-An older, weaker neural network is committed to this repository.  You can find the latest training progress and networks here: https://github.com/carsten-wenderdel/wildbg-training
+#### For users (bots and GUIs)
+- HTTP API: https://wildbg.shuttleapp.rs/swagger-ui/
+- C API: [docs/user/wildbg-c.md](docs/user/wildbg-c.md)
 
-#### Topic 2: Backgammon logic
-Currently only cubeless equities and moves are implemented. Cubes and cubeful equities are missing.
-
-#### Topic 3: HTTP/json API
-
-Getting the best move is already implemented: https://wildbg.shuttleapp.rs/swagger-ui/
-
-### Installation of python environment
-
-Make an editable install by targeting the training directory:
-``` pip install -e "training/[dev]"```
+#### For contributors
+- Code structure: [docs/dev/architecture.md](docs/dev/architecture.md)
 
 ## Contributing
 

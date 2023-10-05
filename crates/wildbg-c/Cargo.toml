@@ -10,5 +10,4 @@ crate-type = ["staticlib"]
 
 [dependencies]
 # internal
-engine = { path = "../engine" }
 logic = { path = "../logic" }
