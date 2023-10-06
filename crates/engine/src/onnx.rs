@@ -39,8 +39,7 @@ impl OnnxEvaluator {
         OnnxEvaluator::from_file_path(NETWORK_FILE_PATH)
     }
 
-    #[cfg(test)]
-    fn with_default_model_for_tests() -> Self {
+    pub fn with_default_model_for_tests() -> Self {
         // Tests are executed from a different path than binary crates - so we need to slightly change the folder for them.
         OnnxEvaluator::from_file_path(&("../../".to_owned() + NETWORK_FILE_PATH))
             .expect("onnx file should exist at that path.")
