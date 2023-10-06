@@ -131,7 +131,7 @@ impl Position {
                                 let bear_off_from_not_exact_pip = j < dice.big;
                                 // is there a checker between (i - dice.small) and (i - dice.big) that would prevent moving out if moving the big first?
                                 let checker_between = self.pips
-                                    [(i - dice.big + 1)..(i - dice.small)]
+                                    [(i - dice.big + 1)..(i - dice.small + 1)]
                                     .iter()
                                     .any(|p| *p > 0);
                                 bear_off_from_not_exact_pip && checker_between
@@ -596,6 +596,18 @@ mod tests {
             position.all_positions_after_regular_move(&RegularDice::new(5, 4));
         // Then
         let expected = pos!(x 6:2, 3:1, 1:1; o 2:2);
+        assert_eq!(resulting_positions, vec![expected]);
+    }
+
+    #[test]
+    fn bearoff_with_same_checker_after_moving_small_first() {
+        // Given
+        let position = pos!(x 9:1, 5:3, 3:2; o 24:10, 23:3, 1:2);
+        // When
+        let resulting_positions =
+            position.all_positions_after_regular_move(&RegularDice::new(6, 4));
+        // Then
+        let expected = pos!(x 5:3, 3:2; o 24:10, 23:3, 1:2);
         assert_eq!(resulting_positions, vec![expected]);
     }
 }

@@ -738,6 +738,7 @@ mod tests {
             ("v0MChgK7HwgAAA", (5, 6), 1),
             ("u20DAAP77hEAAA", (6, 3), 3),
             ("u20DYAD77hEAAA", (6, 3), 3),
+            ("ABDAEBIAAAAAAA", (6, 2), 1),
         ];
         fn number_of_moves(position: &Position, dice: &Dice) -> usize {
             let all = position.all_positions_after_moving(dice);
