@@ -23,7 +23,7 @@ pub const STARTING: Position = Position {
     o_off: 0,
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum GameResult {
     WinNormal,
     WinGammon,

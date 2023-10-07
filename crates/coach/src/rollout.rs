@@ -1,4 +1,4 @@
-use engine::dice::{Dice, DiceGen, FastrandDice, ALL_1296};
+use engine::dice::{Dice, DiceGen, FastrandDice, ALL_441};
 use engine::evaluator::{Evaluator, RandomEvaluator};
 use engine::position::GameState::{GameOver, Ongoing};
 use engine::position::{GameResult, Position};
@@ -14,8 +14,18 @@ pub struct RolloutEvaluator<T: Evaluator> {
     seed: u64,
 }
 
+/// We will do 1296 single rollouts and we need different dice for them.
+/// Each of those 1296 rollouts will have a separate dice generator, here are the seeds to initialize them.
+fn dice_seeds(dice_gen: &mut FastrandDice, amount: usize) -> Vec<u64> {
+    let mut seeds = Vec::with_capacity(amount);
+    for _ in 0..amount {
+        seeds.push(dice_gen.seed());
+    }
+    seeds
+}
+
 impl<T: Evaluator + Sync> Evaluator for RolloutEvaluator<T> {
-    /// Rolls out 1296 times, first two half moves are given, rest is random
+    /// Rolls out 1296 times, the dice for the first two half moves are given, rest is random
     fn eval(&self, pos: &Position) -> Probabilities {
         debug_assert!(pos.game_state() == Ongoing);
 
@@ -29,13 +39,11 @@ impl<T: Evaluator + Sync> Evaluator for RolloutEvaluator<T> {
         let seed = hasher.finish();
         let mut dice_gen = FastrandDice::with_seed(seed);
 
-        let dice_and_seeds = ALL_1296.map(|dice| (dice, dice_gen.seed()));
+        let dice_and_seeds =
+            ALL_441.map(|(dice, amount)| (dice, dice_seeds(&mut dice_gen, amount)));
         let game_results: Vec<GameResult> = dice_and_seeds
             .par_iter()
-            .map(|(dice_pair, seed)| {
-                let mut dice_gen = FastrandDice::with_seed(*seed);
-                self.single_rollout(pos, &[dice_pair.0, dice_pair.1], &mut dice_gen)
-            })
+            .flat_map(|(dice, seeds)| self.results_from_single_rollouts(pos, dice, seeds))
             .collect();
 
         let mut results = [0; 6];
@@ -67,37 +75,71 @@ impl<T: Evaluator> RolloutEvaluator<T> {
         Self { evaluator, seed }
     }
 
-    /// `first_dice` contains the dice for first moves, starting at index 0. It may be empty.
-    /// Once all of those given dice have been used, subsequent dice are generated from `dice_gen`.
-    #[allow(dead_code)]
-    fn single_rollout<U: DiceGen>(
+    /// Will do *n* rollouts from the given position, with *n* being the length of `seeds`.
+    ///
+    /// It will initially use `first_dice` for all these rollouts. If the game hasn't ended then,
+    /// this will be followed by random dice. The dice generators for that are initialized with `seeds`.
+    fn results_from_single_rollouts(
         &self,
         from: &Position,
-        first_dice: &[Dice],
+        first_dice: &[Dice; 2],
+        seeds: &Vec<u64>,
+    ) -> Vec<GameResult> {
+        match self.single_rollout_with_dice(from, first_dice) {
+            Ok(result) => vec![result.clone(); seeds.len()],
+            Err(pos) => seeds
+                .iter()
+                .map(|seed| {
+                    let mut dice_gen = FastrandDice::with_seed(*seed);
+                    self.single_rollout_with_generator(&pos, &mut dice_gen)
+                })
+                .collect(),
+        }
+    }
+
+    /// Will try to do a rollout with the given `first_dice`.
+    ///
+    /// If the game ends after using `first_dice` it will return the game result as `success`.
+    /// If the game has not ended yet, it will return the then reached position as `failure`.
+    fn single_rollout_with_dice(
+        &self,
+        from: &Position,
+        first_dice: &[Dice; 2],
+    ) -> Result<GameResult, Position> {
+        let mut player_on_turn = true;
+        let mut pos = from.clone();
+        for dice in first_dice {
+            pos = self.evaluator.best_position_by_equity(&pos, dice);
+            if let GameOver(result) = pos.game_state() {
+                return if player_on_turn {
+                    Ok(result.reverse())
+                } else {
+                    Ok(result)
+                };
+            }
+            player_on_turn = !player_on_turn;
+        }
+        Err(pos)
+    }
+
+    fn single_rollout_with_generator<U: DiceGen>(
+        &self,
+        from: &Position,
         dice_gen: &mut U,
     ) -> GameResult {
-        let mut iteration = 0;
+        let mut player_on_turn = true;
         let mut pos = from.clone();
         loop {
-            let dice = if first_dice.len() > iteration {
-                first_dice[iteration]
-            } else {
-                dice_gen.roll()
-            };
+            let dice = dice_gen.roll();
             pos = self.evaluator.best_position_by_equity(&pos, &dice);
-            match pos.game_state() {
-                Ongoing => {
-                    iteration += 1;
-                    continue;
-                }
-                GameOver(result) => {
-                    return if iteration % 2 == 0 {
-                        result.reverse()
-                    } else {
-                        result
-                    };
-                }
+            if let GameOver(result) = pos.game_state() {
+                return if player_on_turn {
+                    result.reverse()
+                } else {
+                    result
+                };
             }
+            player_on_turn = !player_on_turn;
         }
     }
 }
@@ -158,7 +200,7 @@ mod tests {
 #[cfg(test)]
 mod private_tests {
     use crate::rollout::RolloutEvaluator;
-    use engine::dice::{Dice, DiceGenMock, FastrandDice};
+    use engine::dice::{Dice, DiceGenMock};
     use engine::pos;
     use engine::position::GameResult::{
         LoseBg, LoseGammon, LoseNormal, WinBg, WinGammon, WinNormal,
@@ -167,83 +209,94 @@ mod private_tests {
     use std::collections::HashMap;
 
     #[test]
-    fn single_rollout_win_normal() {
+    fn single_rollout_with_generator_win_normal() {
         // Given
         let rollout_eval = RolloutEvaluator::with_random_evaluator();
         let pos = pos!(x 12:1; o 13:1);
         // When
-        let mut dice_gen = DiceGenMock::new(&[Dice::new(2, 1), Dice::new(2, 1)]);
-        let result = rollout_eval.single_rollout(&pos, &[Dice::new(4, 5)], &mut dice_gen);
+        let mut dice_gen = DiceGenMock::new(&[Dice::new(2, 1), Dice::new(2, 1), Dice::new(4, 5)]);
+        let result = rollout_eval.single_rollout_with_generator(&pos, &mut dice_gen);
         //Then
         dice_gen.assert_all_dice_were_used();
         assert_eq!(result, WinNormal);
     }
 
     #[test]
-    fn single_rollout_lose_normal() {
+    fn single_rollout_with_generator_lose_normal() {
         // Given
         let rollout_eval = RolloutEvaluator::with_random_evaluator();
         let pos = pos!(x 12:1; o 13:1);
         // When
-        let mut dice_gen = DiceGenMock::new(&[Dice::new(2, 1), Dice::new(2, 1)]);
-        let result =
-            rollout_eval.single_rollout(&pos, &[Dice::new(1, 2), Dice::new(4, 5)], &mut dice_gen);
+        let mut dice_gen = DiceGenMock::new(&[
+            Dice::new(2, 1),
+            Dice::new(2, 1),
+            Dice::new(1, 2),
+            Dice::new(4, 5),
+        ]);
+        let result = rollout_eval.single_rollout_with_generator(&pos, &mut dice_gen);
         // Then
         dice_gen.assert_all_dice_were_used();
         assert_eq!(result, LoseNormal);
     }
 
     #[test]
-    fn single_rollout_win_gammon() {
+    fn single_rollout_with_dice_win_gammon() {
         // Given
         let rollout_eval = RolloutEvaluator::with_random_evaluator();
-        let pos = pos!(x 1:4; o 12:15);
+        let pos = pos!(x 1:4; o 18:15);
         // When
         let result =
-            rollout_eval.single_rollout(&pos, &[Dice::new(2, 2)], &mut FastrandDice::new());
+            rollout_eval.single_rollout_with_dice(&pos, &[Dice::new(2, 2), Dice::new(6, 6)]);
         //Then
-        assert_eq!(result, WinGammon);
+        assert_eq!(result, Ok(WinGammon));
     }
 
     #[test]
-    fn single_rollout_lose_gammon() {
+    fn single_rollout_with_dice_lose_gammon() {
         // Given
         let rollout_eval = RolloutEvaluator::with_random_evaluator();
         let pos = pos!(x 12:15; o 24:1);
         // When
-        let result = rollout_eval.single_rollout(
-            &pos,
-            &[Dice::new(2, 1), Dice::new(3, 3)],
-            &mut FastrandDice::new(),
-        );
+        let result =
+            rollout_eval.single_rollout_with_dice(&pos, &[Dice::new(2, 1), Dice::new(3, 3)]);
         //Then
-        assert_eq!(result, LoseGammon);
+        assert_eq!(result, Ok(LoseGammon));
     }
 
     #[test]
-    fn single_rollout_win_bg() {
+    fn single_rollout_with_dice_win_bg() {
         // Given
         let rollout_eval = RolloutEvaluator::with_random_evaluator();
         let pos = pos!(x 24:1; o 1:15);
         // When
         let result =
-            rollout_eval.single_rollout(&pos, &[Dice::new(6, 6)], &mut FastrandDice::new());
+            rollout_eval.single_rollout_with_dice(&pos, &[Dice::new(6, 6), Dice::new(1, 2)]);
         //Then
-        assert_eq!(result, WinBg);
+        assert_eq!(result, Ok(WinBg));
     }
 
     #[test]
-    fn single_rollout_lose_bg() {
+    fn single_rollout_with_dice_lose_bg() {
         // Given
         let rollout_eval = RolloutEvaluator::with_random_evaluator();
         let pos = pos!(x 24:15; o 1:1);
         // When
-        let result = rollout_eval.single_rollout(
-            &pos,
-            &[Dice::new(1, 2), Dice::new(6, 6)],
-            &mut FastrandDice::new(),
-        );
+        let result =
+            rollout_eval.single_rollout_with_dice(&pos, &[Dice::new(1, 2), Dice::new(6, 6)]);
         //Then
-        assert_eq!(result, LoseBg);
+        assert_eq!(result, Ok(LoseBg));
+    }
+
+    #[test]
+    fn single_rollout_with_dice_return_failure() {
+        // Given
+        let rollout_eval = RolloutEvaluator::with_random_evaluator();
+        let pos = pos!(x 1:15; o 24:5);
+        // When
+        let result =
+            rollout_eval.single_rollout_with_dice(&pos, &[Dice::new(1, 2), Dice::new(6, 1)]);
+        //Then
+        let expected_position = pos!(x 1:13; o 24:3);
+        assert_eq!(result, Err(expected_position));
     }
 }
