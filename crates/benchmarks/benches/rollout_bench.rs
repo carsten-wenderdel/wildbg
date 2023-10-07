@@ -6,7 +6,16 @@ use engine::pos;
 use engine::position::Position;
 use std::collections::HashMap;
 
+// Once this function is called there is no going back to more threads for the other benchmarks.
+// So better call it in every benchmark function.
+fn use_only_one_thread() {
+    _ = rayon::ThreadPoolBuilder::new()
+        .num_threads(1)
+        .build_global();
+}
+
 fn rollout_close_to_race(c: &mut Criterion) {
+    use_only_one_thread();
     let mut group = c.benchmark_group("group");
     group.sample_size(10);
     let rollout = RolloutEvaluator::with_evaluator_and_seed(
@@ -23,6 +32,7 @@ fn rollout_close_to_race(c: &mut Criterion) {
 }
 
 fn rollout_early_game(c: &mut Criterion) {
+    use_only_one_thread();
     let mut group = c.benchmark_group("group");
     group.sample_size(10);
     let rollout = RolloutEvaluator::with_evaluator_and_seed(
