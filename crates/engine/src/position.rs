@@ -121,6 +121,10 @@ impl Position {
         self.pips[pip]
     }
 
+    pub fn has_lost(&self) -> bool {
+        self.o_off == NO_OF_CHECKERS
+    }
+
     pub fn game_state(&self) -> GameState {
         debug_assert!(
             self.x_off < 15 || self.o_off < 15,
@@ -499,10 +503,12 @@ mod tests {
     fn game_state_normal() {
         let given = pos!(x 19:14; o);
         assert_eq!(given.game_state(), GameOver(LoseNormal));
+        assert!(given.has_lost());
         assert_eq!(
             given.switch_sides().game_state(),
             GameOver(LoseNormal.reverse())
         );
+        assert!(!given.switch_sides().has_lost());
     }
 
     #[test]

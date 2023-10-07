@@ -31,6 +31,16 @@ pub trait Evaluator {
     where
         F: Fn(&Probabilities) -> f32,
     {
+        // Two optimizations so that we don't have to call eval that often.
+        // The function would also work without the next 6 lines.
+        if positions.len() == 1 {
+            return positions.first().unwrap();
+        }
+        if let Some(end_of_game_position) = positions.iter().find(|p| p.has_lost()) {
+            return end_of_game_position;
+        }
+
+        // No obvious position found, so now we have to call `eval` for all of them.
         positions
             .iter()
             .map(|pos| (pos, value(&self.eval(pos))))
