@@ -4,21 +4,36 @@ use engine::position::GameState::{GameOver, Ongoing};
 use engine::position::{GameResult, Position};
 use engine::probabilities::Probabilities;
 use rayon::prelude::*;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 
+/// Two `RolloutEvaluator`s which are initialized with the same `seed` and the same evaluators,
+/// will always return the identical value when `eval` is called for the same position.
 pub struct RolloutEvaluator<T: Evaluator> {
     evaluator: T,
+    seed: u64,
 }
 
 impl<T: Evaluator + Sync> Evaluator for RolloutEvaluator<T> {
     /// Rolls out 1296 times, first two half moves are given, rest is random
     fn eval(&self, pos: &Position) -> Probabilities {
         debug_assert!(pos.game_state() == Ongoing);
-        let dice = ALL_1296;
 
-        let game_results: Vec<GameResult> = dice
+        // We don't want to have identical dice for rollouts of *all* positions.
+        // On the other hand, for a certain position, we always want the same dice, this helps in tests.
+        // So we initialize `FastrandDice` with a seed depending on the hash of the position combined
+        // with the seed of this RolloutEvaluator.
+        let mut hasher = DefaultHasher::new();
+        pos.hash(&mut hasher);
+        self.seed.hash(&mut hasher);
+        let seed = hasher.finish();
+        let mut dice_gen = FastrandDice::with_seed(seed);
+
+        let dice_and_seeds = ALL_1296.map(|dice| (dice, dice_gen.seed()));
+        let game_results: Vec<GameResult> = dice_and_seeds
             .par_iter()
-            .map(|dice_pair| {
-                let mut dice_gen = FastrandDice::new();
+            .map(|(dice_pair, seed)| {
+                let mut dice_gen = FastrandDice::with_seed(*seed);
                 self.single_rollout(pos, &[dice_pair.0, dice_pair.1], &mut dice_gen)
             })
             .collect();
@@ -37,16 +52,19 @@ impl<T: Evaluator + Sync> Evaluator for RolloutEvaluator<T> {
 }
 
 impl RolloutEvaluator<RandomEvaluator> {
-    pub fn new_random() -> Self {
-        RolloutEvaluator {
-            evaluator: RandomEvaluator {},
-        }
+    pub fn with_random_evaluator() -> Self {
+        Self::with_evaluator(RandomEvaluator {})
     }
 }
 
 impl<T: Evaluator> RolloutEvaluator<T> {
     pub fn with_evaluator(evaluator: T) -> Self {
-        Self { evaluator }
+        let seed = FastrandDice::random_seed();
+        Self::with_evaluator_and_seed(evaluator, seed)
+    }
+
+    pub fn with_evaluator_and_seed(evaluator: T, seed: u64) -> Self {
+        Self { evaluator, seed }
     }
 
     /// `first_dice` contains the dice for first moves, starting at index 0. It may be empty.
@@ -87,16 +105,14 @@ impl<T: Evaluator> RolloutEvaluator<T> {
 #[cfg(test)]
 mod tests {
     use crate::rollout::RolloutEvaluator;
-    use engine::evaluator::{Evaluator, RandomEvaluator};
+    use engine::evaluator::Evaluator;
     use engine::pos;
     use engine::position::Position;
     use std::collections::HashMap;
 
     #[test]
     fn correct_results_after_first_or_second_half_move() {
-        let rollout_eval = RolloutEvaluator {
-            evaluator: RandomEvaluator {},
-        };
+        let rollout_eval = RolloutEvaluator::with_random_evaluator();
         let pos = pos!(x 6:1; o 19:1);
 
         // From this position both players are only 6 pips (2 moves) away from finishing.
@@ -123,9 +139,7 @@ mod tests {
 
     #[test]
     fn rollout_always_lose_gammon() {
-        let rollout_eval = RolloutEvaluator {
-            evaluator: RandomEvaluator {},
-        };
+        let rollout_eval = RolloutEvaluator::with_random_evaluator();
         let pos = pos!(x 17:15; o 24:8);
 
         let results = rollout_eval.eval(&pos);
@@ -133,9 +147,7 @@ mod tests {
     }
     #[test]
     fn rollout_always_win_bg() {
-        let rollout_eval = RolloutEvaluator {
-            evaluator: RandomEvaluator {},
-        };
+        let rollout_eval = RolloutEvaluator::with_random_evaluator();
         let pos = pos!(x 1:8; o 2:15);
 
         let results = rollout_eval.eval(&pos);
@@ -147,7 +159,6 @@ mod tests {
 mod private_tests {
     use crate::rollout::RolloutEvaluator;
     use engine::dice::{Dice, DiceGenMock, FastrandDice};
-    use engine::evaluator::RandomEvaluator;
     use engine::pos;
     use engine::position::GameResult::{
         LoseBg, LoseGammon, LoseNormal, WinBg, WinGammon, WinNormal,
@@ -158,9 +169,7 @@ mod private_tests {
     #[test]
     fn single_rollout_win_normal() {
         // Given
-        let rollout_eval = RolloutEvaluator {
-            evaluator: RandomEvaluator {},
-        };
+        let rollout_eval = RolloutEvaluator::with_random_evaluator();
         let pos = pos!(x 12:1; o 13:1);
         // When
         let mut dice_gen = DiceGenMock::new(&[Dice::new(2, 1), Dice::new(2, 1)]);
@@ -173,9 +182,7 @@ mod private_tests {
     #[test]
     fn single_rollout_lose_normal() {
         // Given
-        let rollout_eval = RolloutEvaluator {
-            evaluator: RandomEvaluator {},
-        };
+        let rollout_eval = RolloutEvaluator::with_random_evaluator();
         let pos = pos!(x 12:1; o 13:1);
         // When
         let mut dice_gen = DiceGenMock::new(&[Dice::new(2, 1), Dice::new(2, 1)]);
@@ -189,9 +196,7 @@ mod private_tests {
     #[test]
     fn single_rollout_win_gammon() {
         // Given
-        let rollout_eval = RolloutEvaluator {
-            evaluator: RandomEvaluator {},
-        };
+        let rollout_eval = RolloutEvaluator::with_random_evaluator();
         let pos = pos!(x 1:4; o 12:15);
         // When
         let result =
@@ -203,9 +208,7 @@ mod private_tests {
     #[test]
     fn single_rollout_lose_gammon() {
         // Given
-        let rollout_eval = RolloutEvaluator {
-            evaluator: RandomEvaluator {},
-        };
+        let rollout_eval = RolloutEvaluator::with_random_evaluator();
         let pos = pos!(x 12:15; o 24:1);
         // When
         let result = rollout_eval.single_rollout(
@@ -220,9 +223,7 @@ mod private_tests {
     #[test]
     fn single_rollout_win_bg() {
         // Given
-        let rollout_eval = RolloutEvaluator {
-            evaluator: RandomEvaluator {},
-        };
+        let rollout_eval = RolloutEvaluator::with_random_evaluator();
         let pos = pos!(x 24:1; o 1:15);
         // When
         let result =
@@ -234,9 +235,7 @@ mod private_tests {
     #[test]
     fn single_rollout_lose_bg() {
         // Given
-        let rollout_eval = RolloutEvaluator {
-            evaluator: RandomEvaluator {},
-        };
+        let rollout_eval = RolloutEvaluator::with_random_evaluator();
         let pos = pos!(x 24:15; o 1:1);
         // When
         let result = rollout_eval.single_rollout(

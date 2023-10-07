@@ -123,11 +123,23 @@ impl FastrandDice {
         }
     }
 
-    #[allow(dead_code)]
-    pub(crate) fn with_seed(seed: u64) -> FastrandDice {
+    pub fn with_seed(seed: u64) -> FastrandDice {
         FastrandDice {
             generator: fastrand::Rng::with_seed(seed),
         }
+    }
+
+    /// Returns a seed which is depending on the state of `FastrandDice`.
+    ///
+    /// If `FastrandDice` was created with a certain seed and immediately this function is called,
+    /// then it will always return the same value. Helpful for tests and benchmarks.
+    pub fn seed(&mut self) -> u64 {
+        self.generator.u64(..)
+    }
+
+    /// Returns a random seed, not depending on state. Don't use it in tests or benchmarks.
+    pub fn random_seed() -> u64 {
+        fastrand::u64(..)
     }
 }
 
@@ -241,6 +253,25 @@ mod fastrand_dice_tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn initialized_with_identical_seeds_results_in_identical_behavior() {
+        let mut dice_gen1 = FastrandDice::with_seed(100);
+        let mut dice_gen2 = FastrandDice::with_seed(100);
+
+        assert_eq!(dice_gen1.seed(), dice_gen2.seed());
+        assert_eq!(dice_gen1.roll(), dice_gen2.roll());
+    }
+
+    #[test]
+    fn initialized_with_different_seeds_results_in_different_behavior() {
+        let mut dice_gen1 = FastrandDice::with_seed(100);
+        let mut dice_gen2 = FastrandDice::with_seed(123);
+
+        // Well, as there are only 21 dice, sometimes we will see the same behavior. But mostly not.
+        assert_ne!(dice_gen1.seed(), dice_gen2.seed());
+        assert_ne!(dice_gen1.roll(), dice_gen2.roll());
     }
 }
 
