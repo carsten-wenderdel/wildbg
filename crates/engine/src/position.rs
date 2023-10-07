@@ -11,7 +11,7 @@ use std::fmt::Formatter;
 use std::fmt::Write;
 use std::ops::Add;
 
-const NO_OF_CHECKERS: u8 = 15;
+const NUM_OF_CHECKERS: u8 = 15;
 pub const X_BAR: usize = 25;
 pub const O_BAR: usize = 0;
 
@@ -122,15 +122,15 @@ impl Position {
     }
 
     pub fn has_lost(&self) -> bool {
-        self.o_off == NO_OF_CHECKERS
+        self.o_off == NUM_OF_CHECKERS
     }
 
     pub fn game_state(&self) -> GameState {
         debug_assert!(
-            self.x_off < 15 || self.o_off < 15,
+            self.x_off < NUM_OF_CHECKERS || self.o_off < NUM_OF_CHECKERS,
             "Not both sides can win at the same time"
         );
-        if self.x_off == 15 {
+        if self.x_off == NUM_OF_CHECKERS {
             if self.o_off > 0 {
                 GameOver(WinNormal)
             } else if self.pips[O_BAR..7].iter().any(|pip| pip < &0) {
@@ -138,7 +138,7 @@ impl Position {
             } else {
                 GameOver(WinGammon)
             }
-        } else if self.o_off == 15 {
+        } else if self.o_off == NUM_OF_CHECKERS {
             if self.x_off > 0 {
                 GameOver(LoseNormal)
             } else if self.pips[19..(X_BAR + 1)].iter().any(|pip| pip > &0) {
@@ -153,7 +153,7 @@ impl Position {
 
     /// The return values have switched the sides of the players.
     pub fn all_positions_after_moving(&self, dice: &Dice) -> Vec<Position> {
-        debug_assert!(self.o_off < NO_OF_CHECKERS && self.x_off < NO_OF_CHECKERS);
+        debug_assert!(self.o_off < NUM_OF_CHECKERS && self.x_off < NUM_OF_CHECKERS);
         let mut new_positions = match dice {
             Dice::Double(die) => self.all_positions_after_double_move(*die),
             Dice::Regular(dice) => self.all_positions_after_regular_move(dice),
@@ -212,8 +212,10 @@ impl TryFrom<[i8; 26]> for Position {
     /// Checkers already off the board are calculated based on the input array.
     /// Will return an error if the sum of checkers for `x` or `o` is bigger than 15.
     fn try_from(pips: [i8; 26]) -> Result<Self, Self::Error> {
-        let x_off: i8 = 15 - pips.iter().filter(|p| p.is_positive()).sum::<i8>();
-        let o_off: i8 = 15 + pips.iter().filter(|p| p.is_negative()).sum::<i8>();
+        let x_off: i8 =
+            (NUM_OF_CHECKERS as i8) - pips.iter().filter(|p| p.is_positive()).sum::<i8>();
+        let o_off: i8 =
+            (NUM_OF_CHECKERS as i8) + pips.iter().filter(|p| p.is_negative()).sum::<i8>();
 
         if x_off < 0 {
             Err("Player x has more than 15 checkers on the board.")
@@ -426,8 +428,8 @@ impl Position {
 
         Position {
             pips,
-            x_off: (15 - x_pieces - x_bar) as u8,
-            o_off: (15 - o_pieces - o_bar) as u8,
+            x_off: (NUM_OF_CHECKERS as i8 - x_pieces - x_bar) as u8,
+            o_off: (NUM_OF_CHECKERS as i8 - o_pieces - o_bar) as u8,
         }
     }
 }
