@@ -129,6 +129,14 @@ impl ResultCounter {
         // This works because the enum has associated integer values (discriminant), starting with zero.
         self.results[result as usize]
     }
+
+    pub fn combine(self, counter: &ResultCounter) -> Self {
+        let mut results = self.results;
+        for (self_value, counter_value) in results.iter_mut().zip(counter.results) {
+            *self_value += counter_value;
+        }
+        Self { results }
+    }
 }
 
 #[cfg(test)]

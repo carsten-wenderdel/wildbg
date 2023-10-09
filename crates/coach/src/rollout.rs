@@ -41,21 +41,17 @@ impl<T: Evaluator + Sync> Evaluator for RolloutEvaluator<T> {
 
         let dice_and_seeds =
             ALL_441.map(|(dice, amount)| (dice, dice_seeds(&mut dice_gen, amount)));
-        let game_results: Vec<GameResult> = dice_and_seeds
+        let game_results: ResultCounter = dice_and_seeds
             .par_iter()
-            .flat_map(|(dice, seeds)| self.results_from_single_rollouts(pos, dice, seeds))
-            .collect();
+            .map(|(dice, seeds)| self.results_from_single_rollouts(pos, dice, seeds))
+            .reduce(ResultCounter::default, |a, b| a.combine(&b));
 
-        let mut counter = ResultCounter::default();
-        for gr in game_results {
-            counter.add(gr);
-        }
         debug_assert_eq!(
-            counter.sum(),
+            game_results.sum(),
             6 * 6 * 6 * 6,
             "Rollout should look at 1296 games"
         );
-        Probabilities::from(&counter)
+        Probabilities::from(&game_results)
     }
 }
 
@@ -84,17 +80,19 @@ impl<T: Evaluator> RolloutEvaluator<T> {
         from: &Position,
         first_dice: &[Dice; 2],
         seeds: &Vec<u64>,
-    ) -> Vec<GameResult> {
+    ) -> ResultCounter {
+        let mut counter = ResultCounter::default();
         match self.single_rollout_with_dice(from, first_dice) {
-            Ok(result) => vec![result.clone(); seeds.len()],
-            Err(pos) => seeds
-                .iter()
-                .map(|seed| {
-                    let mut dice_gen = FastrandDice::with_seed(*seed);
-                    self.single_rollout_with_generator(&pos, &mut dice_gen)
-                })
-                .collect(),
+            Ok(result) => {
+                counter.add_results(result, seeds.len() as u32);
+            }
+            Err(pos) => seeds.iter().for_each(|seed| {
+                let mut dice_gen = FastrandDice::with_seed(*seed);
+                let result = self.single_rollout_with_generator(&pos, &mut dice_gen);
+                counter.add(result);
+            }),
         }
+        counter
     }
 
     /// Will try to do a rollout with the given `first_dice`.
