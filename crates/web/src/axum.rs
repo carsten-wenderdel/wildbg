@@ -169,7 +169,7 @@ mod tests {
     use engine::onnx::OnnxEvaluator;
     use engine::pos;
     use engine::position::Position;
-    use engine::probabilities::Probabilities;
+    use engine::probabilities::{Probabilities, ResultCounter};
     use hyper::{Body, Request, StatusCode};
     use std::collections::HashMap;
     use std::sync::Arc;
@@ -192,13 +192,13 @@ mod tests {
             let double_roll_3 = pos!(x 3:2; o 24:1).switch_sides();
 
             if position == &forced_move {
-                Probabilities::new(&[874, 1, 1, 130, 1, 1])
+                Probabilities::from(&ResultCounter::new(874, 1, 1, 130, 1, 1))
             } else if position == &double_roll_1 {
-                Probabilities::new(&[865, 1, 0, 137, 1, 1])
+                Probabilities::from(&ResultCounter::new(865, 1, 0, 137, 1, 1))
             } else if position == &double_roll_2 {
-                Probabilities::new(&[12, 1, 1, 16, 3, 1])
+                Probabilities::from(&ResultCounter::new(12, 1, 1, 16, 3, 1))
             } else if position == &double_roll_3 {
-                Probabilities::new(&[925, 1, 0, 75, 1, 1])
+                Probabilities::from(&ResultCounter::new(925, 1, 0, 75, 1, 1))
             } else {
                 unreachable!("All evaluated positions should be listed here");
             }

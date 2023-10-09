@@ -2,13 +2,13 @@ use engine::dice::{DiceGen, FastrandDice};
 use engine::evaluator::Evaluator;
 use engine::position::GameState::{GameOver, Ongoing};
 use engine::position::STARTING;
-use engine::probabilities::Probabilities;
+use engine::probabilities::{Probabilities, ResultCounter};
 
 pub struct Duel<T: Evaluator, U: Evaluator> {
     evaluator1: T,
     evaluator2: U,
     dice_gen: FastrandDice,
-    results: [u32; 6],
+    counter: ResultCounter,
 }
 
 /// Let two `Evaluator`s duel each other. A bit quick and dirty.
@@ -23,16 +23,16 @@ impl<T: Evaluator, U: Evaluator> Duel<T, U> {
             evaluator1,
             evaluator2,
             dice_gen,
-            results: [0; 6],
+            counter: ResultCounter::default(),
         }
     }
 
     pub fn number_of_games(&self) -> u32 {
-        self.results.iter().sum()
+        self.counter.sum()
     }
 
     pub fn probabilities(&self) -> Probabilities {
-        Probabilities::new(&self.results)
+        Probabilities::from(&self.counter)
     }
 
     /// The two `Evaluator`s will play twice each against each other.
@@ -62,7 +62,7 @@ impl<T: Evaluator, U: Evaluator> Duel<T, U> {
                         } else {
                             result.reverse()
                         };
-                        self.results[result as usize] += 1;
+                        self.counter.add(result);
                     }
                 }
             }
@@ -82,7 +82,7 @@ impl<T: Evaluator, U: Evaluator> Duel<T, U> {
                         } else {
                             result
                         };
-                        self.results[result as usize] += 1;
+                        self.counter.add(result);
                     }
                 }
             }

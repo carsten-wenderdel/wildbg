@@ -1,3 +1,4 @@
+use crate::position::GameResult;
 use crate::position::GameResult::*;
 use std::fmt;
 use std::fmt::Formatter;
@@ -49,21 +50,6 @@ impl Probabilities {
         "win_normal;win_gammon;win_bg;lose_normal;lose_gammon;lose_bg".to_string()
     }
 
-    /// Typically used from rollouts.
-    /// The index within the array has to correspond to the discriminant of the `Probabilities` enum.
-    /// Input integer values will be normalized so that the sum in the return value is 1.0
-    pub fn new(results: &[u32; 6]) -> Self {
-        let sum = results.iter().sum::<u32>() as f32;
-        Probabilities {
-            win_normal: results[WinNormal as usize] as f32 / sum,
-            win_gammon: results[WinGammon as usize] as f32 / sum,
-            win_bg: results[WinBg as usize] as f32 / sum,
-            lose_normal: results[LoseNormal as usize] as f32 / sum,
-            lose_gammon: results[LoseGammon as usize] as f32 / sum,
-            lose_bg: results[LoseBg as usize] as f32 / sum,
-        }
-    }
-
     pub fn win(&self) -> f32 {
         self.win_normal + self.win_gammon + self.win_bg
     }
@@ -87,15 +73,80 @@ impl Probabilities {
     }
 }
 
+impl From<&ResultCounter> for Probabilities {
+    /// Typically used from rollouts.
+    fn from(value: &ResultCounter) -> Self {
+        let sum = value.sum() as f32;
+        Probabilities {
+            win_normal: value.num_of(WinNormal) as f32 / sum,
+            win_gammon: value.num_of(WinGammon) as f32 / sum,
+            win_bg: value.num_of(WinBg) as f32 / sum,
+            lose_normal: value.num_of(LoseNormal) as f32 / sum,
+            lose_gammon: value.num_of(LoseGammon) as f32 / sum,
+            lose_bg: value.num_of(LoseBg) as f32 / sum,
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct ResultCounter {
+    results: [u32; 6],
+}
+
+impl ResultCounter {
+    /// Convenience method, mainly for tests
+    pub fn new(
+        win_normal: u32,
+        win_gammon: u32,
+        win_bg: u32,
+        lose_normal: u32,
+        lose_gammon: u32,
+        lose_bg: u32,
+    ) -> Self {
+        let results = [
+            win_normal,
+            win_gammon,
+            win_bg,
+            lose_normal,
+            lose_gammon,
+            lose_bg,
+        ];
+        Self { results }
+    }
+    pub fn add(&mut self, result: GameResult) {
+        self.results[result as usize] += 1;
+    }
+
+    pub fn add_results(&mut self, result: GameResult, amount: u32) {
+        self.results[result as usize] += amount;
+    }
+
+    pub fn sum(&self) -> u32 {
+        self.results.iter().sum::<u32>()
+    }
+
+    pub fn num_of(&self, result: GameResult) -> u32 {
+        // This works because the enum has associated integer values (discriminant), starting with zero.
+        self.results[result as usize]
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::probabilities::Probabilities;
+    use crate::position::GameResult::{LoseBg, LoseGammon, LoseNormal, WinBg, WinGammon};
+    use crate::probabilities::{Probabilities, ResultCounter};
 
     #[test]
-    fn new() {
+    fn from_result_counter() {
         // sum of `results is 32, a power of 2. Makes fractions easier to handle.
-        let results = [0_u32, 1, 3, 4, 8, 16];
-        let probabilities = Probabilities::new(&results);
+        let mut counter = ResultCounter::default();
+        counter.add(WinGammon);
+        counter.add_results(WinBg, 3);
+        counter.add_results(LoseNormal, 4);
+        counter.add_results(LoseGammon, 8);
+        counter.add_results(LoseBg, 16);
+
+        let probabilities = Probabilities::from(&counter);
         assert_eq!(probabilities.win_normal, 0.0);
         assert_eq!(probabilities.win_gammon, 0.03125);
         assert_eq!(probabilities.win_bg, 0.09375);

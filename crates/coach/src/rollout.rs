@@ -2,7 +2,7 @@ use engine::dice::{Dice, DiceGen, FastrandDice, ALL_441};
 use engine::evaluator::{Evaluator, RandomEvaluator};
 use engine::position::GameState::{GameOver, Ongoing};
 use engine::position::{GameResult, Position};
-use engine::probabilities::Probabilities;
+use engine::probabilities::{Probabilities, ResultCounter};
 use rayon::prelude::*;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
@@ -46,16 +46,16 @@ impl<T: Evaluator + Sync> Evaluator for RolloutEvaluator<T> {
             .flat_map(|(dice, seeds)| self.results_from_single_rollouts(pos, dice, seeds))
             .collect();
 
-        let mut results = [0; 6];
+        let mut counter = ResultCounter::default();
         for gr in game_results {
-            results[gr as usize] += 1;
+            counter.add(gr);
         }
         debug_assert_eq!(
-            results.iter().sum::<u32>(),
+            counter.sum(),
             6 * 6 * 6 * 6,
             "Rollout should look at 1296 games"
         );
-        Probabilities::new(&results)
+        Probabilities::from(&counter)
     }
 }
 
