@@ -4,7 +4,7 @@ use std::fmt;
 use std::fmt::Formatter;
 
 /// Sum of all six fields will always be 1.0
-#[derive(PartialEq)]
+#[derive(Default, PartialEq)]
 pub struct Probabilities {
     pub win_normal: f32,
     pub win_gammon: f32,

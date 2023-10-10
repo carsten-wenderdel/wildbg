@@ -121,6 +121,7 @@ impl Position {
         self.pips[pip]
     }
 
+    #[inline(always)]
     pub fn has_lost(&self) -> bool {
         self.o_off == NUM_OF_CHECKERS
     }

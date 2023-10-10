@@ -2,6 +2,21 @@ use crate::dice::Dice;
 use crate::position::Position;
 use crate::probabilities::Probabilities;
 
+/// A `PartialEvaluator` can only evaluate certain positions, for example only backgames or only bearoffs.
+pub trait PartialEvaluator {
+    /// Return `None` if the position can not be evaluated.
+    ///
+    /// Return `Some(Probabilities)` if the the position can be evaluated.
+    fn try_eval(&self, pos: &Position) -> Option<Probabilities>;
+}
+
+impl<T: Evaluator> PartialEvaluator for T {
+    /// Will always return `Some(Probabilities`) as all positions can be evaluated.
+    fn try_eval(&self, pos: &Position) -> Option<Probabilities> {
+        Some(self.eval(pos))
+    }
+}
+
 pub trait Evaluator {
     /// Returns a cubeless evaluation of a position.
     /// Implementing types will calculate the probabilities with different strategies.

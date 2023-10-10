@@ -1,3 +1,4 @@
+use engine::composite::{CompositeEvaluator, GameOverEvaluator};
 use engine::dice::Dice;
 use engine::evaluator::Evaluator;
 use engine::onnx::OnnxEvaluator;
@@ -12,9 +13,11 @@ pub struct WebApi<T: Evaluator> {
     evaluator: T,
 }
 
-impl WebApi<OnnxEvaluator> {
+impl WebApi<CompositeEvaluator<GameOverEvaluator, OnnxEvaluator>> {
     pub fn try_default() -> Option<Self> {
-        OnnxEvaluator::with_default_model().map(|evaluator| Self { evaluator })
+        OnnxEvaluator::with_default_model().map(|onnx| Self {
+            evaluator: CompositeEvaluator::new(GameOverEvaluator {}, onnx),
+        })
     }
 }
 
