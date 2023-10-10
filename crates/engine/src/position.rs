@@ -5,6 +5,7 @@ use base64::{engine::general_purpose, Engine as _};
 use crate::dice::Dice;
 use crate::position::GameResult::*;
 use crate::position::GameState::*;
+use crate::position::OngoingState::{Contact, Race};
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Formatter;
@@ -49,6 +50,18 @@ impl GameResult {
 #[derive(Debug, PartialEq)]
 pub enum GameState {
     Ongoing,
+    GameOver(GameResult),
+}
+
+#[derive(Debug, PartialEq)]
+pub enum OngoingState {
+    Contact,
+    Race,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum GamePhase {
+    Ongoing(OngoingState),
     GameOver(GameResult),
 }
 
@@ -149,6 +162,35 @@ impl Position {
             }
         } else {
             Ongoing
+        }
+    }
+
+    /// Returns more info than `game_state` - not only whether the game is still ongoing, but also
+    /// whether we are already in the race phase.
+    ///
+    /// This is important for choosing the proper neural net.
+    pub fn game_phase(&self) -> GamePhase {
+        match self.game_state() {
+            GameOver(result) => GamePhase::GameOver(result),
+            Ongoing => {
+                // The index of my checker which is closest to pip 1
+                let last_own_checker = self
+                    .pips
+                    .iter()
+                    .position(|&p| p > 0)
+                    .expect("There must be a checker on a pip, otherwise the game is over");
+                // The index of opponents checker which is closest to 24
+                let last_opponent_checker = self
+                    .pips
+                    .iter()
+                    .rposition(|&p| p < 0)
+                    .expect("There must be a checker on a pip, otherwise the game is over");
+                if last_own_checker > last_opponent_checker {
+                    GamePhase::Ongoing(Contact)
+                } else {
+                    GamePhase::Ongoing(Race)
+                }
+            }
         }
     }
 
@@ -519,6 +561,60 @@ mod tests {
         let given = pos!(x 19:14; o 1:4);
         assert_eq!(given.game_state(), Ongoing);
         assert_eq!(given.switch_sides().game_state(), Ongoing);
+    }
+
+    #[test]
+    fn game_phase_win_or_lose_normal() {
+        let given = pos!(x 1:1; o);
+        assert_eq!(given.game_phase(), GamePhase::GameOver(LoseNormal));
+        assert_eq!(
+            given.switch_sides().game_phase(),
+            GamePhase::GameOver(WinNormal)
+        );
+    }
+
+    #[test]
+    fn game_phase_win_or_lose_gammon() {
+        let given = pos!(x 12:15; o);
+        assert_eq!(given.game_phase(), GamePhase::GameOver(LoseGammon));
+        assert_eq!(
+            given.switch_sides().game_phase(),
+            GamePhase::GameOver(WinGammon)
+        );
+    }
+
+    #[test]
+    fn game_phase_win_or_lose_bg() {
+        let given = pos!(x 20:15; o);
+        assert_eq!(given.game_phase(), GamePhase::GameOver(LoseBg));
+        assert_eq!(
+            given.switch_sides().game_phase(),
+            GamePhase::GameOver(WinBg)
+        );
+    }
+
+    #[test]
+    fn game_phase_contact() {
+        let given = pos!(x 12:1; o 2:1);
+        assert_eq!(given.game_phase(), GamePhase::Ongoing(Contact));
+    }
+
+    #[test]
+    fn game_phase_contact_when_x_on_bar() {
+        let given = pos!(x X_BAR:1; o 2:1);
+        assert_eq!(given.game_phase(), GamePhase::Ongoing(Contact));
+    }
+
+    #[test]
+    fn game_phase_contact_when_o_on_bar() {
+        let given = pos!(x 1:1; o O_BAR:1);
+        assert_eq!(given.game_phase(), GamePhase::Ongoing(Contact));
+    }
+
+    #[test]
+    fn game_phase_race() {
+        let given = pos!(x 1:1; o 2:1);
+        assert_eq!(given.game_phase(), GamePhase::Ongoing(Race));
     }
 
     #[test]
