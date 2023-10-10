@@ -1,50 +1,35 @@
-use engine::dice::{DiceGen, FastrandDice};
+use engine::dice::DiceGen;
 use engine::evaluator::Evaluator;
 use engine::position::GameState::{GameOver, Ongoing};
 use engine::position::STARTING;
-use engine::probabilities::{Probabilities, ResultCounter};
+use engine::probabilities::ResultCounter;
 
 pub struct Duel<T: Evaluator, U: Evaluator> {
     evaluator1: T,
     evaluator2: U,
-    dice_gen: FastrandDice,
-    counter: ResultCounter,
 }
 
 /// Let two `Evaluator`s duel each other. A bit quick and dirty.
 impl<T: Evaluator, U: Evaluator> Duel<T, U> {
     #[allow(clippy::new_without_default)]
     pub fn new(evaluator1: T, evaluator2: U) -> Self {
-        Self::with_dice_gen(evaluator1, evaluator2, FastrandDice::new())
-    }
-
-    fn with_dice_gen(evaluator1: T, evaluator2: U, dice_gen: FastrandDice) -> Self {
-        Duel {
+        Self {
             evaluator1,
             evaluator2,
-            dice_gen,
-            counter: ResultCounter::default(),
         }
-    }
-
-    pub fn number_of_games(&self) -> u32 {
-        self.counter.sum()
-    }
-
-    pub fn probabilities(&self) -> Probabilities {
-        Probabilities::from(&self.counter)
     }
 
     /// The two `Evaluator`s will play twice each against each other.
     /// Either `Evaluator` will start once and play with the same dice as vice versa.
-    pub fn duel_once(&mut self) {
+    pub fn duel<V: DiceGen>(&self, dice_gen: &mut V) -> ResultCounter {
         let mut pos1 = STARTING;
         let mut pos2 = STARTING;
         let mut iteration = 0;
         let mut pos1_finished = false;
         let mut pos2_finished = false;
+        let mut counter = ResultCounter::default();
         while !(pos1_finished && pos2_finished) {
-            let dice = self.dice_gen.roll();
+            let dice = dice_gen.roll();
 
             match pos1.game_state() {
                 Ongoing => {
@@ -62,7 +47,7 @@ impl<T: Evaluator, U: Evaluator> Duel<T, U> {
                         } else {
                             result.reverse()
                         };
-                        self.counter.add(result);
+                        counter.add(result);
                     }
                 }
             }
@@ -82,11 +67,13 @@ impl<T: Evaluator, U: Evaluator> Duel<T, U> {
                         } else {
                             result
                         };
-                        self.counter.add(result);
+                        counter.add(result);
                     }
                 }
             }
             iteration += 1;
         }
+        debug_assert!(counter.sum() == 2, "Each duel should have two game results");
+        counter
     }
 }
