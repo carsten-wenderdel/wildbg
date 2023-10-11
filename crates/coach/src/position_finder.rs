@@ -37,9 +37,8 @@ impl<T: Evaluator> PositionFinder<T> {
     fn positions_in_one_random_game(&mut self) -> Vec<Position> {
         let mut positions: Vec<Position> = Vec::new();
         let mut pos = STARTING;
+        let mut dice = self.dice_gen.roll_regular();
         while pos.game_state() == Ongoing {
-            // Todo: Don't allow doubles in first move
-            let dice = self.dice_gen.roll();
             let new_positions = pos.all_positions_after_moving(&dice);
             // Todo: remove cloning by implementing the Copy trait -> maybe better performance
             pos = self
@@ -51,6 +50,7 @@ impl<T: Evaluator> PositionFinder<T> {
                 .filter(|p| p.game_state() == Ongoing)
                 .collect();
             positions.append(&mut ongoing_games);
+            dice = self.dice_gen.roll();
         }
         positions
     }

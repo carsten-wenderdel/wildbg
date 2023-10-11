@@ -110,6 +110,19 @@ impl RegularDice {
 pub trait DiceGen {
     /// Returns dice
     fn roll(&mut self) -> Dice;
+
+    /// Returns different dice, no double roll. This is useful for the first move of the game.
+    fn roll_regular(&mut self) -> Dice {
+        // There are more efficient ways to do that, but it's rarely used.
+        // So let's keep it simple.
+        // Also this works for all implementing types.
+        loop {
+            let dice = self.roll();
+            if let Dice::Regular(_) = dice {
+                return dice;
+            }
+        }
+    }
 }
 
 pub struct FastrandDice {
