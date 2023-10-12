@@ -20,7 +20,7 @@ fn main() -> std::io::Result<()> {
     file.write_all(csv_header().as_bytes())?;
 
     let evaluator = OnnxEvaluator::with_default_model().map(RolloutEvaluator::with_evaluator);
-    let finder = OnnxEvaluator::with_default_model().map(PositionFinder::new);
+    let finder = OnnxEvaluator::with_default_model().map(PositionFinder::with_random_dice);
     let start = Instant::now();
 
     match (evaluator, finder) {
@@ -35,7 +35,7 @@ fn main() -> std::io::Result<()> {
         (_, _) => {
             println!("Couldn't find onnx file, use random evaluator");
             let evaluator = RolloutEvaluator::with_evaluator(RandomEvaluator {});
-            let mut finder = PositionFinder::new(RandomEvaluator {});
+            let mut finder = PositionFinder::with_random_dice(RandomEvaluator {});
             let positions = finder.find_positions(AMOUNT);
             for (i, position) in positions.iter().enumerate() {
                 let probabilities = evaluator.eval(position);

@@ -5,21 +5,22 @@ use engine::position::{Position, STARTING};
 use std::collections::HashSet;
 
 /// Finds random positions for later rollout.
-pub struct PositionFinder<T: Evaluator> {
+pub struct PositionFinder<T: Evaluator, U: DiceGen> {
     evaluator: T,
-    dice_gen: FastrandDice,
+    dice_gen: U,
 }
 
-impl<T: Evaluator> PositionFinder<T> {
-    /// Contains different random number generators every time it's called.
-    #[allow(clippy::new_without_default)]
-    pub fn new(evaluator: T) -> Self {
+impl<T: Evaluator> PositionFinder<T, FastrandDice> {
+    /// Contains different random number generator every time it's called.
+    pub fn with_random_dice(evaluator: T) -> Self {
         PositionFinder {
             evaluator,
             dice_gen: FastrandDice::new(),
         }
     }
+}
 
+impl<T: Evaluator, U: DiceGen> PositionFinder<T, U> {
     pub fn find_positions(&mut self, amount: usize) -> HashSet<Position> {
         let mut found: HashSet<Position> = HashSet::new();
         while found.len() < amount {
