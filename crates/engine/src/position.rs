@@ -173,17 +173,17 @@ impl Position {
         match self.game_state() {
             GameOver(result) => GamePhase::GameOver(result),
             Ongoing => {
-                // The index of my checker which is closest to pip 1
+                // The index of my checker which is closest to pip 24
                 let last_own_checker = self
                     .pips
                     .iter()
-                    .position(|&p| p > 0)
+                    .rposition(|&p| p > 0)
                     .expect("There must be a checker on a pip, otherwise the game is over");
-                // The index of opponents checker which is closest to 24
+                // The index of opponent's checker which is closest to 1
                 let last_opponent_checker = self
                     .pips
                     .iter()
-                    .rposition(|&p| p < 0)
+                    .position(|&p| p < 0)
                     .expect("There must be a checker on a pip, otherwise the game is over");
                 if last_own_checker > last_opponent_checker {
                     GamePhase::Ongoing(Contact)
@@ -596,6 +596,15 @@ mod tests {
     #[test]
     fn game_phase_contact() {
         let given = pos!(x 12:1; o 2:1);
+        assert_eq!(given.game_phase(), GamePhase::Ongoing(Contact));
+    }
+
+    #[test]
+    fn game_phase_contact_enclosing() {
+        let given = pos!(x 12:1; o 20:1, 2:1);
+        assert_eq!(given.game_phase(), GamePhase::Ongoing(Contact));
+
+        let given = pos!(x 20:1, 2:1; o 12:1);
         assert_eq!(given.game_phase(), GamePhase::Ongoing(Contact));
     }
 
