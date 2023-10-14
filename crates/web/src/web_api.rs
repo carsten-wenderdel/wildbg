@@ -33,7 +33,7 @@ impl<T: Evaluator> WebApi<T> {
             Ok(position) => {
                 let evaluation = self.evaluator.eval(&position);
                 let cube = CubeInfo::from(&evaluation);
-                let probabilities = Probabilities::from(evaluation);
+                let probabilities = ProbabilitiesView::from(evaluation);
                 Ok(EvalResponse {
                     cube,
                     probabilities,
@@ -81,7 +81,7 @@ impl<T: Evaluator> WebApi<T> {
 /// Contains the probabilities for this position and cube decisions.
 pub struct EvalResponse {
     cube: CubeInfo,
-    probabilities: Probabilities,
+    probabilities: ProbabilitiesView,
 }
 
 #[derive(Serialize, ToSchema)]
@@ -103,7 +103,7 @@ pub struct MoveInfo {
     /// If the dice are identical (double roll), the array contains up to 4 elements.
     #[schema(minimum = 0, maximum = 4)]
     play: Vec<MoveDetail>,
-    probabilities: Probabilities,
+    probabilities: ProbabilitiesView,
 }
 
 // This is similar to evaluator::Probabilities. But while the former serves
@@ -115,7 +115,8 @@ pub struct MoveInfo {
 /// `lose` is not given, you can calculate it through `1 - win`.
 #[derive(Serialize, ToSchema)]
 #[allow(non_snake_case)]
-pub struct Probabilities {
+#[schema(title = "Probabilities")]
+pub struct ProbabilitiesView {
     /// Probability to win normal, gammon or backgammon
     #[schema(minimum = 0, maximum = 1)]
     pub(crate) win: f32,
@@ -133,7 +134,7 @@ pub struct Probabilities {
     pub(crate) loseBg: f32,
 }
 
-impl From<engine::probabilities::Probabilities> for Probabilities {
+impl From<engine::probabilities::Probabilities> for ProbabilitiesView {
     fn from(value: engine::probabilities::Probabilities) -> Self {
         Self {
             win: value.win_normal + value.win_gammon + value.win_bg,
@@ -261,7 +262,7 @@ mod probabilities_tests {
             lose_bg: 0.05,
         };
 
-        let view_probs: crate::web_api::Probabilities = model_probs.into();
+        let view_probs: crate::web_api::ProbabilitiesView = model_probs.into();
         assert_eq!(view_probs.win, 0.7);
         assert_eq!(view_probs.winG, 0.38);
         assert_eq!(view_probs.winBg, 0.12);

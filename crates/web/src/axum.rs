@@ -23,7 +23,7 @@ pub fn router<T: Evaluator + Send + Sync + 'static>(web_api: DynWebApi<T>) -> Ro
             crate::web_api::EvalResponse,
             crate::web_api::MoveInfo,
             crate::web_api::MoveResponse,
-            crate::web_api::Probabilities,
+            crate::web_api::ProbabilitiesView,
         )),
         info(
             title = "wildbg",
