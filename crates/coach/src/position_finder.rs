@@ -1,7 +1,7 @@
 use engine::dice::{DiceGen, FastrandDice};
 use engine::evaluator::Evaluator;
 use engine::position::GameState::Ongoing;
-use engine::position::OngoingState::Race;
+use engine::position::OngoingPhase::Race;
 use engine::position::{GamePhase, Position, STARTING};
 use engine::probabilities::Probabilities;
 use std::collections::HashSet;

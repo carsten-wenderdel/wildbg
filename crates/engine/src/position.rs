@@ -5,7 +5,7 @@ use base64::{engine::general_purpose, Engine as _};
 use crate::dice::Dice;
 use crate::position::GameResult::*;
 use crate::position::GameState::*;
-use crate::position::OngoingState::{Contact, Race};
+use crate::position::OngoingPhase::{Contact, Race};
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Formatter;
@@ -54,14 +54,14 @@ pub enum GameState {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum OngoingState {
+pub enum OngoingPhase {
     Contact,
     Race,
 }
 
 #[derive(Debug, PartialEq)]
 pub enum GamePhase {
-    Ongoing(OngoingState),
+    Ongoing(OngoingPhase),
     GameOver(GameResult),
 }
 
