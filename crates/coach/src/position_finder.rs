@@ -2,7 +2,7 @@ use engine::dice::{DiceGen, FastrandDice};
 use engine::evaluator::Evaluator;
 use engine::position::GameState::Ongoing;
 use engine::position::OngoingPhase::Race;
-use engine::position::{GamePhase, Position, STARTING};
+use engine::position::{GamePhase, OngoingPhase, Position, STARTING};
 use engine::probabilities::Probabilities;
 use std::collections::HashSet;
 
@@ -23,15 +23,14 @@ impl<T: Evaluator> PositionFinder<T, FastrandDice> {
 }
 
 impl<T: Evaluator, U: DiceGen> PositionFinder<T, U> {
-    pub fn find_positions(&mut self, amount: usize) -> HashSet<Position> {
+    pub fn find_positions(&mut self, amount: usize, phase: OngoingPhase) -> HashSet<Position> {
+        let phase = GamePhase::Ongoing(phase);
         let mut found: HashSet<Position> = HashSet::new();
         while found.len() < amount {
-            let mut more = self.positions_in_one_random_game();
-            while found.len() < amount {
-                match more.pop() {
-                    Some(pos) => found.insert(pos),
-                    None => break,
-                };
+            for position in self.positions_in_one_random_game() {
+                if found.len() < amount && position.game_phase() == phase {
+                    found.insert(position);
+                }
             }
         }
         found

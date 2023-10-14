@@ -3,6 +3,7 @@ use coach::rollout::RolloutEvaluator;
 use engine::evaluator::{Evaluator, RandomEvaluator};
 use engine::inputs::Inputs;
 use engine::onnx::OnnxEvaluator;
+use engine::position::OngoingPhase::Contact;
 use engine::position::Position;
 use engine::probabilities::Probabilities;
 use std::fs::File;
@@ -12,11 +13,13 @@ use std::time::Instant;
 const AMOUNT: usize = 100;
 
 fn main() -> std::io::Result<()> {
-    let path = "training-data/rollouts.csv";
+    let phase = Contact;
+
+    let path = format!("training-data/{:?}.csv", phase).to_lowercase();
     println!("Roll out and write CSV data to {}", path);
     _ = std::fs::create_dir("training-data");
-    _ = std::fs::remove_file(path);
-    let mut file = File::create(path)?;
+    _ = std::fs::remove_file(&path);
+    let mut file = File::create(&path)?;
     file.write_all(csv_header().as_bytes())?;
 
     let evaluator = OnnxEvaluator::with_default_model().map(RolloutEvaluator::with_evaluator);
@@ -26,7 +29,7 @@ fn main() -> std::io::Result<()> {
     match (evaluator, finder) {
         (Some(evaluator), Some(mut finder)) => {
             println!("Use onnx evaluator");
-            let positions = finder.find_positions(AMOUNT);
+            let positions = finder.find_positions(AMOUNT, phase);
             for (i, position) in positions.iter().enumerate() {
                 let probabilities = evaluator.eval(position);
                 write_csv_line(&mut file, position, &probabilities, i, start)?;
@@ -36,7 +39,7 @@ fn main() -> std::io::Result<()> {
             println!("Couldn't find onnx file, use random evaluator");
             let evaluator = RolloutEvaluator::with_evaluator(RandomEvaluator {});
             let mut finder = PositionFinder::with_random_dice(RandomEvaluator {});
-            let positions = finder.find_positions(AMOUNT);
+            let positions = finder.find_positions(AMOUNT, phase);
             for (i, position) in positions.iter().enumerate() {
                 let probabilities = evaluator.eval(position);
                 write_csv_line(&mut file, position, &probabilities, i, start)?;
