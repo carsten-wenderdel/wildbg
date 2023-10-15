@@ -22,8 +22,8 @@ fn main() -> std::io::Result<()> {
     let mut file = File::create(&path)?;
     file.write_all(csv_header().as_bytes())?;
 
-    let evaluator = OnnxEvaluator::with_default_model().map(RolloutEvaluator::with_evaluator);
-    let finder = OnnxEvaluator::with_default_model().map(PositionFinder::with_random_dice);
+    let evaluator = OnnxEvaluator::contact_default().map(RolloutEvaluator::with_evaluator);
+    let finder = OnnxEvaluator::contact_default().map(PositionFinder::with_random_dice);
     let start = Instant::now();
 
     match (evaluator, finder) {

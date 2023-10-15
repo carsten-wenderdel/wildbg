@@ -10,7 +10,7 @@ pub mod cube;
 type Error = &'static str;
 
 pub fn best_move_1ptr(pips: [i8; 26], die1: u8, die2: u8) -> Result<BgMove, Error> {
-    match OnnxEvaluator::with_default_model() {
+    match OnnxEvaluator::contact_default() {
         None => Err("Could not find neural networks."),
         Some(evaluator) => best_move_1ptr_with_evaluator(pips, die1, die2, &evaluator),
     }

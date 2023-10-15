@@ -16,7 +16,7 @@ pub struct WebApi<T: Evaluator> {
 
 impl WebApi<CompositeEvaluator<GameOverEvaluator, OnnxEvaluator<ContactInputsGen>>> {
     pub fn try_default() -> Option<Self> {
-        OnnxEvaluator::with_default_model().map(|onnx| Self {
+        OnnxEvaluator::contact_default().map(|onnx| Self {
             evaluator: CompositeEvaluator::new(GameOverEvaluator {}, onnx),
         })
     }

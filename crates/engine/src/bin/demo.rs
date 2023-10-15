@@ -7,7 +7,7 @@ use engine::position::STARTING;
 use std::collections::HashMap;
 
 fn main() {
-    let onnx = OnnxEvaluator::with_default_model().unwrap();
+    let onnx = OnnxEvaluator::contact_default().unwrap();
 
     let position = STARTING;
     let best = onnx.best_position_by_equity(&position, &Dice::new(3, 1));
