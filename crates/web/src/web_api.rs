@@ -1,6 +1,7 @@
 use engine::composite::{CompositeEvaluator, GameOverEvaluator};
 use engine::dice::Dice;
 use engine::evaluator::Evaluator;
+use engine::inputs::ContactInputsGen;
 use engine::onnx::OnnxEvaluator;
 use engine::position::Position;
 use hyper::StatusCode;
@@ -13,7 +14,7 @@ pub struct WebApi<T: Evaluator> {
     evaluator: T,
 }
 
-impl WebApi<CompositeEvaluator<GameOverEvaluator, OnnxEvaluator>> {
+impl WebApi<CompositeEvaluator<GameOverEvaluator, OnnxEvaluator<ContactInputsGen>>> {
     pub fn try_default() -> Option<Self> {
         OnnxEvaluator::with_default_model().map(|onnx| Self {
             evaluator: CompositeEvaluator::new(GameOverEvaluator {}, onnx),

@@ -166,6 +166,7 @@ mod tests {
     use crate::web_api::WebApi;
     use axum::http::header::CONTENT_TYPE;
     use engine::evaluator::Evaluator;
+    use engine::inputs::ContactInputsGen;
     use engine::onnx::OnnxEvaluator;
     use engine::pos;
     use engine::position::Position;
@@ -259,7 +260,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_move_missing_neural_net() {
-        let web_api = Arc::new(None) as DynWebApi<OnnxEvaluator>;
+        let web_api = Arc::new(None) as DynWebApi<OnnxEvaluator<ContactInputsGen>>;
         let response = router(web_api)
             .oneshot(
                 Request::builder()

@@ -1,16 +1,16 @@
 use crate::evaluator::Evaluator;
-use crate::inputs::InputsGen;
+use crate::inputs::{ContactInputsGen, InputsGen};
 use crate::position::Position;
 use crate::probabilities::Probabilities;
 use tract_onnx::prelude::*;
 
-pub struct OnnxEvaluator {
+pub struct OnnxEvaluator<T: InputsGen> {
     #[allow(clippy::type_complexity)]
     model: RunnableModel<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>,
-    inputs_gen: InputsGen,
+    inputs_gen: T,
 }
 
-impl Evaluator for OnnxEvaluator {
+impl<T: InputsGen> Evaluator for OnnxEvaluator<T> {
     fn eval(&self, position: &Position) -> Probabilities {
         let inputs = self.inputs_gen.input_vec(position);
         let tract_inputs = tract_ndarray::Array1::from_vec(inputs)
@@ -35,7 +35,7 @@ impl Evaluator for OnnxEvaluator {
 
 const NETWORK_FILE_PATH: &str = "neural-nets/wildbg.onnx";
 
-impl OnnxEvaluator {
+impl OnnxEvaluator<ContactInputsGen> {
     pub fn with_default_model() -> Option<Self> {
         OnnxEvaluator::from_file_path(NETWORK_FILE_PATH)
     }
@@ -46,27 +46,26 @@ impl OnnxEvaluator {
             .expect("onnx file should exist at that path.")
     }
 
-    pub fn from_file_path(file_path: &str) -> Option<OnnxEvaluator> {
-        match OnnxEvaluator::model(file_path) {
+    pub fn from_file_path(file_path: &str) -> Option<OnnxEvaluator<ContactInputsGen>> {
+        match model(file_path) {
             Ok(model) => Some(OnnxEvaluator {
                 model,
-                inputs_gen: InputsGen {},
+                inputs_gen: ContactInputsGen {},
             }),
             Err(_) => None,
         }
     }
+}
 
-    #[allow(clippy::type_complexity)]
-    fn model(
-        file_path: &str,
-    ) -> TractResult<RunnableModel<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>>
-    {
-        let model = onnx()
-            .model_for_path(file_path)?
-            .into_optimized()?
-            .into_runnable()?;
-        Ok(model)
-    }
+#[allow(clippy::type_complexity)]
+fn model(
+    file_path: &str,
+) -> TractResult<RunnableModel<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>> {
+    let model = onnx()
+        .model_for_path(file_path)?
+        .into_optimized()?
+        .into_runnable()?;
+    Ok(model)
 }
 
 /// The following tests mainly test the quality of the neural nets
