@@ -1,9 +1,11 @@
 use crate::position::{Position, X_BAR};
 
-/// Custom format, for ideas see https://stackoverflow.com/questions/32428237/board-encoding-in-tesauros-td-gammon
 pub trait InputsGen {
+    const NUM_INPUTS: usize;
     /// The number of inputs for the neural network.
-    fn num_inputs(&self) -> usize;
+    fn num_inputs(&self) -> usize {
+        Self::NUM_INPUTS
+    }
 
     /// The inputs for the neural network.
     ///
@@ -30,51 +32,44 @@ pub trait InputsGen {
     }
 }
 
-struct PipInput {
-    p1: u8,
-    p2: u8,
-    p3: u8,
-    p4: u8,
-}
-
-const NO_CHECKERS: PipInput = PipInput {
-    p1: 0,
-    p2: 0,
-    p3: 0,
-    p4: 0,
-};
-
-impl PipInput {
-    fn from_pip(pip: u8) -> Self {
-        match pip {
-            0 => NO_CHECKERS,
-            1 => Self {
-                p1: 1,
-                p2: 0,
-                p3: 0,
-                p4: 0,
-            },
-            2 => Self {
-                p1: 0,
-                p2: 1,
-                p3: 0,
-                p4: 0,
-            },
-            p => Self {
-                p1: 0,
-                p2: 0,
-                p3: 1,
-                p4: p - 3,
-            },
-        }
+/// 4 inputs representing a single pip from the point of view of one player.
+///
+/// Custom format, probably same as GnuBG
+/// For ideas see https://stackoverflow.com/questions/32428237/board-encoding-in-tesauros-td-gammon
+#[inline(always)]
+fn td_inputs(pip: &i8) -> [f32; 4] {
+    match pip {
+        1 => [1.0, 0.0, 0.0, 0.0],
+        2 => [0.0, 1.0, 0.0, 0.0],
+        &p if p > 0 => [0.0, 0.0, 1.0, p as f32 - 3.0],
+        _ => [0.0; 4], // both for no checker and for opponent's checker
     }
 }
 
 pub struct ContactInputsGen {}
 
 impl InputsGen for ContactInputsGen {
-    fn num_inputs(&self) -> usize {
-        202
+    const NUM_INPUTS: usize = 202;
+
+    fn input_vec(&self, pos: &Position) -> Vec<f32> {
+        let mut vec: Vec<f32> = Vec::with_capacity(Self::NUM_INPUTS);
+        vec.push(pos.x_off() as f32);
+        vec.push(pos.o_off() as f32);
+
+        // The inputs for the own player `x`
+        // In an earlier implementation we messed up the order of the inputs
+        // If one day there will be more inputs, streamline the next three lines:
+        // X_BAR
+        vec.extend_from_slice(&td_inputs(&pos.pips[X_BAR]));
+        for td_inputs in pos.pips[1..X_BAR].iter().map(td_inputs) {
+            vec.extend_from_slice(&td_inputs);
+        }
+
+        // The inputs for the opponent `o`.
+        for td_inputs in pos.pips[0..X_BAR].iter().map(|p| td_inputs(&-p)) {
+            vec.extend_from_slice(&td_inputs);
+        }
+        vec
     }
 
     fn csv_header(&self) -> String {
@@ -92,41 +87,6 @@ impl InputsGen for ContactInputsGen {
             }
         }
         string
-    }
-
-    fn input_vec(&self, pos: &Position) -> Vec<f32> {
-        let mut x_inputs = [NO_CHECKERS; 25];
-        let mut o_inputs = [NO_CHECKERS; 25];
-        // on the bar:
-        x_inputs[0] = PipInput::from_pip(pos.x_bar());
-        o_inputs[0] = PipInput::from_pip(pos.o_bar());
-        // on the board:
-        for i in 1..X_BAR {
-            let pip = pos.pip(i);
-            #[allow(clippy::comparison_chain)]
-            if pip > 0 {
-                x_inputs[i] = PipInput::from_pip(pip as u8);
-            } else if pip < 0 {
-                o_inputs[i] = PipInput::from_pip(-pip as u8);
-            }
-        }
-
-        let mut vec: Vec<f32> = Vec::with_capacity(self.num_inputs());
-        vec.push(pos.x_off() as f32);
-        vec.push(pos.o_off() as f32);
-        for input in x_inputs {
-            vec.push(input.p1 as f32);
-            vec.push(input.p2 as f32);
-            vec.push(input.p3 as f32);
-            vec.push(input.p4 as f32);
-        }
-        for input in o_inputs {
-            vec.push(input.p1 as f32);
-            vec.push(input.p2 as f32);
-            vec.push(input.p3 as f32);
-            vec.push(input.p4 as f32);
-        }
-        vec
     }
 }
 

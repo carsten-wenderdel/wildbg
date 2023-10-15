@@ -99,7 +99,7 @@ pub struct Position {
     // The other array positions are the pips from the point of view of x, moving from 24 to 0.
     // A positive number means x has that many checkers on that point. Negative for o.
     // Both x_off and o_off are never negative.
-    pips: [i8; 26],
+    pub(crate) pips: [i8; 26],
     x_off: u8,
     o_off: u8,
 }
@@ -116,21 +116,8 @@ impl Position {
     }
 
     #[inline(always)]
-    /// Number of checkers on the bar for `x`. Non negative number.
-    pub(crate) fn x_bar(&self) -> u8 {
-        self.pips[X_BAR] as u8
-    }
-
-    #[inline(always)]
-    /// Number of checkers on the bar for `x`. Non negative number in contrast to internal representation.
-    pub(crate) fn o_bar(&self) -> u8 {
-        -self.pips[O_BAR] as u8
-    }
-
-    #[inline(always)]
     /// Will return positive value for checkers of `x`, negative value for checkers of `o`.
     pub fn pip(&self, pip: usize) -> i8 {
-        debug_assert!((1..=25).contains(&pip));
         self.pips[pip]
     }
 
@@ -499,22 +486,6 @@ mod tests {
     }
 
     #[test]
-    fn x_bar() {
-        let given = pos! {x 3:15; o 1:1};
-        assert_eq!(given.x_bar(), 0);
-        let given = pos! {x X_BAR:2, 3:10; o 1:1};
-        assert_eq!(given.x_bar(), 2);
-    }
-
-    #[test]
-    fn o_bar() {
-        let given = pos! {x 1:1; o 3:15};
-        assert_eq!(given.o_bar(), 0);
-        let given = pos! {x 1:1; o 3:10, O_BAR:1};
-        assert_eq!(given.o_bar(), 1);
-    }
-
-    #[test]
     fn game_state_bg_when_on_bar() {
         let given = pos!(x 25:1, 1:14; o);
         assert_eq!(given.game_state(), GameOver(LoseBg));
@@ -699,11 +670,11 @@ mod tests {
         let position = Position::try_from(pips);
         // Then
         let position = position.unwrap();
-        assert_eq!(position.x_bar(), 2);
+        assert_eq!(position.pip(X_BAR), 2);
         assert_eq!(position.pip(10), 10);
         assert_eq!(position.x_off, 3);
         assert_eq!(position.pip(11), -11);
-        assert_eq!(position.o_bar(), 3);
+        assert_eq!(position.pip(O_BAR), -3);
         assert_eq!(position.o_off, 1);
     }
 
