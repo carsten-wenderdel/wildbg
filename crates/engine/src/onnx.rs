@@ -1,5 +1,5 @@
 use crate::evaluator::Evaluator;
-use crate::inputs::Inputs;
+use crate::inputs::InputsGen;
 use crate::position::Position;
 use crate::probabilities::Probabilities;
 use tract_onnx::prelude::*;
@@ -7,13 +7,14 @@ use tract_onnx::prelude::*;
 pub struct OnnxEvaluator {
     #[allow(clippy::type_complexity)]
     model: RunnableModel<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>,
+    inputs_gen: InputsGen,
 }
 
 impl Evaluator for OnnxEvaluator {
     fn eval(&self, position: &Position) -> Probabilities {
-        let inputs = Inputs::from_position(position).to_vec();
+        let inputs = self.inputs_gen.input_vec(position);
         let tract_inputs = tract_ndarray::Array1::from_vec(inputs)
-            .into_shape([1, crate::inputs::NUM_INPUTS])
+            .into_shape([1, self.inputs_gen.num_inputs()])
             .unwrap();
         let tensor = tract_inputs.into_tensor();
 
@@ -47,7 +48,10 @@ impl OnnxEvaluator {
 
     pub fn from_file_path(file_path: &str) -> Option<OnnxEvaluator> {
         match OnnxEvaluator::model(file_path) {
-            Ok(model) => Some(OnnxEvaluator { model }),
+            Ok(model) => Some(OnnxEvaluator {
+                model,
+                inputs_gen: InputsGen {},
+            }),
             Err(_) => None,
         }
     }

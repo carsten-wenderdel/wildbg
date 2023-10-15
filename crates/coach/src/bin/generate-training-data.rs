@@ -1,7 +1,7 @@
 use coach::position_finder::PositionFinder;
 use coach::rollout::RolloutEvaluator;
 use engine::evaluator::{Evaluator, RandomEvaluator};
-use engine::inputs::Inputs;
+use engine::inputs::InputsGen;
 use engine::onnx::OnnxEvaluator;
 use engine::position::OngoingPhase::Contact;
 use engine::position::Position;
@@ -81,9 +81,9 @@ fn duration(seconds: u64) -> String {
 }
 
 fn csv_header() -> String {
-    Probabilities::csv_header() + ";" + Inputs::csv_header().as_str() + "\n"
+    Probabilities::csv_header() + ";" + InputsGen {}.csv_header().as_str() + "\n"
 }
 
 fn csv_line(position: &Position, probabilities: &Probabilities) -> String {
-    probabilities.to_string() + ";" + Inputs::from_position(position).to_string().as_str() + "\n"
+    probabilities.to_string() + ";" + InputsGen {}.csv_line(position).as_str() + "\n"
 }
