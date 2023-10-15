@@ -1,51 +1,14 @@
 use crate::position::{Position, X_BAR};
-use std::fmt;
-
-pub(crate) const NUM_INPUTS: usize = 202;
 
 /// Custom format, for ideas see https://stackoverflow.com/questions/32428237/board-encoding-in-tesauros-td-gammon
-pub struct Inputs {
-    x_inputs: [PipInput; 25],
-    o_inputs: [PipInput; 25],
-    x_off: u8,
-    o_off: u8,
-}
+pub struct InputsGen {}
 
-/// Used when writing CSV data to a file
-impl fmt::Display for Inputs {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{};{}", self.x_off, self.o_off).unwrap();
-        for input in &self.x_inputs {
-            write!(f, ";{};{};{};{}", input.p1, input.p2, input.p3, input.p4).unwrap();
-        }
-        for input in &self.o_inputs {
-            write!(f, ";{};{};{};{}", input.p1, input.p2, input.p3, input.p4).unwrap();
-        }
-        Ok(())
-    }
-}
-
-impl Inputs {
-    pub fn to_vec(&self) -> Vec<f32> {
-        let mut vec: Vec<f32> = Vec::with_capacity(NUM_INPUTS);
-        vec.push(self.x_off as f32);
-        vec.push(self.o_off as f32);
-        for input in &self.x_inputs {
-            vec.push(input.p1 as f32);
-            vec.push(input.p2 as f32);
-            vec.push(input.p3 as f32);
-            vec.push(input.p4 as f32);
-        }
-        for input in &self.o_inputs {
-            vec.push(input.p1 as f32);
-            vec.push(input.p2 as f32);
-            vec.push(input.p3 as f32);
-            vec.push(input.p4 as f32);
-        }
-        vec
+impl InputsGen {
+    pub(crate) fn num_inputs(&self) -> usize {
+        202
     }
 
-    pub fn csv_header() -> String {
+    pub fn csv_header(&self) -> String {
         let mut string = String::new();
         string.push_str("x_off;o_off;x_bar-1;x_bar-2;x_bar-3;x_bar-4");
         for pip in 1..25 {
@@ -62,7 +25,7 @@ impl Inputs {
         string
     }
 
-    pub fn from_position(pos: &Position) -> Self {
+    pub(crate) fn input_vec(&self, pos: &Position) -> Vec<f32> {
         let mut x_inputs = [NO_CHECKERS; 25];
         let mut o_inputs = [NO_CHECKERS; 25];
         // on the bar:
@@ -78,12 +41,31 @@ impl Inputs {
                 o_inputs[i] = PipInput::from_pip(-pip as u8);
             }
         }
-        Inputs {
-            x_inputs,
-            o_inputs,
-            x_off: pos.x_off(),
-            o_off: pos.o_off(),
+
+        let mut vec: Vec<f32> = Vec::with_capacity(self.num_inputs());
+        vec.push(pos.x_off() as f32);
+        vec.push(pos.o_off() as f32);
+        for input in x_inputs {
+            vec.push(input.p1 as f32);
+            vec.push(input.p2 as f32);
+            vec.push(input.p3 as f32);
+            vec.push(input.p4 as f32);
         }
+        for input in o_inputs {
+            vec.push(input.p1 as f32);
+            vec.push(input.p2 as f32);
+            vec.push(input.p3 as f32);
+            vec.push(input.p4 as f32);
+        }
+        vec
+    }
+
+    pub fn csv_line(&self, pos: &Position) -> String {
+        self.input_vec(pos)
+            .into_iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>()
+            .join(";")
     }
 }
 
@@ -129,7 +111,7 @@ impl PipInput {
 
 #[cfg(test)]
 mod tests {
-    use crate::inputs::{Inputs, NUM_INPUTS};
+    use crate::inputs::InputsGen;
     use crate::pos;
     use crate::position::{Position, O_BAR};
     use std::collections::HashMap;
@@ -138,14 +120,15 @@ mod tests {
     fn inputs_display() {
         let pos = pos!(x 1:1, 2:2, 3:3, 4:4, 5:5; o 24:1, O_BAR: 1);
         let pos_switched = pos.switch_sides();
-        let inputs = Inputs::from_position(&pos);
-        let inputs_switched = Inputs::from_position(&pos_switched);
+        let inputs_gen = InputsGen {};
+        let inputs = inputs_gen.csv_line(&pos);
+        let inputs_switched = inputs_gen.csv_line(&pos_switched);
         assert_eq!(
-            inputs.to_string(),
+            inputs,
             "0;13;0;0;0;0;1;0;0;0;0;1;0;0;0;0;1;0;0;0;1;1;0;0;1;2;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;1;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;1;0;0;0"
         );
         assert_eq!(
-            inputs_switched.to_string(),
+            inputs_switched,
             "13;0;1;0;0;0;1;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;1;2;0;0;1;1;0;0;1;0;0;1;0;0;1;0;0;0"
         );
     }
@@ -153,18 +136,19 @@ mod tests {
     #[test]
     fn header_has_same_number_of_columns_as_inputs() {
         let pos = pos!(x 1:1; o 2:2);
-        let inputs = Inputs::from_position(&pos);
-        let inputs_semicolons = inputs.to_string().matches(';').count();
+        let inputs_gen = InputsGen {};
+        let inputs = inputs_gen.csv_line(&pos);
+        let inputs_semicolons = inputs.matches(';').count();
 
-        let header = Inputs::csv_header();
+        let header = inputs_gen.csv_header();
         let header_semicolons = header.matches(';').count();
 
-        assert_eq!(inputs_semicolons, NUM_INPUTS - 1);
-        assert_eq!(header_semicolons, NUM_INPUTS - 1);
+        assert_eq!(inputs_semicolons, inputs_gen.num_inputs() - 1);
+        assert_eq!(header_semicolons, inputs_gen.num_inputs() - 1);
     }
 
     #[test]
     fn no_empty_column_in_header() {
-        assert_eq!(Inputs::csv_header().matches(";;").count(), 0)
+        assert_eq!(InputsGen {}.csv_header().matches(";;").count(), 0)
     }
 }
