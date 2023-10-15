@@ -90,15 +90,54 @@ impl InputsGen for ContactInputsGen {
     }
 }
 
+pub struct RaceInputsGen {}
+
+impl InputsGen for RaceInputsGen {
+    const NUM_INPUTS: usize = 186;
+
+    fn input_vec(&self, pos: &Position) -> Vec<f32> {
+        let mut vec: Vec<f32> = Vec::with_capacity(Self::NUM_INPUTS);
+        vec.push(pos.x_off() as f32);
+        vec.push(pos.o_off() as f32);
+
+        // The inputs for the own player `x`. No checkers on bar or on 24 during race.
+        for td_inputs in pos.pips[1..24].iter().map(td_inputs) {
+            vec.extend_from_slice(&td_inputs);
+        }
+
+        // The inputs for the opponent `o`. No checkers on bar or on 1 during race.
+        for td_inputs in pos.pips[2..X_BAR].iter().map(|p| td_inputs(&-p)) {
+            vec.extend_from_slice(&td_inputs);
+        }
+        vec
+    }
+
+    fn csv_header(&self) -> String {
+        let mut string = String::new();
+        string.push_str("x_off;o_off");
+        for pip in 1..24 {
+            for case in 1..5 {
+                string = string + ";x" + &pip.to_string() + "-" + &case.to_string();
+            }
+        }
+        for pip in 2..25 {
+            for case in 1..5 {
+                string = string + ";o" + &pip.to_string() + "-" + &case.to_string();
+            }
+        }
+        string
+    }
+}
+
 #[cfg(test)]
-mod tests {
+mod contact_tests {
     use crate::inputs::{ContactInputsGen, InputsGen};
     use crate::pos;
     use crate::position::{Position, O_BAR};
     use std::collections::HashMap;
 
     #[test]
-    fn inputs_display() {
+    fn contact_cvs_line() {
         let pos = pos!(x 1:1, 2:2, 3:3, 4:4, 5:5; o 24:1, O_BAR: 1);
         let pos_switched = pos.switch_sides();
         let inputs_gen = ContactInputsGen {};
@@ -115,7 +154,7 @@ mod tests {
     }
 
     #[test]
-    fn header_has_same_number_of_columns_as_inputs() {
+    fn contact_header_has_same_number_of_columns_as_inputs() {
         let pos = pos!(x 1:1; o 2:2);
         let inputs_gen = ContactInputsGen {};
         let inputs = inputs_gen.csv_line(&pos);
@@ -129,7 +168,51 @@ mod tests {
     }
 
     #[test]
-    fn no_empty_column_in_header() {
+    fn contact_no_empty_column_in_header() {
         assert_eq!(ContactInputsGen {}.csv_header().matches(";;").count(), 0)
+    }
+}
+
+#[cfg(test)]
+mod race_tests {
+    use crate::inputs::{InputsGen, RaceInputsGen};
+    use crate::pos;
+    use crate::position::Position;
+    use std::collections::HashMap;
+
+    #[test]
+    fn race_cvs_line() {
+        let pos = pos!(x 1:1, 2:2, 3:3, 4:4, 5:5; o 24:1);
+        let pos_switched = pos.switch_sides();
+        let inputs_gen = RaceInputsGen {};
+        let inputs = inputs_gen.csv_line(&pos);
+        let inputs_switched = inputs_gen.csv_line(&pos_switched);
+        assert_eq!(
+            inputs,
+            "0;14;1;0;0;0;0;1;0;0;0;0;1;0;0;0;1;1;0;0;1;2;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;1;0;0;0"
+        );
+        assert_eq!(
+            inputs_switched,
+            "14;0;1;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;1;2;0;0;1;1;0;0;1;0;0;1;0;0;1;0;0;0"
+        );
+    }
+
+    #[test]
+    fn race_header_has_same_number_of_columns_as_inputs() {
+        let pos = pos!(x 1:1; o 2:2);
+        let inputs_gen = RaceInputsGen {};
+        let inputs = inputs_gen.csv_line(&pos);
+        let inputs_semicolons = inputs.matches(';').count();
+
+        let header = inputs_gen.csv_header();
+        let header_semicolons = header.matches(';').count();
+
+        assert_eq!(inputs_semicolons, inputs_gen.num_inputs() - 1);
+        assert_eq!(header_semicolons, inputs_gen.num_inputs() - 1);
+    }
+
+    #[test]
+    fn race_no_empty_column_in_header() {
+        assert_eq!(RaceInputsGen {}.csv_header().matches(";;").count(), 0)
     }
 }
