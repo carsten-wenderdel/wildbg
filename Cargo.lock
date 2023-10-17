@@ -199,7 +199,7 @@ checksum = "9ba43ea6f343b788c8764558649e08df62f86c6ef251fdaeb1ffd010a9ae50a2"
 
 [[package]]
 name = "benchmarks"
-version = "0.0.0"
+version = "0.2.0-pre"
 dependencies = [
  "coach",
  "criterion",
@@ -349,7 +349,7 @@ checksum = "cd7cc57abe963c6d3b9d8be5b06ba7c8957a930305ca90304f24ef040aa6f961"
 
 [[package]]
 name = "coach"
-version = "0.0.0"
+version = "0.2.0-pre"
 dependencies = [
  "engine",
  "rayon",
@@ -633,7 +633,7 @@ dependencies = [
 
 [[package]]
 name = "engine"
-version = "0.0.0"
+version = "0.2.0-pre"
 dependencies = [
  "base64 0.21.4",
  "fastrand",
@@ -1256,7 +1256,7 @@ checksum = "b5e6163cb8c49088c2c36f57875e58ccd8c87c7427f7fbd50ea6710b2f3f2e8f"
 
 [[package]]
 name = "logic"
-version = "0.0.0"
+version = "0.2.0-pre"
 dependencies = [
  "engine",
  "serde",
@@ -3293,7 +3293,7 @@ checksum = "ca6ad05a4870b2bf5fe995117d3728437bd27d7cd5f06f13c17443ef369775a1"
 
 [[package]]
 name = "web"
-version = "0.0.0"
+version = "0.2.0-pre"
 dependencies = [
  "axum",
  "engine",
@@ -3327,7 +3327,7 @@ checksum = "14247bb57be4f377dfb94c72830b8ce8fc6beac03cf4bf7b9732eadd414123fc"
 
 [[package]]
 name = "wildbg-c"
-version = "0.0.0"
+version = "0.2.0-pre"
 dependencies = [
  "logic",
 ]

@@ -6,3 +6,4 @@ resolver = "2"
 [workspace.package]
 edition = "2021"
 license = "Apache-2.0 OR MIT"
+version = "0.2.0-pre"
