@@ -16,6 +16,8 @@ This means you can reuse the same neural networks between for example 0.2.0 and 
 
 ## [Unreleased]
 
+### Changed
+
 Different neural networks for _contact_ and _race_.
 
 ## 0.1.0 - 2023-10-17
@@ -35,6 +37,6 @@ Initial release of `wildbg`.
 - Simple C API for best move in 1-pointer.
 
 ### Thanks for contributions
-- @bungogood
-- @carsten-wenderdel
-- @oradwastaken
+- [@bungogood](https://github.com/bungogood)
+- [@carsten-wenderdel](https://github.com/carsten-wenderdel)
+- [@oradwastaken](https://github.com/oradwastaken)
