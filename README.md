@@ -42,12 +42,14 @@ The training process consists of three steps, which are repeated in a loop:
 #### For contributors
 - Code structure: [docs/dev/architecture.md](docs/dev/architecture.md)
 
+Also see the [CHANGELOG](CHANGELOG.md) for a list of changes.
+
 ## Contributing
 
 Help is more than welcome! There are some smaller tasks but also bigger ones, see https://github.com/carsten-wenderdel/wildbg/issues.
 Currently, most needed is:
 - Documentation of backgammon metrics / neural net inputs: https://github.com/carsten-wenderdel/wildbg/issues/4
-- Implementation of a bearoff database: https://github.com/carsten-wenderdel/wildbg/issues/1
+- Proper cube handling: https://github.com/carsten-wenderdel/wildbg/issues/17
 
 ## License
 
