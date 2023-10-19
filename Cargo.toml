@@ -7,3 +7,6 @@ resolver = "2"
 edition = "2021"
 license = "Apache-2.0 OR MIT"
 version = "0.2.0-pre"
+
+[workspace.dependencies]
+serde =  "1.0.188"
