@@ -12,12 +12,6 @@ pub trait InputsGen {
     /// The length of the vector matches `num_inputs`.
     fn input_vec(&self, pos: &Position) -> Vec<f32>;
 
-    /// The header for CSV files with training data.
-    ///
-    /// As delimiter is `;` used.
-    /// The number of elements matches `num_inputs`;
-    fn csv_header(&self) -> String;
-
     /// A line with outputs for the neural network.
     ///
     /// As delimiter is `;` used.
@@ -71,23 +65,6 @@ impl InputsGen for ContactInputsGen {
         }
         vec
     }
-
-    fn csv_header(&self) -> String {
-        let mut string = String::new();
-        string.push_str("x_off;o_off;x_bar-1;x_bar-2;x_bar-3;x_bar-4");
-        for pip in 1..25 {
-            for case in 1..5 {
-                string = string + ";x" + &pip.to_string() + "-" + &case.to_string();
-            }
-        }
-        string += ";o_bar-1;o_bar-2;o_bar-3;o_bar-4";
-        for pip in 1..25 {
-            for case in 1..5 {
-                string = string + ";o" + &pip.to_string() + "-" + &case.to_string();
-            }
-        }
-        string
-    }
 }
 
 pub struct RaceInputsGen {}
@@ -110,22 +87,6 @@ impl InputsGen for RaceInputsGen {
             vec.extend_from_slice(&td_inputs);
         }
         vec
-    }
-
-    fn csv_header(&self) -> String {
-        let mut string = String::new();
-        string.push_str("x_off;o_off");
-        for pip in 1..24 {
-            for case in 1..5 {
-                string = string + ";x" + &pip.to_string() + "-" + &case.to_string();
-            }
-        }
-        for pip in 2..25 {
-            for case in 1..5 {
-                string = string + ";o" + &pip.to_string() + "-" + &case.to_string();
-            }
-        }
-        string
     }
 }
 
@@ -152,25 +113,6 @@ mod contact_tests {
             "13;0;1;0;0;0;1;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;1;2;0;0;1;1;0;0;1;0;0;1;0;0;1;0;0;0"
         );
     }
-
-    #[test]
-    fn contact_header_has_same_number_of_columns_as_inputs() {
-        let pos = pos!(x 1:1; o 2:2);
-        let inputs_gen = ContactInputsGen {};
-        let inputs = inputs_gen.csv_line(&pos);
-        let inputs_semicolons = inputs.matches(';').count();
-
-        let header = inputs_gen.csv_header();
-        let header_semicolons = header.matches(';').count();
-
-        assert_eq!(inputs_semicolons, inputs_gen.num_inputs() - 1);
-        assert_eq!(header_semicolons, inputs_gen.num_inputs() - 1);
-    }
-
-    #[test]
-    fn contact_no_empty_column_in_header() {
-        assert_eq!(ContactInputsGen {}.csv_header().matches(";;").count(), 0)
-    }
 }
 
 #[cfg(test)]
@@ -195,24 +137,5 @@ mod race_tests {
             inputs_switched,
             "14;0;1;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;1;2;0;0;1;1;0;0;1;0;0;1;0;0;1;0;0;0"
         );
-    }
-
-    #[test]
-    fn race_header_has_same_number_of_columns_as_inputs() {
-        let pos = pos!(x 1:1; o 2:2);
-        let inputs_gen = RaceInputsGen {};
-        let inputs = inputs_gen.csv_line(&pos);
-        let inputs_semicolons = inputs.matches(';').count();
-
-        let header = inputs_gen.csv_header();
-        let header_semicolons = header.matches(';').count();
-
-        assert_eq!(inputs_semicolons, inputs_gen.num_inputs() - 1);
-        assert_eq!(header_semicolons, inputs_gen.num_inputs() - 1);
-    }
-
-    #[test]
-    fn race_no_empty_column_in_header() {
-        assert_eq!(RaceInputsGen {}.csv_header().matches(";;").count(), 0)
     }
 }

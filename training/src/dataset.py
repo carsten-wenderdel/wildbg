@@ -12,7 +12,7 @@ class WildBgDataSet(Dataset):
             with open(path, 'r') as f:
                 lines = f.readlines()
                 for line in lines[1:]:
-                    line = line.strip().split(';')
+                    line = line.strip().split(',')
                     line = list(map(float, line))
                     labels.append(line[:6])
                     inputs.append(line[6:])
