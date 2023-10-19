@@ -1,5 +1,5 @@
 use crate::evaluator::Evaluator;
-use crate::inputs::{ContactInputsGen, InputsGen};
+use crate::inputs::{ContactInputsGen, InputsGen, RaceInputsGen};
 use crate::position::Position;
 use crate::probabilities::Probabilities;
 use tract_onnx::prelude::*;
@@ -33,7 +33,14 @@ impl<T: InputsGen> Evaluator for OnnxEvaluator<T> {
     }
 }
 
-const CONTACT_FILE_PATH: &str = "neural-nets/wildbg.onnx";
+const CONTACT_FILE_PATH: &str = "neural-nets/contact.onnx";
+const RACE_FILE_PATH: &str = "neural-nets/race.onnx";
+
+impl OnnxEvaluator<RaceInputsGen> {
+    pub fn race_default() -> Option<Self> {
+        OnnxEvaluator::from_file_path(RACE_FILE_PATH, RaceInputsGen {})
+    }
+}
 
 impl OnnxEvaluator<ContactInputsGen> {
     pub fn contact_default() -> Option<Self> {

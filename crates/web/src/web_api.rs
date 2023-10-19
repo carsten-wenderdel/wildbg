@@ -1,8 +1,6 @@
-use engine::composite::{CompositeEvaluator, GameOverEvaluator};
+use engine::complex::ComplexEvaluator;
 use engine::dice::Dice;
 use engine::evaluator::Evaluator;
-use engine::inputs::ContactInputsGen;
-use engine::onnx::OnnxEvaluator;
 use engine::position::Position;
 use hyper::StatusCode;
 use logic::bg_move::{BgMove, MoveDetail};
@@ -14,11 +12,9 @@ pub struct WebApi<T: Evaluator> {
     evaluator: T,
 }
 
-impl WebApi<CompositeEvaluator<GameOverEvaluator, OnnxEvaluator<ContactInputsGen>>> {
+impl WebApi<ComplexEvaluator> {
     pub fn try_default() -> Option<Self> {
-        OnnxEvaluator::contact_default().map(|onnx| Self {
-            evaluator: CompositeEvaluator::new(GameOverEvaluator {}, onnx),
-        })
+        ComplexEvaluator::try_default().map(|complex| Self { evaluator: complex })
     }
 }
 

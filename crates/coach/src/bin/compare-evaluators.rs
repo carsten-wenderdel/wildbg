@@ -1,18 +1,20 @@
 use coach::duel::Duel;
+use engine::complex::ComplexEvaluator;
 use engine::dice::FastrandDice;
-use engine::inputs::ContactInputsGen;
-use engine::onnx::OnnxEvaluator;
 use engine::probabilities::{Probabilities, ResultCounter};
 use rayon::prelude::*;
 use std::io::{stdout, Write};
 
 fn main() {
-    let evaluator1 = OnnxEvaluator::from_file_path("neural-nets/wildbg.onnx", ContactInputsGen {})
-        .expect("Neural net for evaluator1 could not be found");
-    let evaluator2 =
-        OnnxEvaluator::from_file_path("neural-nets/wildbg01.onnx", ContactInputsGen {})
-            .expect("Neural net for evaluator2 could not be found");
-    let duel = Duel::new(evaluator1, evaluator2);
+    let evaluator_1 =
+        ComplexEvaluator::from_file_paths("neural-nets/contact.onnx", "neural-nets/race.onnx")
+            .expect("Could not find nets for evaluator_1");
+
+    let evaluator_2 =
+        ComplexEvaluator::from_file_paths("neural-nets/contact.onnx", "neural-nets/race.onnx")
+            .expect("Could not find nets for evaluator_1");
+
+    let duel = Duel::new(evaluator_1, evaluator_2);
 
     let mut dice_gen = FastrandDice::new();
     let mut global_counter = ResultCounter::default();

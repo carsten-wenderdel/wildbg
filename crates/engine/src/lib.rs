@@ -1,3 +1,4 @@
+pub mod complex;
 pub mod composite;
 pub mod dice;
 pub mod evaluator;
