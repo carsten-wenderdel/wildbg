@@ -3,11 +3,13 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 from model import Model
+from tiny_model import TinyModel
 from dataset import WildBgDataSet
 
-def save_model(model: nn.Module, path: str) -> None:
-    dummy_input = torch.randn(1, 202, requires_grad=True, device=device)
+def save_model(model: nn.Module, path: str, num_inputs: int) -> None:
+    dummy_input = torch.randn(1, num_inputs, requires_grad=True, device=device)
     torch.onnx.export(model, dummy_input, path)
+
 
 def train(model: nn.Module, trainloader: DataLoader, epochs: int) -> nn.Module:
     # Define loss function, L1Loss and MSELoss are good choices
@@ -16,7 +18,7 @@ def train(model: nn.Module, trainloader: DataLoader, epochs: int) -> nn.Module:
     # Optimizer based on model, adjust the learning rate
     # 4.0 has worked well for Tanh(), one layer and 100k positions
     # 3.0 has worked well for ReLu(), three layers and 200k positions
-    optimizer = torch.optim.SGD(model.parameters(), lr=3.0)
+    optimizer = torch.optim.SGD(model.parameters(), lr=3.6)
 
     for epoch in range(epochs):
         epoch_loss = 0.0
@@ -38,7 +40,7 @@ def train(model: nn.Module, trainloader: DataLoader, epochs: int) -> nn.Module:
     
     return model
 
-def main(model: nn.Module, data_path: str, model_path: str):
+def main(model: nn.Module, data_path: str, model_path: str, num_inputs: int):
     traindata = WildBgDataSet(data_path)
     trainloader = DataLoader(traindata, batch_size=64, shuffle=True)
 
@@ -46,7 +48,7 @@ def main(model: nn.Module, data_path: str, model_path: str):
         model = train(model, trainloader, 20)
     finally:
         print('Finished Training')
-        save_model(model, model_path)
+        save_model(model, model_path, num_inputs)
 
 if __name__ == "__main__":
     # "mps" takes more time than "cpu" on Macs, so let's ignore it for now.
@@ -59,5 +61,22 @@ if __name__ == "__main__":
     )
     print(f"Using {device} device")
     Path("../neural-nets").mkdir(exist_ok=True)
-    model = Model().to(device)
-    main(model, "../training-data/rollouts.csv", "../neural-nets/wildbg.onnx")
+
+    mode = "tiny_race"
+    match mode:
+        case "contact":
+            num_inputs = 202
+            model = Model(num_inputs).to(device)
+            main(model, "../training-data/contact-inputs.csv", "../neural-nets/contact.onnx", num_inputs)
+        case "race":
+            # `Race` has fewer inputs than `Contact`
+            num_inputs = 186
+            model = Model(num_inputs).to(device)
+            main(model, "../training-data/race-inputs.csv", "../neural-nets/race.onnx", num_inputs)
+        case "tiny_race":
+            # This is used to be committed to the repository and not taking up much space.
+            num_inputs = 186
+            model = TinyModel(num_inputs).to(device)
+            main(model, "../training-data/race-inputs.csv", "../neural-nets/race.onnx", num_inputs)
+        case _:
+            print("Invalid mode")
