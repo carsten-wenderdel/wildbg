@@ -1,6 +1,7 @@
 use coach::duel::Duel;
 use engine::complex::ComplexEvaluator;
 use engine::dice::FastrandDice;
+use engine::multiply::MultiPlyEvaluator;
 use engine::probabilities::{Probabilities, ResultCounter};
 use rayon::prelude::*;
 use std::io::{stdout, Write};
@@ -13,6 +14,9 @@ fn main() {
     let evaluator_2 =
         ComplexEvaluator::from_file_paths("neural-nets/contact.onnx", "neural-nets/race.onnx")
             .expect("Could not find nets for evaluator_1");
+    let evaluator_2 = MultiPlyEvaluator {
+        evaluator: evaluator_2,
+    };
 
     let duel = Duel::new(evaluator_1, evaluator_2);
 

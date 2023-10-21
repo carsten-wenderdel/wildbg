@@ -19,6 +19,11 @@ pub struct RegularDice {
 /// A combination of a double and a regular roll appears 2 times.
 pub const ALL_441: [([Dice; 2], usize); 441] = Dice::all_441();
 
+/// Contains all 21 possibilities of dice and a number of how often they appear in 36 rolls.
+///
+/// So doubles appear 1 time, regular rolls appear 2 times.
+pub const ALL_21: [(Dice, usize); 21] = Dice::all_21();
+
 impl Dice {
     #[inline(always)]
     pub const fn new(die1: usize, die2: usize) -> Self {
@@ -28,13 +33,9 @@ impl Dice {
             Dice::Regular(RegularDice::new(die1, die2))
         }
     }
-
-    /// Contains all 21 possibilities of dice and a number of how often they appear in 36 rolls.
-    ///
-    /// So doubles appear 1 time, regular rolls appear 2 times.
     const fn all_441() -> [([Dice; 2], usize); 441] {
         let mut dice_441 = [([Dice::Double(1), Dice::Double(1)], 0_usize); 441]; // Dummy values, will be replaced
-        let dice_21 = Self::all_21();
+        let dice_21 = ALL_21;
 
         let mut i = 0_usize;
         while i < 21 {
@@ -50,9 +51,6 @@ impl Dice {
         dice_441
     }
 
-    /// Contains all 21 possibilities of dice and a number of how often they appear in 36 rolls.
-    ///
-    /// So doubles appear 1 time, regular rolls appear 2 times.
     const fn all_21() -> [(Dice, usize); 21] {
         let mut dice = [(Dice::Double(1), 0_usize); 21]; // Dummy values, will be replaced
 

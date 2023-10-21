@@ -3,6 +3,7 @@ pub mod composite;
 pub mod dice;
 pub mod evaluator;
 pub mod inputs;
+pub mod multiply;
 pub mod onnx;
 pub mod position;
 pub mod probabilities;
