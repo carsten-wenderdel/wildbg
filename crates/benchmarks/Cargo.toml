@@ -16,4 +16,4 @@ criterion = "0.5.1"
 name = "rollout_bench"
 harness = false
 [dependencies]
-rayon = "1.8.0"
+rayon.workspace = true

@@ -9,6 +9,6 @@ license.workspace = true
 # internal
 engine = { path = "../engine" }
 # external
-rayon = "1.8.0"
+rayon.workspace = true
 serde = { workspace = true, features = ["derive"] }
 csv = "1.3.0"
