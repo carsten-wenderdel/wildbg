@@ -40,6 +40,12 @@ impl OnnxEvaluator<RaceInputsGen> {
     pub fn race_default() -> Option<Self> {
         OnnxEvaluator::from_file_path(RACE_FILE_PATH, RaceInputsGen {})
     }
+
+    pub fn race_default_tests() -> Self {
+        // Tests are executed from a different path than binary crates - so we need to slightly change the folder for them.
+        OnnxEvaluator::from_file_path(&("../../".to_owned() + RACE_FILE_PATH), RaceInputsGen {})
+            .expect("onnx file should exist at that path.")
+    }
 }
 
 impl OnnxEvaluator<ContactInputsGen> {

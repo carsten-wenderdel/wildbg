@@ -39,6 +39,16 @@ impl ComplexEvaluator {
         })
     }
 
+    pub fn default_tests() -> Self {
+        let contact_evaluator = OnnxEvaluator::contact_default_tests();
+        let race_evaluator = OnnxEvaluator::race_default_tests();
+        Self {
+            contact_evaluator,
+            race_evaluator,
+            game_over_evaluator: GameOverEvaluator {},
+        }
+    }
+
     pub fn from_file_paths(contact_path: &str, race_path: &str) -> Option<Self> {
         let contact_evaluator = OnnxEvaluator::from_file_path(contact_path, ContactInputsGen {})?;
         let race_evaluator = OnnxEvaluator::from_file_path(race_path, RaceInputsGen {})?;
