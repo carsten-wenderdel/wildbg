@@ -86,13 +86,10 @@ pub trait Evaluator {
         dice: &Dice,
     ) -> Vec<(Position, Probabilities)> {
         let after_moving = position.all_positions_after_moving(dice);
-        let mut pos_and_probs: Vec<(Position, Probabilities)> = after_moving
+        let mut pos_and_probs: Vec<(Position, Probabilities)> = self
+            .eval_batch(after_moving)
             .into_iter()
-            .map(|pos| {
-                let probabilities = self.eval(&pos).switch_sides();
-                let pos = pos.switch_sides();
-                (pos, probabilities)
-            })
+            .map(|(pos, probabilities)| (pos.switch_sides(), probabilities.switch_sides()))
             .collect();
         pos_and_probs.sort_unstable_by(|a, b| b.1.equity().partial_cmp(&a.1.equity()).unwrap());
         pos_and_probs
