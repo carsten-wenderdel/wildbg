@@ -5,9 +5,24 @@ use crate::probabilities::Probabilities;
 use tract_onnx::prelude::*;
 use tract_onnx::tract_hir::shapefactoid;
 
+type TractModel = RunnableModel<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>;
+
 pub struct OnnxEvaluator<T: InputsGen> {
-    #[allow(clippy::type_complexity)]
-    model: RunnableModel<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>,
+    /// Onnx models optimized for different batch sizes.
+    ///
+    /// On index 0 is the model optimized for any batch size. It is used for batch sizes bigger than
+    /// the length of this vector.
+    /// For a batch size `i`, smaller than the length of this vector, the model at `models[i]` is used.
+    ///
+    /// This is an optimization, everything would also work with just the model at index 0 which has
+    /// a dynamic input shape. But models optimized for a specific batch size give a performance
+    /// boost of about globally 2% for rollouts.
+    ///
+    /// See also https://github.com/sonos/tract/discussions/716#discussioncomment-2769616
+    models: Vec<TractModel>,
+
+    /// Inputs generator specific to a certain game phase (like contact or race). The neural nets
+    /// have different inputs for different game phases.
     inputs_gen: T,
 }
 
@@ -29,7 +44,12 @@ impl<T: InputsGen> BatchEvaluator for OnnxEvaluator<T> {
         let tensor = tract_inputs.into_tensor();
 
         // run the model on the input
-        let result = self.model.run(tvec!(tensor.into())).unwrap();
+        let index = if positions.len() < self.models.len() {
+            positions.len()
+        } else {
+            0
+        };
+        let result = self.models[index].run(tvec!(tensor.into())).unwrap();
 
         // Extract all the probabilities from the result:
         let array_view = result[0].to_array_view::<f32>().unwrap();
@@ -80,29 +100,35 @@ impl OnnxEvaluator<ContactInputsGen> {
 
 impl<T: InputsGen> OnnxEvaluator<T> {
     pub fn from_file_path(file_path: &str, inputs_gen: T) -> Option<OnnxEvaluator<T>> {
-        match Self::model(file_path) {
-            Ok(model) => Some(OnnxEvaluator { model, inputs_gen }),
+        match Self::models(file_path) {
+            Ok(models) => Some(OnnxEvaluator { models, inputs_gen }),
             Err(_) => None,
         }
     }
 
-    #[allow(clippy::type_complexity)]
-    fn model(
-        file_path: &str,
-    ) -> TractResult<RunnableModel<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>>
-    {
-        // The input tensor for the model could be for example [1, 202] - one position with 202 inputs.
-        // We override with [N, 202] to allow batch evaluation.
-        let batch = SymbolTable::default().sym("N");
-        let model = onnx()
-            .model_for_path(file_path)?
-            .with_input_fact(
-                0,
-                InferenceFact::dt_shape(f32::datum_type(), shapefactoid![batch, (T::NUM_INPUTS)]),
-            )?
-            .into_optimized()?
-            .into_runnable()?;
-        Ok(model)
+    /// Load the onnx model from the file path and optimize it several times for different batch sizes.
+    fn models(file_path: &str) -> TractResult<Vec<TractModel>> {
+        let model = onnx().model_for_path(file_path)?;
+
+        let mut models: Vec<TractModel> = Vec::new();
+        let number_of_optimized_models = 50;
+        for i in 0..number_of_optimized_models {
+            let fact: InferenceFact = if i == 0 {
+                // The input tensor for the model could be for example [1, 202] - one position with 202 inputs.
+                // We override with [N, 202] to allow batch evaluation.
+                let batch = SymbolTable::default().sym("N");
+                InferenceFact::dt_shape(f32::datum_type(), shapefactoid![batch, (T::NUM_INPUTS)])
+            } else {
+                InferenceFact::dt_shape(f32::datum_type(), shapefactoid![i, (T::NUM_INPUTS)])
+            };
+            let tract_model = model
+                .clone()
+                .with_input_fact(0, fact)?
+                .into_optimized()?
+                .into_runnable()?;
+            models.push(tract_model);
+        }
+        Ok(models)
     }
 }
 
