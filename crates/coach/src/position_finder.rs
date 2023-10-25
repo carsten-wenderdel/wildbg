@@ -44,16 +44,55 @@ impl<T: Evaluator, U: DiceGen> PositionFinder<T, U> {
             let positions_and_probabilities = self
                 .evaluator
                 .positions_and_probabilities_by_equity(&pos, &dice);
-            pos = self
-                .next_position(&positions_and_probabilities)
-                .switch_sides();
-            if pos.game_state() == Ongoing {
-                positions.push(pos.clone());
+            let next = self.next_position(&positions_and_probabilities);
+            if next.game_state() == Ongoing {
+                pos = next.switch_sides();
                 dice = self.dice_gen.roll();
+                let rollout_positions =
+                    Self::positions_from_one_move(next, positions_and_probabilities);
+                positions.extend(rollout_positions);
             } else {
                 return positions;
             }
         }
+    }
+
+    /// Returns up to four positions for a rollout, all from an array of legal moves.
+    ///
+    /// Returned is:
+    /// 1. The positon at th top of the array
+    /// 2. `next`, the position to which the `PositionFinder` is about to move.
+    /// 3. Added is then a position from the middle of the input array, so that we also rollout
+    /// positions that are not so good.
+    /// 4. If `all` contains both contact and race positions,
+    /// we make sure that at least one position from either phase is returned.
+    ///
+    /// Some of those positions could appear more than once in the array, but that's ok, we enter
+    /// all them into a HashSet later on.
+    ///
+    /// The input values need to be from the perspective of the player who is about to move.
+    /// The return values have switched sides, so they are in the proper format for a rollout.
+    fn positions_from_one_move(
+        next: Position,
+        all: Vec<(Position, Probabilities)>,
+    ) -> Vec<Position> {
+        let mut positions: Vec<Position> = Vec::new();
+        // Best position:
+        positions.push(all[0].0.switch_sides());
+        // Best position with different game phase:
+        if let Some(different_phase) = all.iter().position(|(pos, _)| {
+            pos.game_state() == Ongoing && pos.game_phase() != next.game_phase()
+        }) {
+            positions.push(all[different_phase].0.switch_sides());
+        }
+        // Next position:
+        positions.push(next.switch_sides());
+        // Mediocre position:
+        if all.len() > 1 {
+            let middle = positions.len() / 2;
+            positions.push(all[middle].0.switch_sides());
+        }
+        positions
     }
 
     fn next_position(
