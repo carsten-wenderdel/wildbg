@@ -1,8 +1,9 @@
-use crate::evaluator::Evaluator;
+use crate::evaluator::BatchEvaluator;
 use crate::inputs::{ContactInputsGen, InputsGen, RaceInputsGen};
 use crate::position::Position;
 use crate::probabilities::Probabilities;
 use tract_onnx::prelude::*;
+use tract_onnx::tract_hir::shapefactoid;
 
 pub struct OnnxEvaluator<T: InputsGen> {
     #[allow(clippy::type_complexity)]
@@ -10,26 +11,40 @@ pub struct OnnxEvaluator<T: InputsGen> {
     inputs_gen: T,
 }
 
-impl<T: InputsGen> Evaluator for OnnxEvaluator<T> {
-    fn eval(&self, position: &Position) -> Probabilities {
-        let inputs = self.inputs_gen.input_vec(position);
+impl<T: InputsGen> BatchEvaluator for OnnxEvaluator<T> {
+    fn eval_positions(&self, positions: Vec<Position>) -> Vec<(Position, Probabilities)> {
+        if positions.is_empty() {
+            return Vec::new();
+        }
+
+        // Turn all inputs into one big vector:
+        let inputs: Vec<f32> = positions
+            .iter()
+            .flat_map(|p| self.inputs_gen.input_vec(p))
+            .collect();
+
         let tract_inputs = tract_ndarray::Array1::from_vec(inputs)
-            .into_shape([1, self.inputs_gen.num_inputs()])
+            .into_shape((positions.len(), T::NUM_INPUTS))
             .unwrap();
         let tensor = tract_inputs.into_tensor();
 
         // run the model on the input
         let result = self.model.run(tvec!(tensor.into())).unwrap();
+
+        // Extract all the probabilities from the result:
         let array_view = result[0].to_array_view::<f32>().unwrap();
-        let result_vec: Vec<&f32> = array_view.iter().collect();
-        Probabilities {
-            win_normal: *result_vec[0],
-            win_gammon: *result_vec[1],
-            win_bg: *result_vec[2],
-            lose_normal: *result_vec[3],
-            lose_gammon: *result_vec[4],
-            lose_bg: *result_vec[5],
-        }
+        let probabilities_in_shape = array_view.into_shape((positions.len(), 6)).unwrap();
+        let probabilities_iter = probabilities_in_shape.outer_iter().map(|x| Probabilities {
+            win_normal: x[0],
+            win_gammon: x[1],
+            win_bg: x[2],
+            lose_normal: x[3],
+            lose_gammon: x[4],
+            lose_bg: x[5],
+        });
+        let positions_and_probabilities: Vec<(Position, Probabilities)> =
+            positions.into_iter().zip(probabilities_iter).collect();
+        positions_and_probabilities
     }
 }
 
@@ -65,22 +80,30 @@ impl OnnxEvaluator<ContactInputsGen> {
 
 impl<T: InputsGen> OnnxEvaluator<T> {
     pub fn from_file_path(file_path: &str, inputs_gen: T) -> Option<OnnxEvaluator<T>> {
-        match model(file_path) {
+        match Self::model(file_path) {
             Ok(model) => Some(OnnxEvaluator { model, inputs_gen }),
             Err(_) => None,
         }
     }
-}
 
-#[allow(clippy::type_complexity)]
-fn model(
-    file_path: &str,
-) -> TractResult<RunnableModel<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>> {
-    let model = onnx()
-        .model_for_path(file_path)?
-        .into_optimized()?
-        .into_runnable()?;
-    Ok(model)
+    #[allow(clippy::type_complexity)]
+    fn model(
+        file_path: &str,
+    ) -> TractResult<RunnableModel<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>>
+    {
+        // The input tensor for the model could be for example [1, 202] - one position with 202 inputs.
+        // We override with [N, 202] to allow batch evaluation.
+        let batch = SymbolTable::default().sym("N");
+        let model = onnx()
+            .model_for_path(file_path)?
+            .with_input_fact(
+                0,
+                InferenceFact::dt_shape(f32::datum_type(), shapefactoid![batch, (T::NUM_INPUTS)]),
+            )?
+            .into_optimized()?
+            .into_runnable()?;
+        Ok(model)
+    }
 }
 
 /// The following tests mainly test the quality of the neural nets

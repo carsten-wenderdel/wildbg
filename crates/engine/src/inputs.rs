@@ -1,11 +1,8 @@
 use crate::position::{Position, X_BAR};
 
 pub trait InputsGen {
-    const NUM_INPUTS: usize;
     /// The number of inputs for the neural network.
-    fn num_inputs(&self) -> usize {
-        Self::NUM_INPUTS
-    }
+    const NUM_INPUTS: usize;
 
     /// The inputs for the neural network.
     ///
