@@ -17,11 +17,32 @@ impl<T: Evaluator> PartialEvaluator for T {
     }
 }
 
+/// [Evaluator] is one of the central parts of the engine. Implementing structs only have to
+/// implement the function [Evaluator::eval], Examples are [crate::composite::GameOverEvaluator]
+/// and `RolloutEvaluator`.
+///
+/// The function [Evaluator::eval_batch] is implemented by default, building on `eval`.
+/// If there is way to optimize evaluations by looking at all legal moves at once, then don't
+/// implement `eval_batch` yourself, instead implement [BatchEvaluator].
 pub trait Evaluator {
     /// Returns a cubeless evaluation of a position.
     /// Implementing types will calculate the probabilities with different strategies.
     /// Examples of such strategies are a rollout or 1-ply inference of a neural net.
     fn eval(&self, pos: &Position) -> Probabilities;
+
+    /// Evaluates several positions at once. For optimization it's assumed that those positions
+    /// are the result of *all* legal moves following a certain position/dice combination.
+    /// The positions have to be switched, so they are from the point of view of the opponent, not
+    /// the player who would move.
+    fn eval_batch(&self, positions: Vec<Position>) -> Vec<(Position, Probabilities)> {
+        positions
+            .into_iter()
+            .map(|pos| {
+                let probabilities = self.eval(&pos);
+                (pos, probabilities)
+            })
+            .collect()
+    }
 
     /// Returns the position after applying the *best* move to `pos`.
     /// The returned `Position` has already switches sides.
@@ -84,6 +105,33 @@ pub trait Evaluator {
             .collect();
         pos_and_probs.sort_unstable_by(|a, b| b.1.equity().partial_cmp(&a.1.equity()).unwrap());
         pos_and_probs
+    }
+}
+
+/// [BatchEvaluator] is a subtrait of [Evaluator]. The function [Evaluator::eval_batch] is
+/// implemented by default. This trait is meant for evaluating all legal moves at once.
+/// An example is [crate::onnx::OnnxEvaluator], where feeding several positions at once to the
+/// neural net is more performant than evaluating them one by one.
+///
+/// In the future, also multiply evaluators could implement this trait, deciding which positions
+/// are worth to look more into at deeper plies, while others don't have to be considered further.
+pub trait BatchEvaluator: Evaluator {
+    /// Evaluate all legal moves following a certain position/dice combination.
+    fn eval_positions(&self, positions: Vec<Position>) -> Vec<(Position, Probabilities)>;
+}
+
+impl<T: BatchEvaluator> Evaluator for T {
+    #[inline(always)]
+    fn eval(&'_ self, pos: &Position) -> Probabilities {
+        BatchEvaluator::eval_positions(self, vec![pos.clone()])
+            .pop()
+            .unwrap()
+            .1
+    }
+
+    #[inline(always)]
+    fn eval_batch(&self, positions: Vec<Position>) -> Vec<(Position, Probabilities)> {
+        BatchEvaluator::eval_positions(self, positions)
     }
 }
 
@@ -190,6 +238,33 @@ mod evaluator_trait_tests {
             &evaluator.best_position_by_equity(&given_pos, &Dice::new(4, 2))
         );
         assert_eq!(best_probability.switch_sides(), evaluator.eval(&best_pos));
+    }
+
+    #[test]
+    fn eval_batch_empty() {
+        // Given
+        let evaluator = EvaluatorFake {};
+        // When
+        let values = evaluator.eval_batch(vec![]);
+        // Then
+        assert!(values.is_empty());
+    }
+
+    #[test]
+    fn eval_batch() {
+        // Given
+        let pos_1 = pos!(x 7:2; o 20:2);
+        let pos_2 = position_with_lowest_equity();
+        let evaluator = EvaluatorFake {};
+        // When
+        let values = evaluator.eval_batch(vec![pos_1.clone(), pos_2.clone()]);
+        // Then
+        assert_eq!(values.len(), 2);
+        assert_eq!(values[0].0, pos_1);
+        assert_eq!(values[1].0, pos_2);
+        assert_eq!(values[0].1, evaluator.eval(&pos_1));
+        assert_eq!(values[1].1, evaluator.eval(&pos_2));
+        assert_ne!(evaluator.eval(&pos_1), evaluator.eval(&pos_2));
     }
 }
 
