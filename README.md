@@ -15,7 +15,7 @@ An example for the starting position and rolling 3 and 1: https://wildbg.shuttle
 Install Rust on your machine and then execute `cargo run` or `cargo run --release`.
 A web server will be started which you can access via http://localhost:8080/swagger-ui/
 
-Beware that the network committed to this repository is a bit older and weaker.
+Beware that the networks committed to this repository are very small networks just for demonstration purposes.
 You can find the latest training progress and networks here: https://github.com/carsten-wenderdel/wildbg-training
 
 ## Goals
@@ -31,7 +31,7 @@ A graphical user interface (GUI) is not part of this project.
 The training process consists of three steps, which are repeated in a loop:
 1. Find lots of positions (at least 100,000) through self-play for a later rollout.
 2. Roll out these positions. Currently, only 1-ply rollouts are possible.
-3. Train neural networks based on the rollout data. Currently, a single net with several hidden layers is supported; later different nets for different game phases are planned. This third step is the only one done in Python, everything else is implemented in Rust.
+3. Train neural networks based on the rollout data. There are two different networks for `contact` and `race` positions. This third step is the only one done in Python, everything else is implemented in Rust.
 
 ## Documentation
 
