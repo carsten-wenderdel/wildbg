@@ -58,28 +58,19 @@ pub trait Evaluator {
     where
         F: Fn(&Probabilities) -> f32,
     {
-        self.worst_position(&pos.all_positions_after_moving(dice), value)
-            .clone()
-    }
+        let mut positions = pos.all_positions_after_moving(dice);
 
-    /// Worst position might be interesting, because when you switch sides, it's suddenly the best.
-    fn worst_position<'a, F>(&'a self, positions: &'a [Position], value: F) -> &Position
-    where
-        F: Fn(&Probabilities) -> f32,
-    {
-        // Two optimizations so that we don't have to call eval that often.
+        // Two optimizations so that we don't have to call eval_batch that often.
         // The function would also work without the next 6 lines.
         if positions.len() == 1 {
-            return positions.first().unwrap();
+            return positions.pop().unwrap();
         }
-        if let Some(end_of_game_position) = positions.iter().find(|p| p.has_lost()) {
-            return end_of_game_position;
+        if let Some(end_of_game) = positions.iter().position(|p| p.has_lost()) {
+            return positions.swap_remove(end_of_game);
         }
-
-        // No obvious position found, so now we have to call `eval` for all of them.
-        positions
-            .iter()
-            .map(|pos| (pos, value(&self.eval(pos))))
+        self.eval_batch(positions)
+            .into_iter()
+            .map(|(position, probabilities)| (position, value(&probabilities)))
             .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
             .unwrap()
             .0
