@@ -78,6 +78,9 @@ pub extern "C" fn best_move_1ptr(pips: &[c_int; 26], die1: c_uint, die2: c_uint)
     let pips = pips.map(|pip| pip as i8);
     match logic::best_move_1ptr(pips, die1 as u8, die2 as u8) {
         Ok(bg_move) => CMove::from(bg_move),
-        Err(_) => CMove::default(),
+        Err(error) => {
+            eprintln!("{}", error);
+            CMove::default()
+        }
     }
 }

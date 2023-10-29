@@ -1,7 +1,7 @@
 use crate::bg_move::BgMove;
+use engine::complex::ComplexEvaluator;
 use engine::dice::Dice;
 use engine::evaluator::Evaluator;
-use engine::onnx::OnnxEvaluator;
 use engine::position::Position;
 
 pub mod bg_move;
@@ -10,8 +10,8 @@ pub mod cube;
 type Error = &'static str;
 
 pub fn best_move_1ptr(pips: [i8; 26], die1: u8, die2: u8) -> Result<BgMove, Error> {
-    match OnnxEvaluator::contact_default() {
-        None => Err("Could not find neural networks."),
+    match ComplexEvaluator::try_default() {
+        None => Err("Could not find neural networks. We expect 'contact.onnx' and 'race.onnx' in the folder 'neural-nets'."),
         Some(evaluator) => best_move_1ptr_with_evaluator(pips, die1, die2, &evaluator),
     }
 }
@@ -95,7 +95,7 @@ mod tests {
             crate::best_move_1ptr(given_pos.into(), 4, 2).expect_err(
                 "During tests folders are handled differently than when using a binary crate."
             ),
-            "Could not find neural networks."
+            "Could not find neural networks. We expect 'contact.onnx' and 'race.onnx' in the folder 'neural-nets'."
         );
     }
 }

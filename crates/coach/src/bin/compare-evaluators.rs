@@ -16,7 +16,7 @@ fn main() {
         "neural-nets/contact.onnx",
         "neural-nets/race.onnx",
     )
-    .expect("Could not find nets for evaluator_1");
+    .expect("Could not find nets for evaluator_2");
     // let evaluator_2 = engine::multiply::MultiPlyEvaluator {
     //     evaluator: evaluator_2,
     // };
