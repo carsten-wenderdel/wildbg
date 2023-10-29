@@ -76,6 +76,12 @@ impl OnnxEvaluator<RaceInputsGen> {
         OnnxEvaluator::from_file_path(RACE_FILE_PATH, RaceInputsGen {})
     }
 
+    /// Compared to `race_default`, this function takes much longer to execute and the
+    /// resulting struct is about 50 times bigger. But rollouts are about 2% faster.   
+    pub fn race_default_optimized() -> Option<Self> {
+        OnnxEvaluator::from_file_path_optimized(RACE_FILE_PATH, RaceInputsGen {})
+    }
+
     pub fn race_default_tests() -> Self {
         // Tests are executed from a different path than binary crates - so we need to slightly change the folder for them.
         OnnxEvaluator::from_file_path(&("../../".to_owned() + RACE_FILE_PATH), RaceInputsGen {})
@@ -86,6 +92,12 @@ impl OnnxEvaluator<RaceInputsGen> {
 impl OnnxEvaluator<ContactInputsGen> {
     pub fn contact_default() -> Option<Self> {
         OnnxEvaluator::from_file_path(CONTACT_FILE_PATH, ContactInputsGen {})
+    }
+
+    /// Compared to `contact_default`, this function takes much longer to execute and the
+    /// resulting struct is about 50 times bigger. But rollouts are about 2% faster.   
+    pub fn contact_default_optimized() -> Option<Self> {
+        OnnxEvaluator::from_file_path_optimized(CONTACT_FILE_PATH, ContactInputsGen {})
     }
 
     pub fn contact_default_tests() -> Self {
@@ -99,19 +111,42 @@ impl OnnxEvaluator<ContactInputsGen> {
 }
 
 impl<T: InputsGen> OnnxEvaluator<T> {
+    /// Load the onnx model from the file path and optimize it for any batch size.
+    ///
+    /// Use it when you are low on memory or if this initializer is called very often.
     pub fn from_file_path(file_path: &str, inputs_gen: T) -> Option<OnnxEvaluator<T>> {
-        match Self::models(file_path) {
+        Self::from_file_path_with_variable_number_of_models(file_path, inputs_gen, 1)
+    }
+
+    /// Load the onnx model from the file path and optimize it several times for various batch sizes.
+    ///
+    /// Compared to `from_file_path`, this function takes much longer to execute and the
+    /// resulting struct is about 50 times bigger. But rollouts are about 2% faster.
+    pub fn from_file_path_optimized(file_path: &str, inputs_gen: T) -> Option<OnnxEvaluator<T>> {
+        Self::from_file_path_with_variable_number_of_models(file_path, inputs_gen, 50)
+    }
+
+    fn from_file_path_with_variable_number_of_models(
+        file_path: &str,
+        inputs_gen: T,
+        number_of_optimized_models: usize,
+    ) -> Option<OnnxEvaluator<T>> {
+        match Self::models(file_path, number_of_optimized_models) {
             Ok(models) => Some(OnnxEvaluator { models, inputs_gen }),
             Err(_) => None,
         }
     }
 
     /// Load the onnx model from the file path and optimize it several times for different batch sizes.
-    fn models(file_path: &str) -> TractResult<Vec<TractModel>> {
+    ///
+    /// `number_of_optimized_models` is the number of models that will be optimized for a specific batch size.
+    /// Use `1` for a single model that is optimized for any batch size.
+    /// When using for example `50`, one model is optimized for any batch size (at index `0` in
+    /// the returning array), the other 49 are optimized for batch sizes from `1` to `49`.
+    fn models(file_path: &str, number_of_optimized_models: usize) -> TractResult<Vec<TractModel>> {
         let model = onnx().model_for_path(file_path)?;
 
         let mut models: Vec<TractModel> = Vec::new();
-        let number_of_optimized_models = 50;
         for i in 0..number_of_optimized_models {
             let fact: InferenceFact = if i == 0 {
                 // The input tensor for the model could be for example [1, 202] - one position with 202 inputs.

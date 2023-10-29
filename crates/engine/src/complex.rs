@@ -52,6 +52,18 @@ impl ComplexEvaluator {
         })
     }
 
+    /// Compared to `try_default`, this function takes much longer to execute and the
+    /// resulting struct is about 50 times bigger. But rollouts are about 2% faster.
+    pub fn try_default_optimized() -> Option<Self> {
+        let contact_evaluator = OnnxEvaluator::contact_default_optimized()?;
+        let race_evaluator = OnnxEvaluator::race_default_optimized()?;
+        Some(Self {
+            contact_evaluator,
+            race_evaluator,
+            game_over_evaluator: GameOverEvaluator {},
+        })
+    }
+
     pub fn default_tests() -> Self {
         let contact_evaluator = OnnxEvaluator::contact_default_tests();
         let race_evaluator = OnnxEvaluator::race_default_tests();
@@ -62,9 +74,10 @@ impl ComplexEvaluator {
         }
     }
 
-    pub fn from_file_paths(contact_path: &str, race_path: &str) -> Option<Self> {
-        let contact_evaluator = OnnxEvaluator::from_file_path(contact_path, ContactInputsGen {})?;
-        let race_evaluator = OnnxEvaluator::from_file_path(race_path, RaceInputsGen {})?;
+    pub fn from_file_paths_optimized(contact_path: &str, race_path: &str) -> Option<Self> {
+        let contact_evaluator =
+            OnnxEvaluator::from_file_path_optimized(contact_path, ContactInputsGen {})?;
+        let race_evaluator = OnnxEvaluator::from_file_path_optimized(race_path, RaceInputsGen {})?;
         Some(Self {
             contact_evaluator,
             race_evaluator,
