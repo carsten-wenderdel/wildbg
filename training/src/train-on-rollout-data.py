@@ -12,13 +12,13 @@ def save_model(model: nn.Module, path: str, num_inputs: int) -> None:
 
 
 def train(model: nn.Module, trainloader: DataLoader, epochs: int) -> nn.Module:
-    # Define loss function, L1Loss and MSELoss are good choices
-    criterion = nn.MSELoss()
+    # L1Loss has had an advantage of 0.042 equity compared to MSELoss (both trained on 200k contact positions).
+    criterion = nn.L1Loss()
 
     # Optimizer based on model, adjust the learning rate
     # 4.0 has worked well for Tanh(), one layer and 100k positions
     # 3.0 has worked well for ReLu(), three layers and 200k positions
-    optimizer = torch.optim.SGD(model.parameters(), lr=3.6)
+    optimizer = torch.optim.SGD(model.parameters(), lr=3.0)
 
     for epoch in range(epochs):
         epoch_loss = 0.0
