@@ -12,7 +12,7 @@ impl BgMove {
                 // Let's assume one checker was moved twice. Where was the stopover?
                 for (die1, die2) in [(dice.small(), dice.big()), (dice.big(), dice.small())] {
                     if let Some(position) =
-                        can_move_both(old, from_pip, die1, from_pip - die1, die2)
+                        can_move_both(old, from_pip, die1, from_pip as isize - die1 as isize, die2)
                     {
                         if position == *new {
                             // In case of bear off, we want 0, not negative numbers
@@ -57,7 +57,8 @@ impl BgMove {
                 let (from1, die1, from2, die2) = combinations
                     .into_iter()
                     .find(|(from1, die1, from2, die2)| {
-                        can_move_both(old, *from1, *die1, *from2, *die2) == Some(new.clone())
+                        can_move_both(old, *from1, *die1, *from2 as isize, *die2)
+                            == Some(new.clone())
                     })
                     .expect("some move combination should work");
                 let to1 = from1.saturating_sub(die1);
@@ -84,10 +85,14 @@ pub fn can_move_both(
     position: &Position,
     from1: usize,
     die1: usize,
-    from2: usize,
+    from2: isize,
     die2: usize,
 ) -> Option<Position> {
     debug_assert!(die1 != die2);
+    if from2 < 0 {
+        return None;
+    }
+    let from2 = from2 as usize;
     position
         .try_move_single_checker(from1, die1)
         .and_then(|p| p.try_move_single_checker(from2, die2))

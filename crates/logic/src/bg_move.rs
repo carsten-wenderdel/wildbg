@@ -105,4 +105,33 @@ mod tests {
             ]
         );
     }
+
+    #[test]
+    fn bear_off_one_die_used() {
+        // Given
+        let old = pos!(x 1:1; o 23:4, 24:3);
+        let new = pos!(x 1:3, 2:4; o).switch_sides(); // The macro only works when `x` has checkers
+
+        // When
+        let bg_move = BgMove::new_regular(&old, &new, &RegularDice::new(5, 2));
+
+        // Then
+        assert_eq!(bg_move.details, vec![MoveDetail { from: 1, to: 0 },]);
+    }
+
+    #[test]
+    fn bear_off_use_two_dice_instead_of_one() {
+        // Given
+        let old = pos!(x 4:1; o 23:4, 24:3);
+        let new = pos!(x 1:3, 2:4; o).switch_sides(); // The macro only works when `x` has checkers
+
+        // When
+        let bg_move = BgMove::new_regular(&old, &new, &RegularDice::new(5, 2));
+
+        // Then
+        assert_eq!(
+            bg_move.details,
+            vec![MoveDetail { from: 4, to: 2 }, MoveDetail { from: 2, to: 0 },]
+        );
+    }
 }
