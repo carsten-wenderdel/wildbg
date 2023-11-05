@@ -1,5 +1,5 @@
 mod double_moves;
-mod regular_moves;
+mod mixed_moves;
 use base64::{engine::general_purpose, Engine as _};
 
 use crate::dice::Dice;
@@ -186,7 +186,7 @@ impl Position {
         debug_assert!(self.o_off < NUM_OF_CHECKERS && self.x_off < NUM_OF_CHECKERS);
         let mut new_positions = match dice {
             Dice::Double(die) => self.all_positions_after_double_move(*die),
-            Dice::Regular(dice) => self.all_positions_after_regular_move(dice),
+            Dice::Mixed(dice) => self.all_positions_after_mixed_move(dice),
         };
         for position in new_positions.iter_mut() {
             *position = position.switch_sides();
@@ -318,7 +318,7 @@ impl Position {
                 self.pips[from - die] = 1;
                 self.pips[O_BAR] -= 1;
             } else {
-                // regular move
+                // mixed move
                 self.pips[from - die] += 1;
             }
         } else {
@@ -349,7 +349,7 @@ impl Position {
             // no checker to move
             false
         } else if from > die {
-            // regular move, no bear off
+            // mixed move, no bear off
             let number_of_opposing_checkers = self.pips[from - die];
             number_of_opposing_checkers > -2
         } else if from == die {
@@ -611,7 +611,7 @@ mod tests {
     }
 
     #[test]
-    fn all_positions_after_moving_regular() {
+    fn all_positions_after_moving_mixed() {
         let pos = pos!(x X_BAR:1; o 22:1);
         // When
         let positions = pos.all_positions_after_moving(&Dice::new(2, 3));
@@ -859,7 +859,7 @@ mod private_tests {
     }
 
     #[test]
-    fn move_single_checker_regular_move() {
+    fn move_single_checker_mixed_move() {
         let before = pos!(x 4:10; o);
         let actual = before.clone_and_move_single_checker(4, 2);
         let expected = pos!(x 4:9, 2:1; o);
@@ -875,7 +875,7 @@ mod private_tests {
     }
 
     #[test]
-    fn move_single_checker_bearoff_regular() {
+    fn move_single_checker_bearoff_mixed() {
         let before = pos!(x 4:10; o);
         let actual = before.clone_and_move_single_checker(4, 4);
         let expected = pos!(x 4:9; o);

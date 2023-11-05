@@ -39,7 +39,7 @@ impl<T: Evaluator, U: DiceGen> PositionFinder<T, U> {
     fn positions_in_one_random_game(&mut self) -> Vec<Position> {
         let mut positions: Vec<Position> = Vec::new();
         let mut pos = STARTING;
-        let mut dice = self.dice_gen.roll_regular();
+        let mut dice = self.dice_gen.roll_mixed();
         loop {
             let positions_and_probabilities = self
                 .evaluator

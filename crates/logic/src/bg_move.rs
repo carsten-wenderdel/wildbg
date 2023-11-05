@@ -5,7 +5,7 @@ use std::cmp::max;
 use utoipa::ToSchema;
 
 mod double;
-mod regular;
+mod mixed;
 
 /// `BgMove` is not used during rollouts or evaluation but only when returning moves via an API
 /// This is why a new `BgMove` is always calculated based on a `old` and a resulting `new` position.
@@ -45,7 +45,7 @@ impl BgMove {
 
     pub fn new(old: &Position, new: &Position, dice: &Dice) -> BgMove {
         match dice {
-            Dice::Regular(dice) => Self::new_regular(old, new, dice),
+            Dice::Mixed(dice) => Self::new_mixed(old, new, dice),
             Dice::Double(die) => Self::new_double(old, new, *die),
         }
     }
@@ -73,7 +73,7 @@ impl BgMove {
 #[cfg(test)]
 mod tests {
     use crate::bg_move::{BgMove, MoveDetail};
-    use engine::dice::RegularDice;
+    use engine::dice::MixedDice;
     use engine::pos;
     use engine::position::Position;
     use std::collections::HashMap;
@@ -90,12 +90,12 @@ mod tests {
     }
 
     #[test]
-    fn regular() {
+    fn mixed() {
         // Given
         let old = pos!(x 20:2; o 12:2);
         let new = pos!(x 18:1, 15:1; o 12:2);
         // When
-        let bg_move = BgMove::new_regular(&old, &new, &RegularDice::new(5, 2));
+        let bg_move = BgMove::new_mixed(&old, &new, &MixedDice::new(5, 2));
         // Then
         assert_eq!(
             bg_move.details,
@@ -113,7 +113,7 @@ mod tests {
         let new = pos!(x 1:3, 2:4; o).switch_sides(); // The macro only works when `x` has checkers
 
         // When
-        let bg_move = BgMove::new_regular(&old, &new, &RegularDice::new(5, 2));
+        let bg_move = BgMove::new_mixed(&old, &new, &MixedDice::new(5, 2));
 
         // Then
         assert_eq!(bg_move.details, vec![MoveDetail { from: 1, to: 0 },]);
@@ -126,7 +126,7 @@ mod tests {
         let new = pos!(x 1:3, 2:4; o).switch_sides(); // The macro only works when `x` has checkers
 
         // When
-        let bg_move = BgMove::new_regular(&old, &new, &RegularDice::new(5, 2));
+        let bg_move = BgMove::new_mixed(&old, &new, &MixedDice::new(5, 2));
 
         // Then
         assert_eq!(

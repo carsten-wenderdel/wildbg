@@ -1,13 +1,13 @@
 /// Contains a legal pair of dice (values between 1 and 6).
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Dice {
-    Regular(RegularDice),
+    Mixed(MixedDice),
     Double(usize),
 }
 
 /// Contains two different values between 1 and six. `big` is bigger than `small`.
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
-pub struct RegularDice {
+pub struct MixedDice {
     pub(crate) big: usize,
     pub(crate) small: usize,
 }
@@ -15,13 +15,13 @@ pub struct RegularDice {
 /// Contains all 441 possibilities of for two rolls of dice.
 ///
 /// As `usize` is also returned how often those dice on average appear in 1296 rolls.
-/// Two double rolls appear 1 time, two regular rolls appear 4 times.
-/// A combination of a double and a regular roll appears 2 times.
+/// Two double rolls appear 1 time, two mixed rolls appear 4 times.
+/// A combination of a double and a mixed roll appears 2 times.
 pub const ALL_441: [([Dice; 2], usize); 441] = Dice::all_441();
 
 /// Contains all 21 possibilities of dice and a number of how often they appear in 36 rolls.
 ///
-/// So doubles appear 1 time, regular rolls appear 2 times.
+/// So doubles appear 1 time, mixed rolls appear 2 times.
 pub const ALL_21: [(Dice, usize); 21] = Dice::all_21();
 
 impl Dice {
@@ -30,7 +30,7 @@ impl Dice {
         if die1 == die2 {
             Dice::Double(die1)
         } else {
-            Dice::Regular(RegularDice::new(die1, die2))
+            Dice::Mixed(MixedDice::new(die1, die2))
         }
     }
     const fn all_441() -> [([Dice; 2], usize); 441] {
@@ -84,7 +84,7 @@ impl TryFrom<(usize, usize)> for Dice {
     }
 }
 
-impl RegularDice {
+impl MixedDice {
     #[inline(always)]
     pub fn small(&self) -> usize {
         self.small
@@ -113,13 +113,13 @@ pub trait DiceGen {
     fn roll(&mut self) -> Dice;
 
     /// Returns different dice, no double roll. This is useful for the first move of the game.
-    fn roll_regular(&mut self) -> Dice {
+    fn roll_mixed(&mut self) -> Dice {
         // There are more efficient ways to do that, but it's rarely used.
         // So let's keep it simple.
         // Also this works for all implementing types.
         loop {
             let dice = self.roll();
-            if let Dice::Regular(_) = dice {
+            if let Dice::Mixed(_) = dice {
                 return dice;
             }
         }
@@ -193,7 +193,7 @@ impl FastrandDice {
 
 #[cfg(test)]
 mod dice_tests {
-    use crate::dice::Dice::{Double, Regular};
+    use crate::dice::Dice::{Double, Mixed};
     use crate::dice::{Dice, ALL_441};
     use std::collections::HashSet;
 
@@ -204,9 +204,9 @@ mod dice_tests {
         assert_eq!(sum_of_numbers, 1296);
         for (dice, number) in all_441 {
             match (dice[0], dice[1]) {
-                (Regular(_), Regular(_)) => assert_eq!(number, 4),
-                (Double(_), Regular(_)) => assert_eq!(number, 2),
-                (Regular(_), Double(_)) => assert_eq!(number, 2),
+                (Mixed(_), Mixed(_)) => assert_eq!(number, 4),
+                (Double(_), Mixed(_)) => assert_eq!(number, 2),
+                (Mixed(_), Double(_)) => assert_eq!(number, 2),
                 (Double(_), Double(_)) => assert_eq!(number, 1),
             }
         }
@@ -218,7 +218,7 @@ mod dice_tests {
         let mut dice_set: HashSet<[Dice; 2]> = HashSet::new();
         for (dice, _) in all_441 {
             match dice[0] {
-                Regular(dice) => assert!(dice.small > 0 && dice.big < 7),
+                Mixed(dice) => assert!(dice.small > 0 && dice.big < 7),
                 Double(die) => assert!(die > 0 && die < 7),
             }
             dice_set.insert(dice);
@@ -279,13 +279,13 @@ mod fastrand_dice_tests {
                 Dice::Double(die) => {
                     count[die - 1][die - 1] += 1;
                 }
-                Dice::Regular(dice) => {
+                Dice::Mixed(dice) => {
                     count[dice.big - 1][dice.small - 1] += 1;
                 }
             }
         }
 
-        // Check regular rolls
+        // Check mixed rolls
         for i in 0..6 {
             for j in 0..6 {
                 let count = count[i][j];

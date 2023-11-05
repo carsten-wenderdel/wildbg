@@ -1,11 +1,11 @@
-use crate::dice::RegularDice;
+use crate::dice::MixedDice;
 use crate::position::{Position, O_BAR, X_BAR};
 use std::cmp::{max, min};
 
 impl Position {
     /// Returns all legal positions after rolling a double and then moving.
     /// The return values have not switched sides yet.
-    pub(super) fn all_positions_after_regular_move(&self, dice: &RegularDice) -> Vec<Position> {
+    pub(super) fn all_positions_after_mixed_move(&self, dice: &MixedDice) -> Vec<Position> {
         debug_assert!(dice.big > dice.small);
         match self.pips[X_BAR] {
             0 => self.moves_with_0_checkers_on_bar(dice),
@@ -14,8 +14,8 @@ impl Position {
         }
     }
 
-    /// Regular moves with exactly 1 checker on the bar.
-    fn moves_with_1_checker_on_bar(&self, dice: &RegularDice) -> Vec<Position> {
+    /// Mixed moves with exactly 1 checker on the bar.
+    fn moves_with_1_checker_on_bar(&self, dice: &MixedDice) -> Vec<Position> {
         debug_assert!(self.pips[X_BAR] == 1);
 
         if self.can_enter(dice.big) {
@@ -55,8 +55,8 @@ impl Position {
         }
     }
 
-    /// Regular moves with no checkers on the bar.
-    fn moves_with_0_checkers_on_bar(&self, dice: &RegularDice) -> Vec<Position> {
+    /// Mixed moves with no checkers on the bar.
+    fn moves_with_0_checkers_on_bar(&self, dice: &MixedDice) -> Vec<Position> {
         debug_assert!(self.pips[X_BAR] == 0);
 
         match self.move_possibilities(dice) {
@@ -88,7 +88,7 @@ impl Position {
     }
 
     // All moves with no checkers on the bar where two checkers can be moved.
-    fn two_checker_moves(&self, dice: &RegularDice) -> Vec<Position> {
+    fn two_checker_moves(&self, dice: &MixedDice) -> Vec<Position> {
         debug_assert!(self.pips[X_BAR] == 0);
 
         let mut moves: Vec<Position> = Vec::new();
@@ -158,7 +158,7 @@ impl Position {
     }
 
     /// All moves (well, exactly one) when at least two checkers are on the bar.
-    fn moves_with_2_checkers_on_bar(&self, dice: &RegularDice) -> Vec<Position> {
+    fn moves_with_2_checkers_on_bar(&self, dice: &MixedDice) -> Vec<Position> {
         debug_assert!(self.pips[X_BAR] > 1);
 
         let mut position = self.clone();
@@ -173,7 +173,7 @@ impl Position {
 
     /// Will return 2 if 2 or more checkers can be moved.
     /// Will return 0 if no checker can be moved.
-    fn move_possibilities(&self, dice: &RegularDice) -> MovePossibilities {
+    fn move_possibilities(&self, dice: &MixedDice) -> MovePossibilities {
         debug_assert!(self.pips[X_BAR] == 0);
 
         let mut can_move_big = false;
@@ -264,7 +264,7 @@ enum MovePossibilities {
 
 #[cfg(test)]
 mod tests {
-    use crate::dice::RegularDice;
+    use crate::dice::MixedDice;
     use crate::pos;
     use crate::position::{Position, O_BAR, X_BAR};
     use std::collections::HashMap;
@@ -277,7 +277,7 @@ mod tests {
         let position = pos!(x X_BAR:2, 10:2; o 22:2, 20:2);
         // When
         let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice { big: 5, small: 3 });
+            position.all_positions_after_mixed_move(&MixedDice { big: 5, small: 3 });
         // Then
         assert_eq!(resulting_positions, vec![position]);
     }
@@ -287,8 +287,7 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:2, 10:2; o 22:2);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(5, 3));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(5, 3));
         // Then
         let expected = pos!(x X_BAR:1, 20:1, 10:2; o 22:2);
         assert_eq!(resulting_positions, vec![expected]);
@@ -299,8 +298,7 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:2, 10:2; o 22:1, 20:2);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(5, 3));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(5, 3));
         // Then
         let expected = pos!(x X_BAR:1, 22:1, 10:2; o 20:2, O_BAR:1);
         assert_eq!(resulting_positions, vec![expected]);
@@ -311,8 +309,7 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:3, 10:2; o 20:1);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(5, 3));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(5, 3));
         // Then
         let expected = pos!(x X_BAR:1, 22:1, 20:1, 10:2; o O_BAR:1);
         assert_eq!(resulting_positions, vec![expected]);
@@ -325,8 +322,7 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1, 10:2; o 22:2, 20:2);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(5, 3));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(5, 3));
         // Then
         assert_eq!(resulting_positions, vec![position]);
     }
@@ -336,8 +332,7 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1, 10:2; o 22:2, 20:1, 17:2, 7:3);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(5, 3));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(5, 3));
         // Then
         let expected = pos!(x 20:1, 10:2; o 22:2, 17:2, 7:3, O_BAR:1);
         assert_eq!(resulting_positions, vec![expected]);
@@ -348,8 +343,7 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1; o 19:2, 14:2);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(6, 5));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(6, 5));
         // Then
         let expected = pos!(x 20:1; o 19:2, 14:2);
         assert_eq!(resulting_positions, vec![expected]);
@@ -360,8 +354,7 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1; o 20:2);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(3, 2));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(3, 2));
         // Then
         let expected = pos!(x 22:1; o 20:2);
         assert_eq!(resulting_positions, vec![expected]);
@@ -372,8 +365,7 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1, 12:1; o 20:2, 10:2);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(3, 2));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(3, 2));
         // Then
         let expected = pos!(x 23:1, 9:1; o 20:2, 10:2);
         assert_eq!(resulting_positions, vec![expected]);
@@ -384,8 +376,7 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1, 12:1; o 20:2, 9:2);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(3, 2));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(3, 2));
         // Then
         let expected = pos!(x 22:1, 10:1; o 20:2, 9:2);
         assert_eq!(resulting_positions, vec![expected]);
@@ -396,8 +387,7 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1; o 9:2);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(3, 2));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(3, 2));
         // Then
         let expected = pos!(x 20:1; o 9:2);
         assert_eq!(resulting_positions, vec![expected]);
@@ -408,8 +398,7 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1; o 22:1);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(3, 2));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(3, 2));
         // Then
         let expected1 = pos!(x 20:1; o O_BAR:1);
         let expected2 = pos!(x 20:1; o 22:1);
@@ -421,8 +410,7 @@ mod tests {
         // Given
         let position = pos!(x X_BAR:1; o 23:1);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(3, 2));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(3, 2));
         // Then
         let expected1 = pos!(x 20:1; o 23:1);
         let expected2 = pos!(x 20:1; o O_BAR:1);
@@ -436,8 +424,7 @@ mod tests {
         // Given
         let position = pos!(x 10:2, 2:3; o 8:2, 6:2);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(4, 2));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(4, 2));
         // Then
         assert_eq!(resulting_positions, vec![position]);
     }
@@ -447,8 +434,7 @@ mod tests {
         // Given
         let position = pos!(x 7:2; o 2:2);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(5, 2));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(5, 2));
         // Then
         let expected = pos!(x 7:1, 5:1; o 2:2);
         assert_eq!(resulting_positions, vec![expected]);
@@ -459,8 +445,7 @@ mod tests {
         // Given
         let position = pos!(x 8:1, 4:3; o 1:2);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(4, 3));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(4, 3));
         // Then
         let expected = pos!(x 5:1, 4:2; o 1:2);
         assert_eq!(resulting_positions, vec![expected]);
@@ -471,8 +456,7 @@ mod tests {
         // Given
         let position = pos!(x 20:1; o 16:3);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(4, 3));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(4, 3));
         // Then
         let expected = pos!(x 13:1; o 16:3);
         assert_eq!(resulting_positions, vec![expected]);
@@ -483,8 +467,7 @@ mod tests {
         // Given
         let position = pos!(x 9:1, 5:1; o 20:2);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(5, 3));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(5, 3));
         // Then
         let expected1 = pos!(x 4:1, 2:1; o 20:2);
         let expected2 = pos!(x 5:1, 1:1; o 20:2);
@@ -497,8 +480,7 @@ mod tests {
         // Given
         let position = pos!(x 5:2, 4:3, 3:1; o 20:1);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(4, 3));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(4, 3));
         // Then
         let expected1 = pos!(x 4:3, 3:1, 2:1, 1:1; o 20:1);
         let expected2 = pos!(x 5:1, 4:2, 3:1, 1:2; o 20:1);
@@ -517,8 +499,7 @@ mod tests {
         // Given
         let position = pos!(x 20:1; o 22:2);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(4, 3));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(4, 3));
         // Then
         let expected = pos!(x 13:1; o 22:2);
         assert_eq!(resulting_positions, vec![expected]);
@@ -529,8 +510,7 @@ mod tests {
         // Given
         let position = pos!(x 5:1; o 22:2);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(2, 1));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(2, 1));
         // Then
         let expected = pos!(x 2:1; o 22:2);
         assert_eq!(resulting_positions, vec![expected]);
@@ -541,8 +521,7 @@ mod tests {
         // Given
         let position = pos!(x 10:1; o 6:1);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(4, 2));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(4, 2));
         // Then
         let expected1 = pos!(x 4:1; o O_BAR:1);
         let expected2 = pos!(x 4:1; o 6:1);
@@ -554,8 +533,7 @@ mod tests {
         // Given
         let position = pos!(x 5:1; o 4:1);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(3, 1));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(3, 1));
         // Then
         let expected1 = pos!(x 1:1; o 4:1);
         let expected2 = pos!(x 1:1; o O_BAR:1);
@@ -567,8 +545,7 @@ mod tests {
         // Given
         let position = pos!(x 1:5; o 24:8);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(6, 4));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(6, 4));
         // Then
         let expected = pos!(x 1:3; o 24:8);
         assert_eq!(resulting_positions, vec![expected]);
@@ -579,8 +556,7 @@ mod tests {
         // Given
         let position = pos!(x 2:1, 1:5; o);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(6, 1));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(6, 1));
         // Then
         let expected1 = pos!(x 1:4; o);
         let expected2 = pos!(x 1:5; o);
@@ -592,8 +568,7 @@ mod tests {
         // Given
         let position = pos!(x 7:1, 6:3; o 2:2);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(5, 4));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(5, 4));
         // Then
         let expected = pos!(x 6:2, 3:1, 1:1; o 2:2);
         assert_eq!(resulting_positions, vec![expected]);
@@ -604,8 +579,7 @@ mod tests {
         // Given
         let position = pos!(x 9:1, 5:3, 3:2; o 24:10, 23:3, 1:2);
         // When
-        let resulting_positions =
-            position.all_positions_after_regular_move(&RegularDice::new(6, 4));
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(6, 4));
         // Then
         let expected = pos!(x 5:3, 3:2; o 24:10, 23:3, 1:2);
         assert_eq!(resulting_positions, vec![expected]);

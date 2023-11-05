@@ -1,9 +1,9 @@
 use crate::bg_move::{BgMove, MoveDetail};
-use engine::dice::RegularDice;
+use engine::dice::MixedDice;
 use engine::position::Position;
 
 impl BgMove {
-    pub(super) fn new_regular(old: &Position, new: &Position, dice: &RegularDice) -> BgMove {
+    pub(super) fn new_mixed(old: &Position, new: &Position, dice: &MixedDice) -> BgMove {
         let from = Self::more_checkers(old, new);
         let details: Vec<MoveDetail> = match from {
             [None, None] => Vec::new(),
@@ -101,7 +101,7 @@ pub fn can_move_both(
 #[cfg(test)]
 mod tests {
     use crate::bg_move::{BgMove, MoveDetail};
-    use engine::dice::RegularDice;
+    use engine::dice::MixedDice;
     use engine::pos;
     use engine::position::{Position, O_BAR, X_BAR};
     use std::collections::HashMap;
@@ -112,7 +112,7 @@ mod tests {
         let old = pos!(x 20:4; o 16:2, 13:2);
         let new = pos!(x 20:4; o 16:2, 14:1);
         // When
-        let bg_move = BgMove::new_regular(&old, &new, &RegularDice::new(6, 4));
+        let bg_move = BgMove::new_mixed(&old, &new, &MixedDice::new(6, 4));
         // Then
         assert_eq!(bg_move.details, Vec::new());
     }
@@ -123,7 +123,7 @@ mod tests {
         let old = pos!(x X_BAR:2; o 21:2);
         let new = pos!(x X_BAR:1, 19:1; o 21:2);
         // When
-        let bg_move = BgMove::new_regular(&old, &new, &RegularDice::new(6, 4));
+        let bg_move = BgMove::new_mixed(&old, &new, &MixedDice::new(6, 4));
         // Then
         assert_eq!(
             bg_move.details,
@@ -140,7 +140,7 @@ mod tests {
         let old = pos!(x 20:4, 10:1; o 24:1, 14:1);
         let new = pos!(x 20:3, 10:2; o 24:1, O_BAR: 1);
         // When
-        let bg_move = BgMove::new_regular(&old, &new, &RegularDice::new(6, 4));
+        let bg_move = BgMove::new_mixed(&old, &new, &MixedDice::new(6, 4));
         // then
         assert_eq!(
             bg_move.details,
@@ -157,7 +157,7 @@ mod tests {
         let old = pos!(x 20:4, 10:1; o 24:1, 14:1);
         let new = pos!(x 20:3, 10:2; o 24:1, 14:1);
         // When
-        let bg_move = BgMove::new_regular(&old, &new, &RegularDice::new(6, 4));
+        let bg_move = BgMove::new_mixed(&old, &new, &MixedDice::new(6, 4));
         // then
         assert_eq!(
             bg_move.details,
@@ -174,7 +174,7 @@ mod tests {
         let old = pos!(x 8:1, 1:10; o 2:2);
         let new = pos!(x 1:10; o 2:2);
         // When
-        let bg_move = BgMove::new_regular(&old, &new, &RegularDice::new(6, 4));
+        let bg_move = BgMove::new_mixed(&old, &new, &MixedDice::new(6, 4));
         // then
         assert_eq!(
             bg_move.details,
@@ -188,7 +188,7 @@ mod tests {
         let old = pos!(x 4:1, 3:1, 1:1; o 2:2);
         let new = pos!(x 1:1; o 2:2);
         // When
-        let bg_move = BgMove::new_regular(&old, &new, &RegularDice::new(6, 4));
+        let bg_move = BgMove::new_mixed(&old, &new, &MixedDice::new(6, 4));
         // then
         assert_eq!(
             bg_move.details,
@@ -202,7 +202,7 @@ mod tests {
         let old = pos!(x 4:1, 2:1; o 24:2);
         let new = pos!(x 2:1; o 24:2);
         // When
-        let bg_move = BgMove::new_regular(&old, &new, &RegularDice::new(4, 2));
+        let bg_move = BgMove::new_mixed(&old, &new, &MixedDice::new(4, 2));
         // then
         assert_eq!(
             bg_move.details,
