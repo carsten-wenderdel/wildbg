@@ -2,9 +2,17 @@
 
 `wildbg` is a backgammon engine based on neural networks. Currently, it's in alpha stage.
 
+As of November 2023, it reaches an ELO rating of roughly 1800 and an error rate mEMG of roughly 7.5 when being analyzed with GnuBG.
+
+For discussions, please join the Discord Server [Computer Backgammon](https://discord.gg/BcU9AzunGx) ![Discord Shield](https://discordapp.com/api/guilds/1159408833999945798/widget.png?style=shield).
+
 ## Try it out
 
-#### Online
+#### FIBS
+
+Thanks to [@oysteio](https://github.com/oysteijo) you can play against `wildbg` on the backgammon server [FIBS](http://www.fibs.com). As FIBS client I recommend [JavaFibs](http://www.fibs.com/javafibs/).
+
+#### Online API
 
 You can access the API and see yourself how `wildbg` would move: https://wildbg.shuttleapp.rs/swagger-ui/
 
