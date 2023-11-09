@@ -49,6 +49,7 @@ The training process consists of three steps, which are repeated in a loop:
 
 #### For contributors
 - Code structure: [docs/dev/architecture.md](docs/dev/architecture.md)
+- Engine: [docs/dev/engine.md](docs/dev/engine.md)
 
 Also see the [CHANGELOG](CHANGELOG.md) for a list of changes.
 

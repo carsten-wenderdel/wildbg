@@ -27,6 +27,8 @@ graph
 - Inference of the neural net: given the proper inputs – what are the cubeless money game probabilities for winning/losing normal/gammon/backgammon?
 - Best move: Given a position and a pair of dice – what's the best move following?
 
+For a more detailed documentation, see [docs/dev/engine.md](./engine.md).
+
 #### coach
 [`coach`](../../crates/coach/src) contains everything to generate training data and compare the performance of different neural networks.
 
