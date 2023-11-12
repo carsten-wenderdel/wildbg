@@ -6,6 +6,14 @@ As of November 2023, it reaches an ELO rating of roughly 1800 and an error rate 
 
 For discussions, please join the Discord Server [Computer Backgammon](https://discord.gg/BcU9AzunGx) ![Discord Shield](https://discordapp.com/api/guilds/1159408833999945798/widget.png?style=shield).
 
+## Goals
+
+1. Provide source code and documentation to train neural nets from zero to super human strength.
+2. Implement logic to evaluate all kind of backgammon positions: cubeless and cubeful equities, multi-ply evaluation, rollouts, etc.
+3. Make the backgammon engine accessible via an easy-to-use HTTP JSON API.
+
+A graphical user interface (GUI) is not part of this project.
+
 ## Try it out
 
 #### FIBS
@@ -26,21 +34,6 @@ A web server will be started which you can access via http://localhost:8080/swag
 Beware that the networks committed to this repository are very small networks just for demonstration purposes.
 You can find the latest training progress and networks here: https://github.com/carsten-wenderdel/wildbg-training
 
-## Goals
-
-1. Provide source code and documentation to train neural nets from zero to super human strength.
-2. Implement logic to evaluate all kind of backgammon positions: cubeless and cubeful equities, multi-ply evaluation, rollouts, etc.
-3. Make the backgammon engine accessible via an easy-to-use HTTP JSON API.
-
-A graphical user interface (GUI) is not part of this project.
-
-## Training process
-
-The training process consists of three steps, which are repeated in a loop:
-1. Find lots of positions (at least 100,000) through self-play for a later rollout.
-2. Roll out these positions. Currently, only 1-ply rollouts are possible.
-3. Train neural networks based on the rollout data. There are two different networks for `contact` and `race` positions. This third step is the only one done in Python, everything else is implemented in Rust.
-
 ## Documentation
 
 #### For users (bots and GUIs)
@@ -50,6 +43,7 @@ The training process consists of three steps, which are repeated in a loop:
 #### For contributors
 - Code structure: [docs/dev/architecture.md](docs/dev/architecture.md)
 - Engine: [docs/dev/engine.md](docs/dev/engine.md)
+- Training process: [docs/dev/training.md](docs/dev/training.md)
 
 Also see the [CHANGELOG](CHANGELOG.md) for a list of changes.
 
