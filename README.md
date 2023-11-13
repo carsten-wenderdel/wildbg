@@ -18,7 +18,7 @@ A graphical user interface (GUI) is not part of this project.
 
 #### FIBS
 
-Thanks to [@oysteio](https://github.com/oysteijo) you can play against `wildbg` on the backgammon server [FIBS](http://www.fibs.com). As FIBS client I recommend [JavaFibs](http://www.fibs.com/javafibs/).
+Thanks to [@oysteijo](https://github.com/oysteijo) you can play against `wildbg` on the backgammon server [FIBS](http://www.fibs.com). As FIBS client I recommend [JavaFibs](http://www.fibs.com/javafibs/).
 
 #### Online API
 
