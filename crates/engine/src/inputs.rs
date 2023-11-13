@@ -8,19 +8,6 @@ pub trait InputsGen {
     ///
     /// The length of the vector matches `num_inputs`.
     fn input_vec(&self, pos: &Position) -> Vec<f32>;
-
-    /// A line with outputs for the neural network.
-    ///
-    /// As delimiter is `;` used.
-    /// The elements are floating point numbers converted to strings.
-    /// The number of elements matches `num_inputs`;
-    fn csv_line(&self, pos: &Position) -> String {
-        self.input_vec(pos)
-            .into_iter()
-            .map(|x| x.to_string())
-            .collect::<Vec<String>>()
-            .join(";")
-    }
 }
 
 /// 4 inputs representing a single pip from the point of view of one player.
@@ -97,10 +84,21 @@ mod contact_tests {
     #[test]
     fn contact_cvs_line() {
         let pos = pos!(x 1:1, 2:2, 3:3, 4:4, 5:5; o 24:1, O_BAR: 1);
-        let pos_switched = pos.switch_sides();
         let inputs_gen = ContactInputsGen {};
-        let inputs = inputs_gen.csv_line(&pos);
-        let inputs_switched = inputs_gen.csv_line(&pos_switched);
+
+        let inputs = inputs_gen
+            .input_vec(&pos)
+            .iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<_>>()
+            .join(";");
+        let inputs_switched = inputs_gen
+            .input_vec(&pos.switch_sides())
+            .iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<_>>()
+            .join(";");
+
         assert_eq!(
             inputs,
             "0;13;0;0;0;0;1;0;0;0;0;1;0;0;0;0;1;0;0;0;1;1;0;0;1;2;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;1;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;1;0;0;0"
@@ -122,10 +120,21 @@ mod race_tests {
     #[test]
     fn race_cvs_line() {
         let pos = pos!(x 1:1, 2:2, 3:3, 4:4, 5:5; o 24:1);
-        let pos_switched = pos.switch_sides();
         let inputs_gen = RaceInputsGen {};
-        let inputs = inputs_gen.csv_line(&pos);
-        let inputs_switched = inputs_gen.csv_line(&pos_switched);
+
+        let inputs = inputs_gen
+            .input_vec(&pos)
+            .iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<_>>()
+            .join(";");
+        let inputs_switched = inputs_gen
+            .input_vec(&pos.switch_sides())
+            .iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<_>>()
+            .join(";");
+
         assert_eq!(
             inputs,
             "0;14;1;0;0;0;0;1;0;0;0;0;1;0;0;0;1;1;0;0;1;2;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;1;0;0;0"
