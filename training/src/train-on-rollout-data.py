@@ -19,7 +19,7 @@ def train(model: nn.Module, trainloader: DataLoader, epochs: int) -> nn.Module:
     # 4.0 has worked well for SGD, MSELoss, Tanh(), one layer and 100k positions
     # 3.0 has worked well for SGD, MSELoss/L1Loss, ReLu(), three layers and 200k positions
     # 700e-6 == 0.0007 has worked well for Adam, L1Loss, ReLu(), three layers and 200k positions
-    optimizer = torch.optim.Adam(model.parameters(), lr=700e-6)
+    optimizer = torch.optim.Adam(model.parameters(), lr=290e-6)
 
     for epoch in range(epochs):
         epoch_loss = 0.0
@@ -46,7 +46,7 @@ def main(model: nn.Module, data_path: str, model_path: str, num_inputs: int):
     trainloader = DataLoader(traindata, batch_size=64, shuffle=True)
 
     try:
-        model = train(model, trainloader, 20)
+        model = train(model, trainloader, 50)
     finally:
         print('Finished Training')
         save_model(model, model_path, num_inputs)
@@ -63,7 +63,7 @@ if __name__ == "__main__":
     print(f"Using {device} device")
     Path("../neural-nets").mkdir(exist_ok=True)
 
-    mode = "tiny_race"
+    mode = "race"
     match mode:
         case "contact":
             num_inputs = 202
