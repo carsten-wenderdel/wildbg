@@ -1,8 +1,8 @@
 use coach::data::PositionRecord;
 use coach::position_finder::PositionFinder;
 use coach::rollout::RolloutEvaluator;
+use engine::complex::ComplexEvaluator;
 use engine::evaluator::{Evaluator, RandomEvaluator};
-use engine::onnx::OnnxEvaluator;
 use engine::position::OngoingPhase;
 use std::fs::File;
 use std::io::{stdout, Write};
@@ -15,13 +15,13 @@ use std::time::Instant;
 fn main() -> std::io::Result<()> {
     // Change the next 4 lines to configure what, how and how much you want to roll out.
     let phase = OngoingPhase::Race;
-    let amount = 10;
-    let rollout_evaluator = OnnxEvaluator::contact_default().map(RolloutEvaluator::with_evaluator);
-    let finder_evaluator = OnnxEvaluator::contact_default();
+    let amount = 200_000;
+    let rollout_evaluator = ComplexEvaluator::try_default().map(RolloutEvaluator::with_evaluator);
+    let finder_evaluator = ComplexEvaluator::try_default();
 
     match (rollout_evaluator, finder_evaluator) {
         (Some(rollout_evaluator), Some(finder_evaluator)) => {
-            println!("Use onnx evaluator.");
+            println!("Use onnx evaluators.");
             find_and_roll_out(finder_evaluator, rollout_evaluator, amount, phase)?;
         }
         (_, _) => {
