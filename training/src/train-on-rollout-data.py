@@ -16,10 +16,12 @@ def train(model: nn.Module, trainloader: DataLoader, epochs: int) -> nn.Module:
     criterion = nn.L1Loss()
 
     # Optimizer based on model, adjust the learning rate
-    # 4.0 has worked well for SGD, MSELoss, Tanh(), one layer and 100k positions
-    # 3.0 has worked well for SGD, MSELoss/L1Loss, ReLu(), three layers and 200k positions
-    # 700e-6 == 0.0007 has worked well for Adam, L1Loss, ReLu(), three layers and 200k positions
-    optimizer = torch.optim.Adam(model.parameters(), lr=290e-6)
+    # 4.0 has worked well for SGD, MSELoss, Tanh(), one layer, 20 epochs and 100k positions
+    # 3.0 has worked well for SGD, MSELoss/L1Loss, ReLu(), three layers, 20 epochs and 200k positions
+    # 700e-6 has worked well for Adam, L1Loss, ReLu(), three layers, 20 epochs and 200k positions
+    # 290e-6 has worked well for Adam, L1Loss, ReLu(), three layers, 50 epochs and 200k positions
+    # 350e-6 has worked well for AdamW, L1Loss, ReLu(), three layers, 50 epochs and 200k positions
+    optimizer = torch.optim.AdamW(model.parameters(), lr=350e-6)
 
     for epoch in range(epochs):
         epoch_loss = 0.0
