@@ -20,6 +20,11 @@ A graphical user interface (GUI) is not part of this project.
 
 Thanks to [@oysteijo](https://github.com/oysteijo) you can play against `wildbg` on the backgammon server [FIBS](http://www.fibs.com). As FIBS client I recommend [JavaFibs](http://www.fibs.com/javafibs/).
 
+#### bgammon.org
+
+Thanks to [@tslocum](https://github.com/tslocum) you can play against `BOT_wildbg` on his new backgammon server https://bgammon.org.
+The source code of the bot can be found [here](https://code.rocket9labs.com/tslocum/bgammon-wildbg-bot).
+
 #### Online API
 
 You can access the API and see yourself how `wildbg` would move: https://wildbg.shuttleapp.rs/swagger-ui/
