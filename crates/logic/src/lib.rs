@@ -5,6 +5,7 @@ use engine::evaluator::Evaluator;
 use engine::position::Position;
 
 pub mod bg_move;
+#[cfg(feature = "web")]
 pub mod cube;
 
 type Error = &'static str;

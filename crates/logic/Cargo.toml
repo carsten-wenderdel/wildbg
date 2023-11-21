@@ -5,11 +5,15 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 
+[features]
+# Enables `serde` and `utoipa` capabilities which might not be needed when using the crate from Rust or C
+web=["dep:serde", "dep:serde_json", "dep:utoipa"]
+
 [dependencies]
 # internal
 engine = { path = "../engine" }
 # external
-serde = { workspace = true, features = ["derive"] }
-serde_json.workspace = true
-utoipa = { workspace = true, features = ["axum_extras", "preserve_order"] }
+serde = { workspace = true, features = ["derive"], optional = true }
+serde_json = { workspace = true, optional = true }
+utoipa = { workspace = true, features = ["axum_extras", "preserve_order"], optional = true }
 

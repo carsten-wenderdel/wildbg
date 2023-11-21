@@ -1,7 +1,9 @@
 use engine::dice::Dice;
 use engine::position::Position;
+#[cfg(feature = "web")]
 use serde::Serialize;
 use std::cmp::max;
+#[cfg(feature = "web")]
 use utoipa::ToSchema;
 
 mod double;
@@ -14,16 +16,17 @@ pub struct BgMove {
     pub(crate) details: Vec<MoveDetail>,
 }
 
-#[derive(Debug, PartialEq, Serialize, ToSchema)]
+#[derive(Debug, PartialEq)]
+#[cfg_attr(feature = "web", derive(Serialize, ToSchema))]
 /// Single movement of one checker. We always move from bigger pips to smaller pips.
 /// If the same checker is moved more than once, multiple `MoveDetail`s are given.
 /// Therefore: `from > to` and `from - to <= 6`.
 pub struct MoveDetail {
     /// The bar is represented by `25`.
-    #[schema(minimum = 1, maximum = 25)]
+    #[cfg_attr(feature = "web", schema(minimum = 1, maximum = 25))]
     pub(crate) from: usize,
     /// bear off is represented by `0`.
-    #[schema(minimum = 0, maximum = 24)]
+    #[cfg_attr(feature = "web", schema(minimum = 0, maximum = 24))]
     pub(crate) to: usize,
 }
 

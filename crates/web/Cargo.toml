@@ -9,7 +9,7 @@ default-run = "server"
 [dependencies]
 # internal
 engine = { path = "../engine" }
-logic = { path = "../logic" }
+logic = { path = "../logic", features = ["web"] }
 # external
 axum = "0.6.20"
 hyper = "0.14.27"
