@@ -13,7 +13,7 @@ class Model(nn.Module):
         self.output = nn.Linear(200, 6)
         
         # Define activation function and softmax output 
-        self.activation = nn.ReLU()
+        self.activation = nn.Hardsigmoid()
         self.softmax = nn.Softmax(dim=1)
         
     def forward(self, x):
