@@ -11,6 +11,7 @@ The Rust code is split into 5 crates, displayed in the following diagram. Some (
 graph
     coach ----> rayon("ext: rayon")
     coach ---> engine
+    wildbg-c --> engine
     wildbg-c --> logic
     logic --> engine
     web --> logic
@@ -43,6 +44,8 @@ While `engine` only deals with cubeless equities, [`logic`](../../crates/logic/s
 #### wildbg-c
 
 [`wildbg-c`](../../crates/wildbg-c/src) is a small layer on top of `logic` which allows C code to access `wildbg`.
+
+For a more detailed documentation, see [docs/user/wildbg-c.md](../user/wildbg-c.md).
 
 #### web
 

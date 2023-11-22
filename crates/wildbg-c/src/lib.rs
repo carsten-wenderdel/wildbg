@@ -1,10 +1,72 @@
 use core::ffi::*;
+use engine::complex::ComplexEvaluator;
+use engine::dice::Dice;
+use engine::position::Position;
 use logic::bg_move::{BgMove, MoveDetail};
+use logic::wildbg_api::{WildbgApi, WildbgConfig};
 
 // When this file is changed, recreate the header file by executing this from the project's root:
 // touch cbindgen.toml
 // cbindgen --config cbindgen.toml --crate wildbg-c --output crates/wildbg-c/wildbg.h --lang c
 // rm cbindgen.toml
+
+// For more infos about Rust -> C see
+// https://docs.rust-embedded.org/book/interoperability/rust-with-c.html
+// http://jakegoulding.com/rust-ffi-omnibus/objects/
+
+// Wrap the WildbgApi into a new struct, so that we don't have to expose the ComplexEvaluator
+pub struct Wildbg {
+    api: WildbgApi<ComplexEvaluator>,
+}
+
+/// Configuration needed for the evaluation of positions.
+///
+/// Currently only 1 pointers and money game are supported.
+/// In the future `BgConfig` can also include information about Crawford, strength of the engine and so on.
+#[repr(C)]
+pub struct BgConfig {
+    /// Number of points the player on turn needs to finish the match. Zero indicates money game.
+    pub x_away: c_uint,
+    /// Number of points the opponent needs to finish the match. Zero indicates money game.
+    pub o_away: c_uint,
+}
+
+impl From<&BgConfig> for WildbgConfig {
+    fn from(value: &BgConfig) -> Self {
+        if value.x_away == 0 && value.o_away == 0 {
+            Self { away: None }
+        } else {
+            Self {
+                away: Some((value.x_away, value.o_away)),
+            }
+        }
+    }
+}
+
+type Error = &'static str;
+
+#[no_mangle]
+/// Loads the neural nets into memory and returns a pointer to the API.
+///
+/// To free the memory after usage, call `wildbg_free`.
+pub extern "C" fn wildbg_new() -> *mut Wildbg {
+    if let Some(api) = WildbgApi::try_default() {
+        Box::into_raw(Box::new(Wildbg { api }))
+    } else {
+        std::ptr::null_mut()
+    }
+}
+
+#[no_mangle]
+/// # Safety
+///
+/// Frees the memory of the argument.
+/// Don't call it with a NULL pointer. Don't call it more than once for the same `Wildbg` pointer.
+pub unsafe extern "C" fn wildbg_free(ptr: *mut Wildbg) {
+    unsafe {
+        drop(Box::from_raw(ptr));
+    }
+}
 
 /// When no move is possible, all member variables in all details will be `-1`.
 ///
@@ -74,9 +136,23 @@ impl From<&MoveDetail> for CMoveDetail {
 /// The array `pips` contains the player's bar in index 25, the opponent's bar in index 0.
 /// Checkers of the player on turn are encoded with positive integers, the opponent's checkers with negative integers.
 #[no_mangle]
-pub extern "C" fn best_move_1ptr(pips: &[c_int; 26], die1: c_uint, die2: c_uint) -> CMove {
+pub extern "C" fn best_move(
+    wildbg: &Wildbg,
+    pips: &[c_int; 26],
+    die1: c_uint,
+    die2: c_uint,
+    config: &BgConfig,
+) -> CMove {
     let pips = pips.map(|pip| pip as i8);
-    match logic::best_move_1ptr(pips, die1 as u8, die2 as u8) {
+    let move_result = || -> Result<BgMove, Error> {
+        let position = Position::try_from(pips)?;
+        let dice = Dice::try_from((die1 as usize, die2 as usize))?;
+        let bg_move = wildbg
+            .api
+            .best_move(&position, &dice, &WildbgConfig::from(config));
+        Ok(bg_move)
+    };
+    match move_result() {
         Ok(bg_move) => CMove::from(bg_move),
         Err(error) => {
             eprintln!("{}", error);
