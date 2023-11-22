@@ -2,7 +2,7 @@
 
 This crate contains a small C library to access some functionality of `wildbg`.
 
-In contrast to the [`web`](../web/) API this library contains less features and needs more manual work to set up. Only use it if you have existing C code and no other way to connect that to `wildbg`.
+In contrast to the [`web`](../../crates/web/src/) API this library contains less features and needs more manual work to set up. Only use it if you have existing C code and no other way to connect that to `wildbg`.
 
 You can see the API in the header file: [`crates/wildbg-c/wildbgh.h`](../../crates/wildbg-c/wildbg.h).
 
