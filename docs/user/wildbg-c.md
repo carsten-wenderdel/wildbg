@@ -39,11 +39,15 @@ int main() {
   // Initialize engine:
   Wildbg *wildbg = wildbg_new();
   
+  // Define position and print winning probability:
+  int starting[] = {0, -2, 0, 0, 0, 0, 5, 0, 3, 0, 0, 0, -5, 5, 0, 0, 0, -3, 0, -5, 0, 0, 0, 0, 2, 0,};
+  CProbabilities p = probabilities(wildbg, &starting);
+  printf("The estimated probability to win is %.2f percent.\n", 100 * p.win);
+  
   // Specify 1 pointer:
   BgConfig config = { .x_away = 1, .o_away = 1 };
   
-  // Define position and find best move:
-  int starting[] = {0, -2, 0, 0, 0, 0, 5, 0, 3, 0, 0, 0, -5, 5, 0, 0, 0, -3, 0, -5, 0, 0, 0, 0, 2, 0,};
+  // Find and print best move:
   CMove move = best_move(wildbg, &starting, 3, 1, &config); 
   printf("The computer would move from %d to %d and from %d to %d.\n", move.detail1.from, move.detail1.to, move.detail2.from, move.detail2.to);
   

@@ -36,7 +36,7 @@ typedef struct CMove {
  * Configuration needed for the evaluation of positions.
  *
  * Currently only 1 pointers and money game are supported.
- * In the future `BgConfig` can also include information about Crawford, strength of the engine and so on.
+ * In the future `BgConfig` can also include information about Crawford, cube possession, strength of the engine and so on.
  */
 typedef struct BgConfig {
   /**
@@ -49,8 +49,32 @@ typedef struct BgConfig {
   unsigned int o_away;
 } BgConfig;
 
+typedef struct CProbabilities {
+  /**
+   * Cubeless probability to win the game. This includes gammons and backgammons.
+   */
+  float win;
+  /**
+   * Probability to win gammon or backgammon.
+   */
+  float win_g;
+  /**
+   * Probability to win backgammon.
+   */
+  float win_bg;
+  /**
+   * Probability to lose gammon or backgammon.
+   */
+  float lose_g;
+  /**
+   * Probability to lose backgammon.
+   */
+  float lose_bg;
+} CProbabilities;
+
 /**
  * Loads the neural nets into memory and returns a pointer to the API.
+ * Returns `NULL` if the neural nets cannot be found.
  *
  * To free the memory after usage, call `wildbg_free`.
  */
@@ -76,3 +100,14 @@ struct CMove best_move(const struct Wildbg *wildbg,
                        unsigned int die1,
                        unsigned int die2,
                        const struct BgConfig *config);
+
+/**
+ * Returns cubeless money game probabilities for a certain position.
+ * If an illegal position is encountered, all probabilities will be zero.
+ *
+ * The player on turn always moves from pip 24 to pip 1.
+ * The array `pips` contains the player's bar in index 25, the opponent's bar in index 0.
+ * Checkers of the player on turn are encoded with positive integers, the opponent's checkers with negative integers.
+ */
+struct CProbabilities probabilities(const struct Wildbg *wildbg,
+                                    const int (*pips)[26]);

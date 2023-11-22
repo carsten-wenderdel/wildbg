@@ -2,6 +2,7 @@ use core::ffi::*;
 use engine::complex::ComplexEvaluator;
 use engine::dice::Dice;
 use engine::position::Position;
+use engine::probabilities::Probabilities;
 use logic::bg_move::{BgMove, MoveDetail};
 use logic::wildbg_api::{WildbgApi, WildbgConfig};
 
@@ -22,7 +23,7 @@ pub struct Wildbg {
 /// Configuration needed for the evaluation of positions.
 ///
 /// Currently only 1 pointers and money game are supported.
-/// In the future `BgConfig` can also include information about Crawford, strength of the engine and so on.
+/// In the future `BgConfig` can also include information about Crawford, cube possession, strength of the engine and so on.
 #[repr(C)]
 pub struct BgConfig {
     /// Number of points the player on turn needs to finish the match. Zero indicates money game.
@@ -43,16 +44,16 @@ impl From<&BgConfig> for WildbgConfig {
     }
 }
 
-type Error = &'static str;
-
 #[no_mangle]
 /// Loads the neural nets into memory and returns a pointer to the API.
+/// Returns `NULL` if the neural nets cannot be found.
 ///
 /// To free the memory after usage, call `wildbg_free`.
 pub extern "C" fn wildbg_new() -> *mut Wildbg {
     if let Some(api) = WildbgApi::try_default() {
         Box::into_raw(Box::new(Wildbg { api }))
     } else {
+        eprintln!("Could not find neural networks");
         std::ptr::null_mut()
     }
 }
@@ -65,6 +66,33 @@ pub extern "C" fn wildbg_new() -> *mut Wildbg {
 pub unsafe extern "C" fn wildbg_free(ptr: *mut Wildbg) {
     unsafe {
         drop(Box::from_raw(ptr));
+    }
+}
+
+#[repr(C)]
+#[derive(Default)]
+pub struct CProbabilities {
+    /// Cubeless probability to win the game. This includes gammons and backgammons.
+    win: c_float,
+    /// Probability to win gammon or backgammon.
+    win_g: c_float,
+    /// Probability to win backgammon.
+    win_bg: c_float,
+    /// Probability to lose gammon or backgammon.
+    lose_g: c_float,
+    /// Probability to lose backgammon.
+    lose_bg: c_float,
+}
+
+impl From<&Probabilities> for CProbabilities {
+    fn from(value: &Probabilities) -> Self {
+        Self {
+            win: value.win_normal + value.win_gammon + value.win_bg,
+            win_g: value.win_gammon + value.win_bg,
+            win_bg: value.win_bg,
+            lose_g: value.lose_gammon + value.lose_bg,
+            lose_bg: value.lose_bg,
+        }
     }
 }
 
@@ -130,6 +158,8 @@ impl From<&MoveDetail> for CMoveDetail {
     }
 }
 
+type Error = &'static str;
+
 /// Returns the best move for the given position.
 ///
 /// The player on turn always moves from pip 24 to pip 1.
@@ -158,5 +188,47 @@ pub extern "C" fn best_move(
             eprintln!("{}", error);
             CMove::default()
         }
+    }
+}
+
+/// Returns cubeless money game probabilities for a certain position.
+/// If an illegal position is encountered, all probabilities will be zero.
+///
+/// The player on turn always moves from pip 24 to pip 1.
+/// The array `pips` contains the player's bar in index 25, the opponent's bar in index 0.
+/// Checkers of the player on turn are encoded with positive integers, the opponent's checkers with negative integers.
+#[no_mangle]
+pub extern "C" fn probabilities(wildbg: &Wildbg, pips: &[c_int; 26]) -> CProbabilities {
+    let pips = pips.map(|pip| pip as i8);
+    match Position::try_from(pips) {
+        Ok(position) => (&wildbg.api.probabilities(&position)).into(),
+        Err(error) => {
+            eprintln!("{}", error);
+            CProbabilities::default()
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::CProbabilities;
+
+    #[test]
+    fn from_probabilities() {
+        let model_probs = engine::probabilities::Probabilities {
+            win_normal: 0.32,
+            win_gammon: 0.26,
+            win_bg: 0.12,
+            lose_normal: 0.15,
+            lose_gammon: 0.1,
+            lose_bg: 0.05,
+        };
+
+        let c_probs: CProbabilities = (&model_probs).into();
+        assert_eq!(c_probs.win, 0.7);
+        assert_eq!(c_probs.win_g, 0.38);
+        assert_eq!(c_probs.win_bg, 0.12);
+        assert_eq!(c_probs.lose_g, 0.15);
+        assert_eq!(c_probs.lose_bg, 0.05);
     }
 }

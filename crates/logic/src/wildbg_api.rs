@@ -23,6 +23,10 @@ impl WildbgApi<ComplexEvaluator> {
 }
 
 impl<T: Evaluator> WildbgApi<T> {
+    pub fn probabilities(&self, position: &Position) -> Probabilities {
+        self.evaluator.eval(position)
+    }
+
     pub fn best_move(&self, position: &Position, dice: &Dice, config: &WildbgConfig) -> BgMove {
         let value: fn(&Probabilities) -> f32 = if config.away == Some((1, 1)) {
             |p| p.win()
