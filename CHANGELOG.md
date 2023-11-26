@@ -14,13 +14,18 @@ The minor version will be incremented if any of the following changes:
 
 This means you can reuse the same neural networks between for example 0.2.0 and 0.2.1, but not between 0.1.0 and 0.2.0.
 
-## [Unreleased]
+## 0.2.0 - 2023-11-26
 
-- `added` Rudimentary 2-ply evaluation of positions.
 - `added` Batch inference of neural networks.
 - `changed` Improved selection of positions for rollouts via self play.
 - `changed` Different neural networks for _contact_ and _race_.
 - `changed` Rollout data is now stored with GnuBG position IDs.
+- `changed` Use `Hardsigmoid` instead of `ReLU` for hidden layers.
+- `changed` Use `AdamW` instead of `SGD` as PyTorch Optimizer.
+- `changed` Use `L1Loss` instead of `MSELoss` as loss function during supervised training.
+- `added` The C API now supports raw evaluation of positions.
+- `changed` The C API doesn't need to reload the neural nets for every call.
+- `added` Documentation for `engine` and the training process.
 
 ## 0.1.0 - 2023-10-17
 
