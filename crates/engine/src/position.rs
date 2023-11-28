@@ -93,7 +93,7 @@ macro_rules! pos {
 
 /// A single position in backgammon without match information.
 /// We assume two players "x" and "o".
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Position {
     // Array positions 25 and 0 are the bar.
     // The other array positions are the pips from the point of view of x, moving from 24 to 0.
@@ -329,7 +329,7 @@ impl Position {
 
     /// Only call if this move is legal.
     fn clone_and_move_single_checker(&self, from: usize, die: usize) -> Position {
-        let mut new = self.clone();
+        let mut new = *self;
         new.move_single_checker(from, die);
         new
     }

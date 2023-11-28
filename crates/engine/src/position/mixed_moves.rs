@@ -50,7 +50,7 @@ impl Position {
                 moved_twice.unwrap_or(vec![position])
             } else {
                 // Neither big nor small die allow entering - return the identity move.
-                vec![self.clone()]
+                vec![*self]
             }
         }
     }
@@ -60,7 +60,7 @@ impl Position {
         debug_assert!(self.pips[X_BAR] == 0);
 
         match self.move_possibilities(dice) {
-            MovePossibilities::None => vec![self.clone()],
+            MovePossibilities::None => vec![*self],
             MovePossibilities::One { die } => self
                 .one_checker_moves(die)
                 .expect("We already checked that moving one checker is possible"),
@@ -161,7 +161,7 @@ impl Position {
     fn moves_with_2_checkers_on_bar(&self, dice: &MixedDice) -> Vec<Position> {
         debug_assert!(self.pips[X_BAR] > 1);
 
-        let mut position = self.clone();
+        let mut position = *self;
         if position.can_enter(dice.big) {
             position.enter_single_checker(dice.big);
         }
@@ -230,7 +230,7 @@ impl Position {
     }
 
     fn clone_and_enter_single_checker(&self, die: usize) -> Position {
-        let mut position = self.clone();
+        let mut position = *self;
         position.enter_single_checker(die);
         position
     }

@@ -105,7 +105,7 @@ impl<T: Evaluator> RolloutEvaluator<T> {
         first_dice: &[Dice; 2],
     ) -> Result<GameResult, Position> {
         let mut player_on_turn = true;
-        let mut pos = from.clone();
+        let mut pos = *from;
         for dice in first_dice {
             pos = self.evaluator.best_position_by_equity(&pos, dice);
             if let GameOver(result) = pos.game_state() {
@@ -126,7 +126,7 @@ impl<T: Evaluator> RolloutEvaluator<T> {
         dice_gen: &mut U,
     ) -> GameResult {
         let mut player_on_turn = true;
-        let mut pos = from.clone();
+        let mut pos = *from;
         loop {
             let dice = dice_gen.roll();
             pos = self.evaluator.best_position_by_equity(&pos, &dice);

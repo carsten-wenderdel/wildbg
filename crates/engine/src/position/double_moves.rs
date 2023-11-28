@@ -6,12 +6,12 @@ impl Position {
     pub(super) fn all_positions_after_double_move(&self, die: usize) -> Vec<Position> {
         if self.pips[X_BAR] > 0 && self.pips[X_BAR - die] < -1 {
             // Has at least one checker on the bar but can't move it
-            return vec![self.clone()];
+            return vec![*self];
         }
 
         let (position, number_of_entered_checkers) = self.position_after_entering_checkers(die);
         if number_of_entered_checkers == 4 {
-            return vec![position.clone()];
+            return vec![position];
         }
 
         let moves = position.double_moves_after_entering(die, number_of_entered_checkers);
@@ -22,11 +22,11 @@ impl Position {
     /// Returns the position after entering all possible checkers and the number of entered checkers (0 to 4)
     fn position_after_entering_checkers(&self, die: usize) -> (Position, u32) {
         if self.pips[X_BAR] == 0 {
-            return (self.clone(), 0);
+            return (*self, 0);
         }
         debug_assert!(self.pips[X_BAR - die] > -2);
         let number_of_checkers_to_enter = min(4, self.pips[X_BAR]);
-        let mut position = self.clone();
+        let mut position = *self;
         if number_of_checkers_to_enter > 0 {
             position.pips[X_BAR] -= number_of_checkers_to_enter;
             if self.pips[X_BAR - die] == -1 {
@@ -48,7 +48,7 @@ impl Position {
     ) -> Vec<Position> {
         let nr_movable_checkers = self.number_of_movable_checkers(die, number_of_entered_checkers);
         if nr_movable_checkers == 0 {
-            return vec![self.clone()];
+            return vec![*self];
         }
         let mut moves: Vec<Position> = Vec::new();
         for i1 in (1..X_BAR).rev() {
@@ -93,7 +93,7 @@ impl Position {
     fn number_of_movable_checkers(&self, die: usize, number_of_entered_checkers: u32) -> u32 {
         let mut number_of_checkers = 0;
         let mut pip = 24;
-        let mut position = self.clone();
+        let mut position = *self;
         while number_of_checkers < 4 - number_of_entered_checkers && pip > 0 {
             if position.can_move_in_board(pip, die) {
                 position.move_single_checker(pip, die);

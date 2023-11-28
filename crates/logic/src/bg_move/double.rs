@@ -5,7 +5,7 @@ impl BgMove {
     pub(super) fn new_double(old: &Position, new: &Position, die: usize) -> BgMove {
         let mut details: Vec<MoveDetail> = Vec::with_capacity(4);
         let mut index = 25_usize;
-        let mut position = old.clone();
+        let mut position = *old;
         while index > 0 {
             if position.pip(index) > new.pip(index) {
                 // We could speed this up by replacing the next line with the private method `move_single_checker`
@@ -31,7 +31,7 @@ mod tests {
     fn could_not_move() {
         // Given
         let old = pos!(x 20:4; o 16:2);
-        let new = old.clone();
+        let new = old;
         // When
         let bg_move = BgMove::new_double(&old, &new, 4);
         // Then

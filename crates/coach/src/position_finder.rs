@@ -104,13 +104,13 @@ impl<T: Evaluator, U: DiceGen> PositionFinder<T, U> {
             .expect("move generator must always return a move");
         // In some cases we definitely want to return the best move
         match best.0.game_phase() {
-            GamePhase::GameOver(_) => return best.0.clone(),
+            GamePhase::GameOver(_) => return best.0,
             GamePhase::Ongoing(ongoing_state) => {
                 if ongoing_state == Race {
                     // For races we always want to take the best move - it's not worth it to explore
                     // different moves here; for example we can't reach a backgame from a race.
                     // Instead we would only roll out strange positions later on.
-                    return best.0.clone();
+                    return best.0;
                 }
             }
         }
@@ -139,7 +139,6 @@ impl<T: Evaluator, U: DiceGen> PositionFinder<T, U> {
             .get(choice)
             .expect("choose_index must return index smaller than the number of moves")
             .0
-            .clone()
     }
 }
 
@@ -192,7 +191,7 @@ mod private_tests {
         };
 
         // Given
-        let input = vec![(pos_1, prob_1), (pos_2.clone(), prob_2), (pos_3, prob_3)];
+        let input = vec![(pos_1, prob_1), (pos_2, prob_2), (pos_3, prob_3)];
         // When
         let found = finder.next_position(&input);
         // Then
@@ -222,7 +221,7 @@ mod private_tests {
         };
 
         // Given
-        let input = vec![(pos_1.clone(), prob_1), (pos_2, prob_2), (pos_3, prob_3)];
+        let input = vec![(pos_1, prob_1), (pos_2, prob_2), (pos_3, prob_3)];
         // When
         let found = finder.next_position(&input);
         // Then

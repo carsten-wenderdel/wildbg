@@ -124,7 +124,7 @@ mod tests {
         let race = pos![x 1: 1; o 24:1];
 
         // When
-        let positions_and_probabilities = evaluator.eval_batch(vec![contact.clone(), race.clone()]);
+        let positions_and_probabilities = evaluator.eval_batch(vec![contact, race]);
 
         // Then
         assert_eq!(positions_and_probabilities.len(), 2);

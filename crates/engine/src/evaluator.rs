@@ -111,7 +111,7 @@ pub trait BatchEvaluator: Evaluator {
 impl<T: BatchEvaluator> Evaluator for T {
     #[inline(always)]
     fn eval(&'_ self, pos: &Position) -> Probabilities {
-        BatchEvaluator::eval_positions(self, vec![pos.clone()])
+        BatchEvaluator::eval_positions(self, vec![*pos])
             .pop()
             .unwrap()
             .1
@@ -245,7 +245,7 @@ mod evaluator_trait_tests {
         let pos_2 = position_with_lowest_equity();
         let evaluator = EvaluatorFake {};
         // When
-        let values = evaluator.eval_batch(vec![pos_1.clone(), pos_2.clone()]);
+        let values = evaluator.eval_batch(vec![pos_1, pos_2]);
         // Then
         assert_eq!(values.len(), 2);
         assert_eq!(values[0].0, pos_1);

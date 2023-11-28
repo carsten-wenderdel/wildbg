@@ -57,8 +57,7 @@ impl BgMove {
                 let (from1, die1, from2, die2) = combinations
                     .into_iter()
                     .find(|(from1, die1, from2, die2)| {
-                        can_move_both(old, *from1, *die1, *from2 as isize, *die2)
-                            == Some(new.clone())
+                        can_move_both(old, *from1, *die1, *from2 as isize, *die2) == Some(*new)
                     })
                     .expect("some move combination should work");
                 let to1 = from1.saturating_sub(die1);
