@@ -17,3 +17,8 @@ name = "rollout_bench"
 harness = false
 [dependencies]
 rayon.workspace = true
+
+
+[[bench]]
+name = "move_generation_bench"
+harness = false

@@ -62,6 +62,7 @@ It doesn't contain any regular source code but benchmarks of the other crates.
 They can help you make performance sensitive changes.
 
 You can run them by executing `cargo bench -p benchmarks` from the project's root folder.
+For only one benchmark file, execute for example `cargo bench -p benchmarks --bench rollout_bench`.
 
 ### External crates
 
