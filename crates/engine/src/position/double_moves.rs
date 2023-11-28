@@ -3,6 +3,7 @@ use std::cmp::min;
 
 impl Position {
     /// Returns a vector of all possible moves when rolling a double.
+    #[inline]
     pub(super) fn all_positions_after_double_move(&self, die: usize) -> Vec<Position> {
         if self.pips[X_BAR] > 0 && self.pips[X_BAR - die] < -1 {
             // Has at least one checker on the bar but can't move it

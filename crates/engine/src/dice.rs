@@ -25,7 +25,7 @@ pub const ALL_441: [([Dice; 2], usize); 441] = Dice::all_441();
 pub const ALL_21: [(Dice, usize); 21] = Dice::all_21();
 
 impl Dice {
-    #[inline(always)]
+    #[inline]
     pub const fn new(die1: usize, die2: usize) -> Self {
         if die1 == die2 {
             Dice::Double(die1)
@@ -85,16 +85,16 @@ impl TryFrom<(usize, usize)> for Dice {
 }
 
 impl MixedDice {
-    #[inline(always)]
+    #[inline]
     pub fn small(&self) -> usize {
         self.small
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn big(&self) -> usize {
         self.big
     }
-    #[inline(always)]
+    #[inline]
     pub const fn new(die1: usize, die2: usize) -> Self {
         let (big, small) = if die1 > die2 {
             (die1, die2)

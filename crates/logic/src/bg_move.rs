@@ -41,7 +41,7 @@ impl MoveDetail {
 }
 
 impl BgMove {
-    #[inline(always)]
+    #[inline]
     pub fn into_details(self) -> Vec<MoveDetail> {
         self.details
     }

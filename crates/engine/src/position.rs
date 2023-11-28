@@ -111,27 +111,28 @@ pub struct Position {
 }
 
 impl Position {
-    #[inline(always)]
+    #[inline]
     pub(crate) fn x_off(&self) -> u8 {
         self.x_off
     }
 
-    #[inline(always)]
+    #[inline]
     pub(crate) fn o_off(&self) -> u8 {
         self.o_off
     }
 
-    #[inline(always)]
+    #[inline]
     /// Will return positive value for checkers of `x`, negative value for checkers of `o`.
     pub fn pip(&self, pip: usize) -> i8 {
         self.pips[pip]
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn has_lost(&self) -> bool {
         self.o_off == NUM_OF_CHECKERS
     }
 
+    #[inline]
     pub fn game_state(&self) -> GameState {
         debug_assert!(
             self.x_off < NUM_OF_CHECKERS || self.o_off < NUM_OF_CHECKERS,
@@ -162,6 +163,7 @@ impl Position {
     /// whether we are already in the race phase.
     ///
     /// This is important for choosing the proper neural net.
+    #[inline]
     pub fn game_phase(&self) -> GamePhase {
         match self.game_state() {
             GameOver(result) => GamePhase::GameOver(result),
@@ -349,7 +351,7 @@ impl Position {
         self.can_move_internally(from, die)
     }
 
-    #[inline(always)]
+    #[inline]
     fn can_move_internally(&self, from: usize, die: usize) -> bool {
         return if self.pips[from] < 1 {
             // no checker to move

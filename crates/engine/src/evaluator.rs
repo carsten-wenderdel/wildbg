@@ -47,6 +47,7 @@ pub trait Evaluator {
     /// Returns the position after applying the *best* move to `pos`.
     /// The returned `Position` has already switches sides.
     /// This means the returned position will have the *lowest* equity of possible positions.
+    #[inline]
     fn best_position_by_equity(&self, pos: &Position, dice: &Dice) -> Position {
         self.best_position(pos, dice, |probabilities| probabilities.equity())
     }
@@ -109,7 +110,7 @@ pub trait BatchEvaluator: Evaluator {
 }
 
 impl<T: BatchEvaluator> Evaluator for T {
-    #[inline(always)]
+    #[inline]
     fn eval(&'_ self, pos: &Position) -> Probabilities {
         BatchEvaluator::eval_positions(self, vec![*pos])
             .pop()
@@ -117,7 +118,7 @@ impl<T: BatchEvaluator> Evaluator for T {
             .1
     }
 
-    #[inline(always)]
+    #[inline]
     fn eval_batch(&self, positions: Vec<Position>) -> Vec<(Position, Probabilities)> {
         BatchEvaluator::eval_positions(self, positions)
     }

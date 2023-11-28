@@ -5,6 +5,7 @@ use std::cmp::{max, min};
 impl Position {
     /// Returns all legal positions after rolling a double and then moving.
     /// The return values have not switched sides yet.
+    #[inline]
     pub(super) fn all_positions_after_mixed_move(&self, dice: &MixedDice) -> Vec<Position> {
         debug_assert!(dice.big > dice.small);
         match self.pips[X_BAR] {

@@ -14,7 +14,7 @@ pub trait InputsGen {
 ///
 /// Custom format, probably same as GnuBG
 /// For ideas see https://stackoverflow.com/questions/32428237/board-encoding-in-tesauros-td-gammon
-#[inline(always)]
+#[inline]
 fn td_inputs(pip: &i8) -> [f32; 4] {
     match pip {
         1 => [1.0, 0.0, 0.0, 0.0],
