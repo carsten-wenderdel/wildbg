@@ -1,4 +1,4 @@
-use crate::position::{Position, O_BAR, X_BAR};
+use crate::position::{Position, MOVES_CAPACITY, O_BAR, X_BAR};
 use std::cmp::min;
 
 impl Position {
@@ -50,7 +50,7 @@ impl Position {
         if nr_movable_checkers == 0 {
             return vec![*self];
         }
-        let mut moves: Vec<Position> = Vec::new();
+        let mut moves: Vec<Position> = Vec::with_capacity(MOVES_CAPACITY);
         for i1 in (1..X_BAR).rev() {
             if self.can_move_in_board(i1, die) {
                 let pos = self.clone_and_move_single_checker(i1, die);

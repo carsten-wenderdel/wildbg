@@ -16,6 +16,12 @@ const NUM_OF_CHECKERS: u8 = 15;
 pub const X_BAR: usize = 25;
 pub const O_BAR: usize = 0;
 
+/// It helps performance during move generation to initialize vectors with a given capacity.
+/// It also helps the compiler optimizing, when this number is the same in all places.
+/// A good capacity is 128 or 256 on Apple silicon. Smaller numbers mean more reallocations.
+/// Bigger numbers mean too much memory wasted.
+const MOVES_CAPACITY: usize = 128;
+
 pub const STARTING: Position = Position {
     pips: [
         0, -2, 0, 0, 0, 0, 5, 0, 3, 0, 0, 0, -5, 5, 0, 0, 0, -3, 0, -5, 0, 0, 0, 0, 2, 0,

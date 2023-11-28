@@ -1,5 +1,5 @@
 use crate::dice::MixedDice;
-use crate::position::{Position, O_BAR, X_BAR};
+use crate::position::{Position, MOVES_CAPACITY, O_BAR, X_BAR};
 use std::cmp::{max, min};
 
 impl Position {
@@ -73,7 +73,7 @@ impl Position {
     fn one_checker_moves(&self, die: usize) -> Option<Vec<Position>> {
         debug_assert!(self.pips[X_BAR] == 0);
 
-        let mut moves: Vec<Position> = Vec::new();
+        let mut moves: Vec<Position> = Vec::with_capacity(MOVES_CAPACITY);
         for i in (1..X_BAR).rev() {
             if self.can_move_in_board(i, die) {
                 let position = self.clone_and_move_single_checker(i, die);
@@ -91,7 +91,7 @@ impl Position {
     fn two_checker_moves(&self, dice: &MixedDice) -> Vec<Position> {
         debug_assert!(self.pips[X_BAR] == 0);
 
-        let mut moves: Vec<Position> = Vec::new();
+        let mut moves: Vec<Position> = Vec::with_capacity(MOVES_CAPACITY);
         for i in (1..X_BAR).rev() {
             // Looking at moves where the big die *can* be used first
             let can_move_big_from_i = self.can_move_in_board(i, dice.big);
