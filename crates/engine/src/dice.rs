@@ -27,6 +27,10 @@ pub const ALL_21: [(Dice, usize); 21] = Dice::all_21();
 impl Dice {
     #[inline]
     pub const fn new(die1: usize, die2: usize) -> Self {
+        debug_assert!(die1 > 0);
+        debug_assert!(die1 < 7);
+        debug_assert!(die2 > 0);
+        debug_assert!(die2 < 7);
         if die1 == die2 {
             Dice::Double(die1)
         } else {
@@ -49,6 +53,36 @@ impl Dice {
             i += 1;
         }
         dice_441
+    }
+
+    /// All 6 double rolls. Used in tests.
+    pub const fn all_6_double() -> [Dice; 6] {
+        let mut dice = [Dice::Double(1); 6];
+        let mut i = 0_usize;
+        while i < 6 {
+            dice[i] = Dice::new(i + 1, i + 1);
+            i += 1;
+        }
+        dice
+    }
+
+    /// All 15 rolls with mixed dice (no doubles). Used in tests.
+    pub const fn all_15_mixed() -> [Dice; 15] {
+        let mut dice = [Dice::Double(1); 15]; // Dummy values, will be replaced
+
+        // for loops don't work with `const fn`
+        let mut i = 0_usize;
+        let mut dice_index = 0_usize;
+        while i < 6 {
+            let mut j = i + 1;
+            while j < 6 {
+                dice[dice_index] = Dice::new(i + 1, j + 1);
+                j += 1;
+                dice_index += 1;
+            }
+            i += 1;
+        }
+        dice
     }
 
     const fn all_21() -> [(Dice, usize); 21] {
