@@ -225,8 +225,8 @@ impl Position {
                 can_move_big = true;
                 let position = self.clone_and_move_single_checker(i, dice.big);
                 // We have to look at all pips in the home board, in case bearing off just became possible. This is why the 7 appears in the max function.
-                for j in (1..max(7, i + 1)).rev() {
-                    if position.can_move_in_board(j, dice.small) {
+                for j in (position.smallest_pip_to_check(dice.small)..max(7, i + 1)).rev() {
+                    if position.can_move_when_bearoff_is_legal(j, dice.small) {
                         return MovePossibilities::Two;
                     }
                 }
@@ -244,8 +244,8 @@ impl Position {
                     return MovePossibilities::Two;
                 }
                 // Now checking bearing off
-                for j in (1..7).rev() {
-                    if position.can_move_in_board(j, dice.big) {
+                for j in (position.smallest_pip_to_check(dice.big)..7).rev() {
+                    if position.can_move_when_bearoff_is_legal(j, dice.big) {
                         return MovePossibilities::Two;
                     }
                 }
