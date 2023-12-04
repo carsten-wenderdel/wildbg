@@ -88,19 +88,58 @@ impl Position {
         }
     }
 
+    /// When iterating over the pips to find checkers to move, we can ignore certain pips because
+    /// moving from them is impossible.
+    ///
+    /// An example is: If there is a checker out of the home board, we can't bear off.
+    /// So for example with a die of 4, the smallest pip to check is the 5.
+    fn smallest_pip_to_check(&self, die: usize) -> usize {
+        match self.pips.iter().rposition(|&p| p > 0) {
+            None => X_BAR + 1, // no checkers on the board
+            Some(biggest_checker) => {
+                if biggest_checker > 6 {
+                    // bear off is impossible
+                    die + 1
+                } else {
+                    // bear off might be possible
+                    min(biggest_checker, die)
+                }
+            }
+        }
+    }
+
+    /// Tests whether we can move a checker from a certain pip.
+    /// This method only does proper checks for non bearoff moves.
+    /// It returns `true` for all possible bear offs.
+    #[inline]
+    fn can_move_when_bearoff_is_legal(&self, from: usize, die: usize) -> bool {
+        if self.pips[from] < 1 {
+            // no checker to move
+            false
+        } else if from > die {
+            // mixed move, no bear off
+            let number_of_opposing_checkers = self.pips[from - die];
+            number_of_opposing_checkers > -2
+        } else {
+            true
+        }
+    }
+
     // All moves with no checkers on the bar where two checkers can be moved.
     fn two_checker_moves(&self, dice: &MixedDice) -> Vec<Position> {
         debug_assert!(self.pips[X_BAR] == 0);
 
         let mut moves: Vec<Position> = Vec::with_capacity(MOVES_CAPACITY);
-        for i in (1..X_BAR).rev() {
+        for i in (self.smallest_pip_to_check(dice.big)..X_BAR).rev() {
             // Looking at moves where the big die *can* be used first
-            let can_move_big_from_i = self.can_move_in_board(i, dice.big);
+            let can_move_big_from_i = self.can_move_when_bearoff_is_legal(i, dice.big);
             if can_move_big_from_i {
                 let position = self.clone_and_move_single_checker(i, dice.big);
-                for j in (1..X_BAR).rev() {
+                for j in (position.smallest_pip_to_check(dice.small)..X_BAR).rev() {
                     // Checking `j != i + dice.small`: in this case we could have moved the smaller first which will be handled later.
-                    if position.can_move_in_board(j, dice.small) && (j != i + dice.small) {
+                    if position.can_move_when_bearoff_is_legal(j, dice.small)
+                        && (j != i + dice.small)
+                    {
                         let final_position = position.clone_and_move_single_checker(j, dice.small);
                         moves.push(final_position);
                     }
@@ -115,8 +154,8 @@ impl Position {
             if self.can_move_in_board(i, dice.small) {
                 let position = self.clone_and_move_single_checker(i, dice.small);
                 // We have to look at all pips in the home board, in case bearing off just became possible. This is why the 7 appears in the max function.
-                for j in (1..max(7, i + 1)).rev() {
-                    if position.can_move_in_board(j, dice.big) {
+                for j in (position.smallest_pip_to_check(dice.big)..max(7, i + 1)).rev() {
+                    if position.can_move_when_bearoff_is_legal(j, dice.big) {
                         let two_movements_with_same_checker = i == j + dice.small;
                         let must_move_small_first: bool = if two_movements_with_same_checker {
                             // This describes cases 1 and 2:
