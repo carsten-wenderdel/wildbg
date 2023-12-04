@@ -1,5 +1,5 @@
 use crate::position::{Position, MOVES_CAPACITY, O_BAR, X_BAR};
-use std::cmp::min;
+use std::cmp::{max, min};
 
 impl Position {
     /// Returns a vector of all possible moves when rolling a double.
@@ -89,21 +89,54 @@ impl Position {
     }
 
     /// Will return 4 if 4 or more checkers can be moved.
-    /// The return value is never bigger than `number_of_entered_checkers`.
     /// Will return 0 if no checker can be moved.
+    ///
+    /// If for example `number_of_entered_checkers` is 1, the maximum return value is 3.
     fn number_of_movable_checkers(&self, die: usize, number_of_entered_checkers: u32) -> u32 {
         let mut number_of_checkers = 0;
         let mut pip = 24;
         let mut position = *self;
-        while number_of_checkers < 4 - number_of_entered_checkers && pip > 0 {
-            if position.can_move_in_board(pip, die) {
-                position.move_single_checker(pip, die);
-                number_of_checkers += 1;
-            } else {
-                pip -= 1;
+        let max_return_value = 4 - number_of_entered_checkers;
+
+        // non bear off moves
+        while number_of_checkers < max_return_value && pip > die {
+            if position.can_move_when_bearoff_is_legal(pip, die) {
+                let number_to_move = position.pips[pip];
+                position.pips[pip] = 0;
+                if position.pips[pip - die] == -1 {
+                    // hit opponent
+                    position.pips[pip - die] = number_to_move;
+                } else {
+                    position.pips[pip - die] += number_to_move;
+                }
+                number_of_checkers += number_to_move as u32;
             }
+            pip -= 1;
         }
-        number_of_checkers
+        if number_of_checkers >= max_return_value {
+            return max_return_value;
+        }
+        // bear off moves
+        return match position.pips.iter().rposition(|&p| p > 0) {
+            None => number_of_checkers,
+            Some(biggest_pip) => {
+                let bearoff_checkers: u32 = if biggest_pip > 6 {
+                    0 // no bearoff possible
+                } else if biggest_pip > die {
+                    // Only exact bearoff possible
+                    // We need the `max` in case there are opponent's checkers on the pip.
+                    max(0, position.pips[die]) as u32
+                } else {
+                    // no checkers on bigger pips, all bearoffs legal
+                    position.pips[1..die + 1]
+                        .iter()
+                        .filter(|&&p| p > 0)
+                        .sum::<i8>() as u32
+                };
+                number_of_checkers += bearoff_checkers;
+                min(number_of_checkers, max_return_value)
+            }
+        };
     }
 }
 

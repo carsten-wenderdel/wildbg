@@ -190,11 +190,11 @@ fn race_mixed(c: &mut Criterion) {
 criterion_group!(
     benches,
     starting,
-    // from_bar,
-    // bearoff,
+    from_bar,
+    bearoff,
     contact_double,
     race_double,
-    // contact_mixed,
-    // race_mixed
+    contact_mixed,
+    race_mixed
 );
 criterion_main!(benches);
