@@ -75,8 +75,8 @@ impl Position {
         debug_assert!(self.pips[X_BAR] == 0);
 
         let mut moves: Vec<Position> = Vec::with_capacity(MOVES_CAPACITY);
-        for i in (1..X_BAR).rev() {
-            if self.can_move_in_board(i, die) {
+        for i in (self.smallest_pip_to_check(die)..X_BAR).rev() {
+            if self.can_move_when_bearoff_is_legal(i, die) {
                 let position = self.clone_and_move_single_checker(i, die);
                 moves.push(position);
             }
