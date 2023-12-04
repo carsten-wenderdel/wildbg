@@ -30,12 +30,12 @@ impl Position {
                     Some(small_moves) => match moves_after_entering_big {
                         None => small_moves,
                         Some(mut big_moves) => {
-                            for position in small_moves {
+                            small_moves.iter().for_each(|&position| {
                                 if !big_moves.contains(&position) {
                                     // Lets say 21 is rolled: bar/24/22 and bar/23/22 will appear in both vectors.
                                     big_moves.push(position);
                                 }
-                            }
+                            });
                             big_moves
                         }
                     },
@@ -75,12 +75,14 @@ impl Position {
         debug_assert!(self.pips[X_BAR] == 0);
 
         let mut moves: Vec<Position> = Vec::with_capacity(MOVES_CAPACITY);
-        for i in (self.smallest_pip_to_check(die)..X_BAR).rev() {
-            if self.can_move_when_bearoff_is_legal(i, die) {
-                let position = self.clone_and_move_single_checker(i, die);
-                moves.push(position);
-            }
-        }
+        (self.smallest_pip_to_check(die)..X_BAR)
+            .rev()
+            .for_each(|i| {
+                if self.can_move_when_bearoff_is_legal(i, die) {
+                    let position = self.clone_and_move_single_checker(i, die);
+                    moves.push(position);
+                }
+            });
         if moves.is_empty() {
             None
         } else {
@@ -130,12 +132,12 @@ impl Position {
         debug_assert!(self.pips[X_BAR] == 0);
 
         let mut moves: Vec<Position> = Vec::with_capacity(MOVES_CAPACITY);
-        for i in (self.smallest_pip_to_check(dice.big)..X_BAR).rev() {
+        (self.smallest_pip_to_check(dice.big)..X_BAR).rev().for_each(|i| {
             // Looking at moves where the big die *can* be used first
             let can_move_big_from_i = self.can_move_when_bearoff_is_legal(i, dice.big);
             if can_move_big_from_i {
                 let position = self.clone_and_move_single_checker(i, dice.big);
-                for j in (position.smallest_pip_to_check(dice.small)..X_BAR).rev() {
+                (position.smallest_pip_to_check(dice.small)..X_BAR).rev().for_each(|j| {
                     // Checking `j != i + dice.small`: in this case we could have moved the smaller first which will be handled later.
                     if position.can_move_when_bearoff_is_legal(j, dice.small)
                         && (j != i + dice.small)
@@ -143,7 +145,7 @@ impl Position {
                         let final_position = position.clone_and_move_single_checker(j, dice.small);
                         moves.push(final_position);
                     }
-                }
+                });
             }
             // Looking at moves where the small die *must* be moved first
             // This can be because of two reasons:
@@ -154,7 +156,7 @@ impl Position {
             if self.can_move_when_bearoff_is_legal(i, dice.small) {
                 let position = self.clone_and_move_single_checker(i, dice.small);
                 // We have to look at all pips in the home board, in case bearing off just became possible. This is why the 7 appears in the max function.
-                for j in (position.smallest_pip_to_check(dice.big)..max(7, i + 1)).rev() {
+                (position.smallest_pip_to_check(dice.big)..max(7, i + 1)).rev().for_each(|j| {
                     if position.can_move_when_bearoff_is_legal(j, dice.big) {
                         let two_movements_with_same_checker = i == j + dice.small;
                         let must_move_small_first: bool = if two_movements_with_same_checker {
@@ -190,9 +192,9 @@ impl Position {
                             moves.push(final_position);
                         }
                     }
-                }
+                });
             }
-        }
+        });
         debug_assert!(!moves.is_empty());
         moves
     }
