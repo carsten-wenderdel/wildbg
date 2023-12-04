@@ -151,7 +151,7 @@ impl Position {
             // 2. We make two movements with the same checker and hit something with the first movement, either with the big or the small die.
             // 3. We make two movements with the same checker, but we could have born off with the bigger die from the initial pip.
             // 4. After moving the small die, we now can bear off with the big die, which was illegal before.
-            if self.can_move_in_board(i, dice.small) {
+            if self.can_move_when_bearoff_is_legal(i, dice.small) {
                 let position = self.clone_and_move_single_checker(i, dice.small);
                 // We have to look at all pips in the home board, in case bearing off just became possible. This is why the 7 appears in the max function.
                 for j in (position.smallest_pip_to_check(dice.big)..max(7, i + 1)).rev() {
