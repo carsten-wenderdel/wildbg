@@ -219,9 +219,9 @@ impl Position {
         let mut can_move_big = false;
         let mut can_move_small = false;
 
-        // Move die1 first
-        for i in (1..X_BAR).rev() {
-            if self.can_move_in_board(i, dice.big) {
+        // Move dice.big first
+        for i in (self.smallest_pip_to_check(dice.big)..X_BAR).rev() {
+            if self.can_move_when_bearoff_is_legal(i, dice.big) {
                 can_move_big = true;
                 let position = self.clone_and_move_single_checker(i, dice.big);
                 // We have to look at all pips in the home board, in case bearing off just became possible. This is why the 7 appears in the max function.
@@ -233,9 +233,9 @@ impl Position {
             }
         }
 
-        // Move die2 first, assuming die1 cannot be moved first
-        for i in (1..X_BAR).rev() {
-            if self.can_move_in_board(i, dice.small) {
+        // Move dice.small first, assuming dice.big cannot be moved first
+        for i in (self.smallest_pip_to_check(dice.small)..X_BAR).rev() {
+            if self.can_move_when_bearoff_is_legal(i, dice.small) {
                 can_move_small = true;
                 let position = self.clone_and_move_single_checker(i, dice.small);
                 // If die1 and die2 could be used with different checkers without bearing off, then we would not get here.
