@@ -653,7 +653,7 @@ mod tests {
         let expected1 = pos!(x 1:2; o 6:2, 21:1, 22:1);
         let expected2 = pos!(x 1:2; o 3:1, 9:1, 21:1, 22:1);
         let expected3 = pos!(x 1:2; o 3:1, 6:1, 22:1, 24:1);
-        assert_eq!(positions, [expected1, expected2, expected3]);
+        assert_eq!(positions, [expected3, expected2, expected1]);
     }
 
     #[test]

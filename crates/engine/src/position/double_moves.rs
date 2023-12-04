@@ -52,39 +52,39 @@ impl Position {
             return vec![*self];
         }
         let mut moves: Vec<Position> = Vec::with_capacity(MOVES_CAPACITY);
-        for i1 in (self.smallest_pip_to_check(die)..X_BAR).rev() {
+        (self.smallest_pip_to_check(die)..X_BAR).for_each(|i1| {
             if self.can_move_when_bearoff_is_legal(i1, die) {
                 let pos = self.clone_and_move_single_checker(i1, die);
                 if nr_movable_checkers == 1 {
                     moves.push(pos);
-                    continue;
+                    return;
                 }
-                for i2 in (pos.smallest_pip_to_check(die)..i1 + 1).rev() {
+                (pos.smallest_pip_to_check(die)..i1 + 1).for_each(|i2| {
                     if pos.can_move_when_bearoff_is_legal(i2, die) {
                         let pos = pos.clone_and_move_single_checker(i2, die);
                         if nr_movable_checkers == 2 {
                             moves.push(pos);
-                            continue;
+                            return;
                         }
-                        for i3 in (pos.smallest_pip_to_check(die)..i2 + 1).rev() {
+                        (pos.smallest_pip_to_check(die)..i2 + 1).for_each(|i3| {
                             if pos.can_move_when_bearoff_is_legal(i3, die) {
                                 let pos = pos.clone_and_move_single_checker(i3, die);
                                 if nr_movable_checkers == 3 {
                                     moves.push(pos);
-                                    continue;
+                                    return;
                                 }
-                                for i4 in (pos.smallest_pip_to_check(die)..i3 + 1).rev() {
+                                (pos.smallest_pip_to_check(die)..i3 + 1).for_each(|i4| {
                                     if pos.can_move_when_bearoff_is_legal(i4, die) {
                                         let pos = pos.clone_and_move_single_checker(i4, die);
                                         moves.push(pos);
                                     }
-                                }
+                                });
                             }
-                        }
+                        });
                     }
-                }
+                });
             }
-        }
+        });
         moves
     }
 
@@ -155,7 +155,7 @@ mod tests {
         let expected1 = pos!(x 19:2, 4:1, 3:1; o 24:2);
         let expected2 = pos!(x 22:1, 16:1, 4:1, 3:1; o 24:2);
         let expected3 = pos!(x 22:1, 19:1, 3:1, 1:1; o 24:2);
-        assert_eq!(resulting_positions, vec![expected1, expected2, expected3]);
+        assert_eq!(resulting_positions, vec![expected3, expected2, expected1]);
     }
 
     #[test]
@@ -171,7 +171,7 @@ mod tests {
         let expected4 = pos!(x 4:1, 3:1; o 22:2);
         assert_eq!(
             resulting_positions,
-            vec![expected1, expected2, expected3, expected4],
+            vec![expected4, expected3, expected2, expected1],
         );
     }
 
