@@ -75,14 +75,12 @@ impl Position {
         debug_assert!(self.pips[X_BAR] == 0);
 
         let mut moves: Vec<Position> = Vec::with_capacity(MOVES_CAPACITY);
-        (self.smallest_pip_to_check(die)..X_BAR)
-            .rev()
-            .for_each(|i| {
-                if self.can_move_when_bearoff_is_legal(i, die) {
-                    let position = self.clone_and_move_single_checker(i, die);
-                    moves.push(position);
-                }
-            });
+        (self.smallest_pip_to_check(die)..X_BAR).for_each(|i| {
+            if self.can_move_when_bearoff_is_legal(i, die) {
+                let position = self.clone_and_move_single_checker(i, die);
+                moves.push(position);
+            }
+        });
         if moves.is_empty() {
             None
         } else {
@@ -156,7 +154,7 @@ impl Position {
             if self.can_move_when_bearoff_is_legal(i, dice.small) {
                 let position = self.clone_and_move_single_checker(i, dice.small);
                 // We have to look at all pips in the home board, in case bearing off just became possible. This is why the 7 appears in the max function.
-                (position.smallest_pip_to_check(dice.big)..max(7, i + 1)).rev().for_each(|j| {
+                (position.smallest_pip_to_check(dice.big)..max(7, i + 1)).for_each(|j| {
                     if position.can_move_when_bearoff_is_legal(j, dice.big) {
                         let two_movements_with_same_checker = i == j + dice.small;
                         let must_move_small_first: bool = if two_movements_with_same_checker {
