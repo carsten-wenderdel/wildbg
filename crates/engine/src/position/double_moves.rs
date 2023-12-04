@@ -52,28 +52,28 @@ impl Position {
             return vec![*self];
         }
         let mut moves: Vec<Position> = Vec::with_capacity(MOVES_CAPACITY);
-        for i1 in (1..X_BAR).rev() {
+        for i1 in (self.smallest_pip_to_check(die)..X_BAR).rev() {
             if self.can_move_in_board(i1, die) {
                 let pos = self.clone_and_move_single_checker(i1, die);
                 if nr_movable_checkers == 1 {
                     moves.push(pos);
                     continue;
                 }
-                for i2 in (1..i1 + 1).rev() {
+                for i2 in (pos.smallest_pip_to_check(die)..i1 + 1).rev() {
                     if pos.can_move_in_board(i2, die) {
                         let pos = pos.clone_and_move_single_checker(i2, die);
                         if nr_movable_checkers == 2 {
                             moves.push(pos);
                             continue;
                         }
-                        for i3 in (1..i2 + 1).rev() {
+                        for i3 in (pos.smallest_pip_to_check(die)..i2 + 1).rev() {
                             if pos.can_move_in_board(i3, die) {
                                 let pos = pos.clone_and_move_single_checker(i3, die);
                                 if nr_movable_checkers == 3 {
                                     moves.push(pos);
                                     continue;
                                 }
-                                for i4 in (1..i3 + 1).rev() {
+                                for i4 in (pos.smallest_pip_to_check(die)..i3 + 1).rev() {
                                     if pos.can_move_in_board(i4, die) {
                                         let pos = pos.clone_and_move_single_checker(i4, die);
                                         moves.push(pos);

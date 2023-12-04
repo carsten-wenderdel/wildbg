@@ -169,6 +169,7 @@ fn race_double(c: &mut Criterion) {
     });
 }
 
+#[allow(dead_code)]
 fn race_mixed(c: &mut Criterion) {
     let file = File::open("resources/race.csv").unwrap();
     let positions = read_positions_from_file(file);
@@ -189,11 +190,11 @@ fn race_mixed(c: &mut Criterion) {
 criterion_group!(
     benches,
     starting,
-    from_bar,
-    bearoff,
+    // from_bar,
+    // bearoff,
     contact_double,
     race_double,
-    contact_mixed,
-    race_mixed
+    // contact_mixed,
+    // race_mixed
 );
 criterion_main!(benches);

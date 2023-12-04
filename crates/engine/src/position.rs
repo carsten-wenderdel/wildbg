@@ -1,6 +1,8 @@
 mod double_moves;
 mod mixed_moves;
+
 use base64::{engine::general_purpose, Engine as _};
+use std::cmp::min;
 
 use crate::dice::Dice;
 use crate::position::GameResult::*;
@@ -377,6 +379,42 @@ impl Position {
             self.can_move_internally(from, die)
         } else {
             false
+        }
+    }
+
+    /// Tests whether we can move a checker from a certain pip.
+    /// This method only does proper checks for non bearoff moves.
+    /// It returns `true` for all possible bear offs.
+    fn can_move_when_bearoff_is_legal(&self, from: usize, die: usize) -> bool {
+        if self.pips[from] < 1 {
+            // no checker to move
+            false
+        } else if from > die {
+            // mixed move, no bear off
+            let number_of_opposing_checkers = self.pips[from - die];
+            number_of_opposing_checkers > -2
+        } else {
+            true
+        }
+    }
+
+    /// When iterating over the pips to find checkers to move, we can ignore certain pips because
+    /// moving from them is impossible.
+    ///
+    /// An example is: If there is a checker out of the home board, we can't bear off.
+    /// So for example with a die of 4, the smallest pip to check is the 5.
+    fn smallest_pip_to_check(&self, die: usize) -> usize {
+        match self.pips.iter().rposition(|&p| p > 0) {
+            None => X_BAR + 1, // no checkers on the board
+            Some(biggest_checker) => {
+                if biggest_checker > 6 {
+                    // bear off is impossible
+                    die + 1
+                } else {
+                    // bear off might be possible
+                    min(biggest_checker, die)
+                }
+            }
         }
     }
 
