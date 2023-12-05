@@ -2,6 +2,7 @@ use crate::evaluator::BatchEvaluator;
 use crate::inputs::{ContactInputsGen, InputsGen, RaceInputsGen};
 use crate::position::Position;
 use crate::probabilities::Probabilities;
+use tract_onnx::prelude::tract_itertools::Itertools;
 use tract_onnx::prelude::*;
 use tract_onnx::tract_hir::shapefactoid;
 
@@ -35,8 +36,8 @@ impl<T: InputsGen> BatchEvaluator for OnnxEvaluator<T> {
         // Turn all inputs into one big vector:
         let inputs: Vec<f32> = positions
             .iter()
-            .flat_map(|p| self.inputs_gen.input_vec(p))
-            .collect();
+            .map(|p| self.inputs_gen.input_vec(p))
+            .concat();
 
         let tract_inputs = tract_ndarray::Array1::from_vec(inputs)
             .into_shape((positions.len(), T::NUM_INPUTS))
