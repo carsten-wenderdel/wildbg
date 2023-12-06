@@ -1,12 +1,13 @@
+use crate::helper::{contact_positions, race_positions};
 use criterion::{criterion_group, criterion_main, Criterion};
 use engine::dice::{Dice, ALL_21};
 use engine::pos;
 use engine::position::GameState::Ongoing;
 use engine::position::{Position, O_BAR, STARTING, X_BAR};
 use std::collections::HashMap;
-use std::fs::File;
 use std::hint::black_box;
-use std::io::{BufRead, BufReader};
+
+mod helper;
 
 // This file contains benchmarks for generating moves/positions for a given position and dice.
 
@@ -47,13 +48,6 @@ fn number_moves(positions: &[Position], dice: &[Dice]) -> usize {
                 .sum::<usize>()
         })
         .sum()
-}
-
-fn read_positions_from_file(file: File) -> Vec<Position> {
-    BufReader::new(file)
-        .lines()
-        .map(|l| Position::from_id(l.expect("Could not parse line")))
-        .collect()
 }
 
 // Benchmark methods
@@ -117,9 +111,7 @@ fn starting(c: &mut Criterion) {
 
 #[allow(dead_code)]
 fn contact_double(c: &mut Criterion) {
-    let file = File::open("resources/contact.csv").unwrap();
-    let positions = read_positions_from_file(file);
-    assert_eq!(positions.len(), 1_000);
+    let positions = contact_positions();
 
     let number = number_double_moves(&positions);
     assert_eq!(number, 218_356);
@@ -135,9 +127,7 @@ fn contact_double(c: &mut Criterion) {
 
 #[allow(dead_code)]
 fn contact_mixed(c: &mut Criterion) {
-    let file = File::open("resources/contact.csv").unwrap();
-    let positions = read_positions_from_file(file);
-    assert_eq!(positions.len(), 1_000);
+    let positions = contact_positions();
 
     let number = number_mixed_moves(&positions);
     assert_eq!(number, 185_964);
@@ -153,9 +143,7 @@ fn contact_mixed(c: &mut Criterion) {
 
 #[allow(dead_code)]
 fn race_double(c: &mut Criterion) {
-    let file = File::open("resources/race.csv").unwrap();
-    let positions = read_positions_from_file(file);
-    assert_eq!(positions.len(), 1_000);
+    let positions = race_positions();
 
     let number = number_double_moves(&positions);
     assert_eq!(number, 140_720);
@@ -171,9 +159,7 @@ fn race_double(c: &mut Criterion) {
 
 #[allow(dead_code)]
 fn race_mixed(c: &mut Criterion) {
-    let file = File::open("resources/race.csv").unwrap();
-    let positions = read_positions_from_file(file);
-    assert_eq!(positions.len(), 1_000);
+    let positions = race_positions();
 
     let number = number_mixed_moves(&positions);
     assert_eq!(number, 123_303);
