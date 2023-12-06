@@ -18,7 +18,10 @@ harness = false
 [dependencies]
 rayon.workspace = true
 
-
 [[bench]]
 name = "move_generation_bench"
+harness = false
+
+[[bench]]
+name = "inputs_bench"
 harness = false
