@@ -1,20 +1,32 @@
 use crate::position::{Position, X_BAR};
-use tract_onnx::prelude::tract_itertools::Itertools;
 
 pub trait InputsGen {
     /// The number of inputs for the neural network.
     const NUM_INPUTS: usize;
 
+    /// Fill the given vector with the neural net inputs for a single position.
+    /// The returned vector is the same as the given vector, the length should have been
+    /// increased by `NUM_INPUTS`.
+    ///
+    /// This is the only method that needs to be implemented.
+    fn fill_inputs(&self, pos: &Position, vec: Vec<f32>) -> Vec<f32>;
+
     /// The neural net inputs for a single position.
     ///
-    /// The length of the vector matches `NUM_INPUTS`.
-    fn inputs_for_single(&self, pos: &Position) -> Vec<f32>;
+    /// The length of the returned vector matches `NUM_INPUTS`.
+    fn inputs_for_single(&self, pos: &Position) -> Vec<f32> {
+        self.inputs_for_all(&[*pos])
+    }
 
     /// A single vector with neural net inputs for all positions. This is useful for batch evaluation.
     ///
     /// The length of the returned vector is `NUM_INPUTS * positions.len()`.
     fn inputs_for_all(&self, positions: &[Position]) -> Vec<f32> {
-        positions.iter().map(|p| self.inputs_for_single(p)).concat()
+        let mut vec = Vec::with_capacity(Self::NUM_INPUTS * positions.len());
+        for pos in positions {
+            vec = self.fill_inputs(pos, vec);
+        }
+        vec
     }
 }
 
@@ -37,8 +49,7 @@ pub struct ContactInputsGen {}
 impl InputsGen for ContactInputsGen {
     const NUM_INPUTS: usize = 202;
 
-    fn inputs_for_single(&self, pos: &Position) -> Vec<f32> {
-        let mut vec: Vec<f32> = Vec::with_capacity(Self::NUM_INPUTS);
+    fn fill_inputs(&self, pos: &Position, mut vec: Vec<f32>) -> Vec<f32> {
         vec.push(pos.x_off() as f32);
         vec.push(pos.o_off() as f32);
 
@@ -64,8 +75,7 @@ pub struct RaceInputsGen {}
 impl InputsGen for RaceInputsGen {
     const NUM_INPUTS: usize = 186;
 
-    fn inputs_for_single(&self, pos: &Position) -> Vec<f32> {
-        let mut vec: Vec<f32> = Vec::with_capacity(Self::NUM_INPUTS);
+    fn fill_inputs(&self, pos: &Position, mut vec: Vec<f32>) -> Vec<f32> {
         vec.push(pos.x_off() as f32);
         vec.push(pos.o_off() as f32);
 
