@@ -63,7 +63,7 @@ impl InputsRecord {
             lose_normal: 1.0 - record.win - record.lose_g,
             lose_gammon: record.lose_g - record.lose_bg,
             lose_bg: record.lose_bg,
-            inputs: inputs_gen.input_vec(&position),
+            inputs: inputs_gen.inputs_for_single(&position),
         }
     }
 }

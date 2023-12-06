@@ -1,13 +1,21 @@
 use crate::position::{Position, X_BAR};
+use tract_onnx::prelude::tract_itertools::Itertools;
 
 pub trait InputsGen {
     /// The number of inputs for the neural network.
     const NUM_INPUTS: usize;
 
-    /// The inputs for the neural network.
+    /// The neural net inputs for a single position.
     ///
-    /// The length of the vector matches `num_inputs`.
-    fn input_vec(&self, pos: &Position) -> Vec<f32>;
+    /// The length of the vector matches `NUM_INPUTS`.
+    fn inputs_for_single(&self, pos: &Position) -> Vec<f32>;
+
+    /// A single vector with neural net inputs for all positions. This is useful for batch evaluation.
+    ///
+    /// The length of the returned vector is `NUM_INPUTS * positions.len()`.
+    fn inputs_for_all(&self, positions: &[Position]) -> Vec<f32> {
+        positions.iter().map(|p| self.inputs_for_single(p)).concat()
+    }
 }
 
 /// 4 inputs representing a single pip from the point of view of one player.
@@ -29,7 +37,7 @@ pub struct ContactInputsGen {}
 impl InputsGen for ContactInputsGen {
     const NUM_INPUTS: usize = 202;
 
-    fn input_vec(&self, pos: &Position) -> Vec<f32> {
+    fn inputs_for_single(&self, pos: &Position) -> Vec<f32> {
         let mut vec: Vec<f32> = Vec::with_capacity(Self::NUM_INPUTS);
         vec.push(pos.x_off() as f32);
         vec.push(pos.o_off() as f32);
@@ -56,7 +64,7 @@ pub struct RaceInputsGen {}
 impl InputsGen for RaceInputsGen {
     const NUM_INPUTS: usize = 186;
 
-    fn input_vec(&self, pos: &Position) -> Vec<f32> {
+    fn inputs_for_single(&self, pos: &Position) -> Vec<f32> {
         let mut vec: Vec<f32> = Vec::with_capacity(Self::NUM_INPUTS);
         vec.push(pos.x_off() as f32);
         vec.push(pos.o_off() as f32);
@@ -87,13 +95,13 @@ mod contact_tests {
         let inputs_gen = ContactInputsGen {};
 
         let inputs = inputs_gen
-            .input_vec(&pos)
+            .inputs_for_single(&pos)
             .iter()
             .map(|x| x.to_string())
             .collect::<Vec<_>>()
             .join(";");
         let inputs_switched = inputs_gen
-            .input_vec(&pos.switch_sides())
+            .inputs_for_single(&pos.switch_sides())
             .iter()
             .map(|x| x.to_string())
             .collect::<Vec<_>>()
@@ -123,13 +131,13 @@ mod race_tests {
         let inputs_gen = RaceInputsGen {};
 
         let inputs = inputs_gen
-            .input_vec(&pos)
+            .inputs_for_single(&pos)
             .iter()
             .map(|x| x.to_string())
             .collect::<Vec<_>>()
             .join(";");
         let inputs_switched = inputs_gen
-            .input_vec(&pos.switch_sides())
+            .inputs_for_single(&pos.switch_sides())
             .iter()
             .map(|x| x.to_string())
             .collect::<Vec<_>>()
