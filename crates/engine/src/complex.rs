@@ -13,15 +13,26 @@ pub struct ComplexEvaluator {
 
 impl BatchEvaluator for ComplexEvaluator {
     fn eval_positions(&self, positions: Vec<Position>) -> Vec<(Position, Probabilities)> {
-        let mut game_over: Vec<(Position, Probabilities)> = Vec::with_capacity(positions.len());
+        let length = positions.len();
+        let mut game_over: Vec<(Position, Probabilities)> = Vec::with_capacity(length);
         let mut contact: Vec<Position> = Vec::new();
         let mut race: Vec<Position> = Vec::new();
 
         for position in positions.into_iter() {
             match position.game_phase() {
                 GamePhase::Ongoing(ongoing) => match ongoing {
-                    OngoingPhase::Contact => contact.push(position),
-                    OngoingPhase::Race => race.push(position),
+                    OngoingPhase::Contact => {
+                        if contact.is_empty() {
+                            contact.reserve_exact(length)
+                        }
+                        contact.push(position)
+                    }
+                    OngoingPhase::Race => {
+                        if race.is_empty() {
+                            race.reserve_exact(length);
+                        }
+                        race.push(position);
+                    }
                 },
                 GamePhase::GameOver(_) => {
                     let probabilities = self
