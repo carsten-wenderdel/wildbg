@@ -42,7 +42,7 @@ This reads the downloaded CSV file and creates a new CSV file with inputs and ou
 If you want to try different inputs, you have to program that in Rust ([inputs.rs](../../crates/engine/src/inputs.rs)).
 - Edit the file [`train-on-rollout-data.py`](../../training/src/train-on-rollout-data.py). Make sure the correct model is
 defined, it should be something like `mode = "contact"`.
-- You might want to edit various hyperparameters. Number of epochs, optimizer and and loss function should be ok, but maybe you find better ones.
+- You might want to edit various hyperparameters. Number of epochs, optimizer and loss function should be ok, but maybe you find better ones.
 In any case you should try various learning rates, they have a big impact on the quality of the net.
 - Go to the folder `training` and execute `./src/train-on-rollout-data.py` - this will create a new net. It should take only a minute or two.
 - Check the quality of the net: Edit [`compare-evaluators.rs`](../../crates/coach/src/bin/compare-evaluators.rs) and pick
