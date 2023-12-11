@@ -44,7 +44,7 @@ If you want to try different inputs, you have to program that in Rust ([inputs.r
 defined, it should be something like `mode = "contact"`.
 - You might want to edit various hyperparameters. Number of epochs, optimizer and loss function should be ok, but maybe you find better ones.
 In any case you should try various learning rates, they have a big impact on the quality of the net.
-- Go to the folder `training` and execute `./src/train-on-rollout-data.py` - this will create a new net. It should take only a minute or two.
+- Go to the folder `training` and execute `./src/train-on-rollout-data.py` - this will create several new nets in the `training-data` folder. It should take only a few minutes.
 - Check the quality of the net: Edit [`compare-evaluators.rs`](../../crates/coach/src/bin/compare-evaluators.rs) and pick
 different nets you want to compare.
 - Execute `cargo run -r -p coach --bin compare-evaluators`. This starts two evaluators with different nets playing against each other.

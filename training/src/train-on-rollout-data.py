@@ -11,7 +11,9 @@ def save_model(model: nn.Module, path: str, num_inputs: int) -> None:
     torch.onnx.export(model, dummy_input, path)
 
 
-def train(model: nn.Module, trainloader: DataLoader, epochs: int) -> nn.Module:
+# `path_prefix` should be something like `../training-data/race-` or `../training-data/contact-`
+# It will then be appended with the epoch number and `.onnx` extension.
+def train(model: nn.Module, trainloader: DataLoader, path_prefix: str, epochs: int):
     # L1Loss has had an advantage of 0.042 equity compared to MSELoss (both trained on 200k contact positions).
     criterion = nn.L1Loss()
 
@@ -22,7 +24,7 @@ def train(model: nn.Module, trainloader: DataLoader, epochs: int) -> nn.Module:
     # 290e-6 has worked well for Adam, L1Loss, ReLU(), three layers, 50 epochs and 200k positions
     # 350e-6 has worked well for AdamW, L1Loss, ReLU(), three layers, 50 epochs and 200k positions
     # 1110e-6 has worked well for AdamW, L1Loss, Hardsigmoid(), three layers, 50 epochs and 200k positions
-    optimizer = torch.optim.AdamW(model.parameters(), lr=1110e-6)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1000e-6)
 
     for epoch in range(epochs):
         epoch_loss = 0.0
@@ -40,19 +42,23 @@ def train(model: nn.Module, trainloader: DataLoader, epochs: int) -> nn.Module:
             epoch_loss += loss.item()
         
         epoch_loss /= len(trainloader) / 64
-        print(f'[Epoch: {epoch + 1}] loss: {epoch_loss:.5f}')
-    
-    return model
 
-def main(model: nn.Module, data_path: str, model_path: str, num_inputs: int):
+        epoch_plus_one = epoch + 1
+        print(f'[Epoch: {epoch_plus_one}] loss: {epoch_loss:.5f}')
+
+        if epoch_plus_one > epochs * 0.33:
+            # Save epochs for each iteration after half the epochs have passed
+            save_model(model, path_prefix + f"{epoch_plus_one:03}" + ".onnx", num_inputs)
+
+
+def main(model: nn.Module, data_path: str, path_prefix: str, num_inputs: int):
     traindata = WildBgDataSet(data_path)
     trainloader = DataLoader(traindata, batch_size=64, shuffle=True)
 
     try:
-        model = train(model, trainloader, 50)
+        train(model, trainloader, path_prefix,120)
     finally:
         print('Finished Training')
-        save_model(model, model_path, num_inputs)
 
 if __name__ == "__main__":
     # "mps" takes more time than "cpu" on Macs, so let's ignore it for now.
@@ -64,23 +70,24 @@ if __name__ == "__main__":
         else "cpu"
     )
     print(f"Using {device} device")
-    Path("../neural-nets").mkdir(exist_ok=True)
+    path = "../training-data/"
+    Path(path).mkdir(exist_ok=True)
 
-    mode = "race"
+    mode = "contact"
     match mode:
         case "contact":
             num_inputs = 202
             model = Model(num_inputs).to(device)
-            main(model, "../training-data/contact-inputs.csv", "../neural-nets/contact.onnx", num_inputs)
+            main(model, path + "contact-inputs.csv", path + mode, num_inputs)
         case "race":
             # `Race` has fewer inputs than `Contact`
             num_inputs = 186
             model = Model(num_inputs).to(device)
-            main(model, "../training-data/race-inputs.csv", "../neural-nets/race.onnx", num_inputs)
+            main(model, path + "race-inputs.csv", path + mode, num_inputs)
         case "tiny_race":
             # This is used to be committed to the repository and not taking up much space.
             num_inputs = 186
             model = TinyModel(num_inputs).to(device)
-            main(model, "../training-data/race-inputs.csv", "../neural-nets/race.onnx", num_inputs)
+            main(model, path + "race-inputs.csv", path + mode, num_inputs)
         case _:
             print("Invalid mode")
