@@ -45,8 +45,17 @@ defined, it should be something like `mode = "contact"`.
 - You might want to edit various hyperparameters. Number of epochs, optimizer and loss function should be ok, but maybe you find better ones.
 In any case you should try various learning rates, they have a big impact on the quality of the net.
 - Go to the folder `training` and execute `./src/train-on-rollout-data.py` - this will create several new nets in the `training-data` folder. It should take only a few minutes.
-- Check the quality of the net: Edit [`compare-evaluators.rs`](../../crates/coach/src/bin/compare-evaluators.rs) and pick
-different nets you want to compare.
+
+### Compare neural nets
+Before deciding which new neural net is the best, you should compare it to the current best net. This is done by letting two evaluators play against each other.
+To have a baseline, copy existing onnx files from https://github.com/carsten-wenderdel/wildbg-training to the folder `neural-networks`. Those committed to this repository are small and weaker.
+- Check the quality of the net: 
+
+#### Compare just two evaluators
+- Edit [`compare-evaluators.rs`](../../crates/coach/src/bin/compare-evaluators.rs) and pick different nets you want to compare.
 - Execute `cargo run -r -p coach --bin compare-evaluators`. This starts two evaluators with different nets playing against each other.
 After several ten thousand games a difference in equity should be visible. This helps to pick the strongest net.
 
+#### Compare all neural nets in the `training-data` folder
+- Edit [`benchmark-evaluators.rs`](../../crates/coach/src/bin/compare-evaluators.rs) and and pick the number of games that should be played per comparison. Even with 300,000 games the results can easily fluctuate by 0.04 equity points.
+- Execute `cargo run -r -p coach --bin benchmark-evaluators`. After having results, you might want to repeat this with less onnx files in the `training-data` folder and more games.
