@@ -9,7 +9,7 @@ pub trait InputsGen {
     /// increased by `NUM_INPUTS`.
     ///
     /// This is the only method that needs to be implemented.
-    fn fill_inputs(&self, pos: &Position, vec: Vec<f32>) -> Vec<f32>;
+    fn fill_inputs(&self, pos: &Position, vec: &mut Vec<f32>);
 
     /// The neural net inputs for a single position.
     ///
@@ -23,9 +23,9 @@ pub trait InputsGen {
     /// The length of the returned vector is `NUM_INPUTS * positions.len()`.
     fn inputs_for_all(&self, positions: &[Position]) -> Vec<f32> {
         let mut vec = Vec::with_capacity(Self::NUM_INPUTS * positions.len());
-        for pos in positions {
-            vec = self.fill_inputs(pos, vec);
-        }
+        positions
+            .iter()
+            .for_each(|pos| self.fill_inputs(pos, &mut vec));
         vec
     }
 }
@@ -64,7 +64,7 @@ pub struct ContactInputsGen {}
 impl InputsGen for ContactInputsGen {
     const NUM_INPUTS: usize = 202;
 
-    fn fill_inputs(&self, pos: &Position, mut vec: Vec<f32>) -> Vec<f32> {
+    fn fill_inputs(&self, pos: &Position, vec: &mut Vec<f32>) {
         vec.push(pos.x_off() as f32);
         vec.push(pos.o_off() as f32);
 
@@ -81,7 +81,6 @@ impl InputsGen for ContactInputsGen {
         for td_inputs in pos.pips[0..X_BAR].iter().map(|p| td_inputs(&-p)) {
             vec.extend_from_slice(&td_inputs);
         }
-        vec
     }
 }
 
@@ -90,7 +89,7 @@ pub struct RaceInputsGen {}
 impl InputsGen for RaceInputsGen {
     const NUM_INPUTS: usize = 186;
 
-    fn fill_inputs(&self, pos: &Position, mut vec: Vec<f32>) -> Vec<f32> {
+    fn fill_inputs(&self, pos: &Position, vec: &mut Vec<f32>) {
         vec.push(pos.x_off() as f32);
         vec.push(pos.o_off() as f32);
 
@@ -103,7 +102,6 @@ impl InputsGen for RaceInputsGen {
         for td_inputs in pos.pips[2..X_BAR].iter().map(|p| td_inputs(&-p)) {
             vec.extend_from_slice(&td_inputs);
         }
-        vec
     }
 }
 
