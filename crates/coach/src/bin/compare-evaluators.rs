@@ -2,8 +2,12 @@ use coach::duel::Duel;
 use engine::complex::ComplexEvaluator;
 use engine::dice::FastrandDice;
 use engine::probabilities::{Probabilities, ResultCounter};
+use mimalloc::MiMalloc;
 use rayon::prelude::*;
 use std::io::{stdout, Write};
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 fn main() {
     let evaluator_1 = ComplexEvaluator::from_file_paths_optimized(

@@ -2,7 +2,11 @@ use crate::helper::{contact_positions, race_positions};
 use criterion::{criterion_group, criterion_main, Criterion};
 use engine::inputs::{ContactInputsGen, InputsGen, RaceInputsGen};
 use engine::position::Position;
+use mimalloc::MiMalloc;
 use std::hint::black_box;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 mod helper;
 

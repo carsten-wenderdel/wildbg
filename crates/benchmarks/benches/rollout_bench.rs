@@ -4,7 +4,11 @@ use engine::complex::ComplexEvaluator;
 use engine::evaluator::Evaluator;
 use engine::pos;
 use engine::position::Position;
+use mimalloc::MiMalloc;
 use std::collections::HashMap;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 // Once this function is called there is no going back to more threads for the other benchmarks.
 // So better call it in every benchmark function.

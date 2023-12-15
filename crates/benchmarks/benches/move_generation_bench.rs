@@ -4,8 +4,12 @@ use engine::dice::{Dice, ALL_21};
 use engine::pos;
 use engine::position::GameState::Ongoing;
 use engine::position::{Position, O_BAR, STARTING, X_BAR};
+use mimalloc::MiMalloc;
 use std::collections::HashMap;
 use std::hint::black_box;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 mod helper;
 

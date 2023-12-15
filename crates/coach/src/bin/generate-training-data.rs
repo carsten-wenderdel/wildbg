@@ -4,9 +4,13 @@ use coach::rollout::RolloutEvaluator;
 use engine::complex::ComplexEvaluator;
 use engine::evaluator::{Evaluator, RandomEvaluator};
 use engine::position::OngoingPhase;
+use mimalloc::MiMalloc;
 use std::fs::File;
 use std::io::{stdout, Write};
 use std::time::Instant;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 /// This binary is for generating training data in CSV format.
 ///

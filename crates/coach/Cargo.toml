@@ -12,3 +12,5 @@ engine = { path = "../engine" }
 rayon.workspace = true
 serde = { workspace = true, features = ["derive"] }
 csv = "1.3.0"
+# This custom allocator speeds up rollouts by 1%. We don't use it in other crates as it increases compile time, binary size and maybe also memory usage.
+mimalloc = { version = "*", default-features = false }

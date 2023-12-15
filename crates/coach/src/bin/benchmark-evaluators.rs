@@ -2,9 +2,13 @@ use coach::duel::Duel;
 use engine::complex::ComplexEvaluator;
 use engine::dice::FastrandDice;
 use engine::probabilities::{Probabilities, ResultCounter};
+use mimalloc::MiMalloc;
 use rayon::prelude::*;
 use std::fs;
 use std::io::{stdout, Write};
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 /// Compare one evaluator with neural nets in the folder `training-data`.
 fn main() {

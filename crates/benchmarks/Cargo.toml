@@ -11,6 +11,8 @@ engine = { path = "../engine" }
 coach = { path = "../coach" }
 # external
 criterion = "0.5.1"
+# Use the same allocator as the `coach` crate
+mimalloc = { version = "*", default-features = false }
 
 [[bench]]
 name = "rollout_bench"
