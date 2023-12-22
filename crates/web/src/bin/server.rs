@@ -13,6 +13,10 @@ async fn main() -> Result<(), Error> {
     );
     println!("http://localhost:8080/swagger-ui");
 
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::WARN)
+        .init();
+
     let web_api = Arc::new(WebApi::try_default());
     let address = SocketAddr::from((Ipv4Addr::UNSPECIFIED, 8080));
     Server::bind(&address)

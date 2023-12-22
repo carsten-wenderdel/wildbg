@@ -33,10 +33,6 @@ pub fn router<T: Evaluator + Send + Sync + 'static>(web_api: DynWebApi<T>) -> Ro
     )]
     struct ApiDoc;
 
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::WARN)
-        .init();
-
     Router::new()
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .route("/eval", get(get_eval))
