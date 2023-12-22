@@ -37,6 +37,7 @@ pub fn router<T: Evaluator + Send + Sync + 'static>(web_api: DynWebApi<T>) -> Ro
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .route("/eval", get(get_eval))
         .route("/move", get(get_move))
+        .route("/bei", get(get_bei))
         .layer(TraceLayer::new_for_http())
         .with_state(web_api)
 }
@@ -159,6 +160,41 @@ async fn get_move<T: Evaluator>(
             Ok(move_response) => Ok(Json(move_response)),
         },
     }
+}
+
+#[derive(Serialize)]
+struct BeiId {
+    name: String,
+    version: String,
+}
+
+impl Default for BeiId {
+    fn default() -> Self {
+        BeiId {
+            name: "wildbg".to_string(),
+            version: env!("CARGO_PKG_VERSION").to_string(),
+        }
+    }
+}
+#[derive(Serialize)]
+struct BeiResponse {
+    r#type: String,
+    version: u32,
+    id: BeiId,
+}
+
+impl Default for BeiResponse {
+    fn default() -> Self {
+        BeiResponse {
+            r#type: "okbei".to_string(),
+            version: 1,
+            id: BeiId::default(),
+        }
+    }
+}
+
+async fn get_bei() -> Json<BeiResponse> {
+    Json(BeiResponse::default())
 }
 
 #[cfg(test)]
