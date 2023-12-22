@@ -5,6 +5,7 @@ use axum::{routing::get, Json, Router};
 use engine::evaluator::Evaluator;
 use serde::Serialize;
 use std::sync::Arc;
+use tower_http::trace::TraceLayer;
 use utoipa::{OpenApi, ToSchema};
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -31,10 +32,16 @@ pub fn router<T: Evaluator + Send + Sync + 'static>(web_api: DynWebApi<T>) -> Ro
         )
     )]
     struct ApiDoc;
+
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::WARN)
+        .init();
+
     Router::new()
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .route("/eval", get(get_eval))
         .route("/move", get(get_move))
+        .layer(TraceLayer::new_for_http())
         .with_state(web_api)
 }
 

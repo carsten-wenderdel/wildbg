@@ -3204,6 +3204,9 @@ dependencies = [
  "shuttle-runtime",
  "tokio",
  "tower",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
  "utoipa",
  "utoipa-swagger-ui",
 ]
