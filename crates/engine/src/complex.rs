@@ -1,8 +1,7 @@
-use crate::composite::GameOverEvaluator;
 use crate::evaluator::{BatchEvaluator, Evaluator, PartialEvaluator};
 use crate::inputs::{ContactInputsGen, RaceInputsGen};
 use crate::onnx::OnnxEvaluator;
-use crate::position::{GamePhase, OngoingPhase, Position};
+use crate::position::{GamePhase, GameResult, GameState, OngoingPhase, Position};
 use crate::probabilities::Probabilities;
 
 pub struct ComplexEvaluator {
@@ -35,6 +34,9 @@ impl BatchEvaluator for ComplexEvaluator {
                     }
                 },
                 GamePhase::GameOver(_) => {
+                    // The `try_eval` runs `match pos.game_state()` a second time.
+                    // This is not a performance problem for rollouts: When the array of positions/moves contains a
+                    // position which is game over, the `ComplexEvaluator` is not used anyway, so we never get here.
                     let probabilities = self
                         .game_over_evaluator
                         .try_eval(&position)
@@ -97,6 +99,42 @@ impl ComplexEvaluator {
     }
 }
 
+struct GameOverEvaluator {}
+
+impl PartialEvaluator for GameOverEvaluator {
+    fn try_eval(&self, pos: &Position) -> Option<Probabilities> {
+        match pos.game_state() {
+            GameState::Ongoing => None,
+            GameState::GameOver(result) => match result {
+                GameResult::WinNormal => Some(Probabilities {
+                    win_normal: 1.,
+                    ..Default::default()
+                }),
+                GameResult::WinGammon => Some(Probabilities {
+                    win_gammon: 1.,
+                    ..Default::default()
+                }),
+                GameResult::WinBg => Some(Probabilities {
+                    win_bg: 1.,
+                    ..Default::default()
+                }),
+                GameResult::LoseNormal => Some(Probabilities {
+                    lose_normal: 1.,
+                    ..Default::default()
+                }),
+                GameResult::LoseGammon => Some(Probabilities {
+                    lose_gammon: 1.,
+                    ..Default::default()
+                }),
+                GameResult::LoseBg => Some(Probabilities {
+                    lose_bg: 1.,
+                    ..Default::default()
+                }),
+            },
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::evaluator::Evaluator;
@@ -155,5 +193,78 @@ mod tests {
             positions_and_probabilities[contact_index].1,
             OnnxEvaluator::contact_default_tests().eval(&contact)
         );
+    }
+}
+
+#[cfg(test)]
+mod game_over_tests {
+    use crate::evaluator::Evaluator;
+    use crate::pos;
+
+    #[test]
+    fn game_over_lose_normal() {
+        let evaluator = super::ComplexEvaluator::default_tests();
+        let position = pos!(x 12:1; o);
+        let probabilities = evaluator.eval(&position);
+        assert_eq!(probabilities.lose_normal, 1.);
+        assert_eq!(probabilities.equity(), -1.);
+    }
+
+    #[test]
+    fn game_over_lose_gammon() {
+        let evaluator = super::ComplexEvaluator::default_tests();
+        let position = pos!(x 12:15; o);
+        let probabilities = evaluator.eval(&position);
+        assert_eq!(probabilities.lose_gammon, 1.);
+        assert_eq!(probabilities.equity(), -2.);
+    }
+
+    #[test]
+    fn game_over_lose_bg() {
+        let evaluator = super::ComplexEvaluator::default_tests();
+        let position = pos!(x 20:15; o);
+        let probabilities = evaluator.eval(&position);
+        assert_eq!(probabilities.lose_bg, 1.);
+        assert_eq!(probabilities.equity(), -3.);
+    }
+
+    #[test]
+    fn game_over_win_normal() {
+        let evaluator = super::ComplexEvaluator::default_tests();
+        let position = pos!(x 12:1; o).switch_sides();
+        let probabilities = evaluator.eval(&position);
+        // The following numbers should be random
+        assert_eq!(probabilities.win_normal, 1.);
+        assert_eq!(probabilities.equity(), 1.);
+    }
+
+    #[test]
+    fn game_over_win_gammon() {
+        let evaluator = super::ComplexEvaluator::default_tests();
+        let position = pos!(x 15:15; o).switch_sides();
+        let probabilities = evaluator.eval(&position);
+        // The following numbers should be random
+        assert_eq!(probabilities.win_gammon, 1.);
+        assert_eq!(probabilities.equity(), 2.);
+    }
+
+    #[test]
+    fn game_over_win_backgammon() {
+        let evaluator = super::ComplexEvaluator::default_tests();
+        let position = pos!(x 22:15; o).switch_sides();
+        let probabilities = evaluator.eval(&position);
+        // The following numbers should be random
+        assert_eq!(probabilities.win_bg, 1.);
+        assert_eq!(probabilities.equity(), 3.);
+    }
+
+    #[test]
+    fn game_over_ongoing() {
+        let evaluator = super::ComplexEvaluator::default_tests();
+        let position = pos!(x 1:1; o 2:2).switch_sides();
+        let probabilities = evaluator.eval(&position);
+        // The probabilities now come from the onnx evaluator
+        assert!(probabilities.equity() < 0.);
+        assert!(probabilities.equity() > -1.);
     }
 }

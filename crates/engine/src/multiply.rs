@@ -55,31 +55,27 @@ impl<T: Evaluator> Evaluator for MultiPlyEvaluator<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::composite::{CompositeEvaluator, GameOverEvaluator};
+    use crate::complex::ComplexEvaluator;
     use crate::evaluator::Evaluator;
     use crate::multiply::MultiPlyEvaluator;
-    use crate::onnx::OnnxEvaluator;
     use crate::pos;
 
     #[test]
     fn equity_is_average_of_1ply_ahead_equities() {
-        let onnx = OnnxEvaluator::contact_default_tests();
-        let composite = CompositeEvaluator::new(GameOverEvaluator {}, onnx);
+        let evaluator = ComplexEvaluator::default_tests();
 
         // From this position `x` will always win, unless the roll is 2-1, 3-1 or 1-1.
         let position = pos!(x 5:1; o 24:1);
 
         // That's the position after the roll 2-1. We switch sides to see it from the perspective of `o`.
         let loser_position_1 = pos!(x 2:1; o 24:1).switch_sides();
-        let loser_equity_1 = composite.eval(&loser_position_1).equity();
+        let loser_equity_1 = evaluator.eval(&loser_position_1).equity();
 
         // That's the position after the roll 3-1 or 1-1. We switch sides to see it from the perspective of `o`.
         let loser_position_2 = pos!(x 1:1; o 24:1).switch_sides();
-        let loser_equity_2 = composite.eval(&loser_position_2).equity();
+        let loser_equity_2 = evaluator.eval(&loser_position_2).equity();
 
-        let multi = MultiPlyEvaluator {
-            evaluator: composite,
-        };
+        let multi = MultiPlyEvaluator { evaluator };
 
         let probabilities_multi = multi.eval(&position);
         let multi_equity = probabilities_multi.equity();
