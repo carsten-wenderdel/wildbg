@@ -1,18 +1,15 @@
+mod conversion;
 mod double_moves;
 mod mixed_moves;
-
-use base64::{engine::general_purpose, Engine as _};
-use std::cmp::min;
 
 use crate::dice::Dice;
 use crate::position::GameResult::*;
 use crate::position::GameState::*;
 use crate::position::OngoingPhase::{Contact, Race};
-use std::collections::HashMap;
+use std::cmp::min;
 use std::fmt;
 use std::fmt::Formatter;
 use std::fmt::Write;
-use std::ops::Add;
 
 const NUM_OF_CHECKERS: u8 = 15;
 pub const X_BAR: usize = 25;
@@ -71,32 +68,6 @@ pub enum OngoingPhase {
 pub enum GamePhase {
     Ongoing(OngoingPhase),
     GameOver(GameResult),
-}
-
-/// Simple way to create positions for testing
-/// The starting position would be:
-/// pos!(x 24:2, 13:5, 8:3, 6:5; o 19:5, 17:3, 12:5, 1:2)
-/// The order is not important, so this is equivalent:
-/// pos!(x 24:2, 13:5, 8:3, 6:5; o 1:2, 12:5, 17:3, 19:5)
-#[macro_export]
-macro_rules! pos {
-    ( x $( $x_pip:tt:$x_checkers:tt ), * ;o $( $o_pip:tt:$o_checkers:tt ), * ) => {
-        {
-            #[allow(unused_mut)]
-            let mut x = HashMap::new();
-            $(
-                x.insert($x_pip as usize, $x_checkers as u8);
-            )*
-
-            #[allow(unused_mut)]
-            let mut o = HashMap::new();
-            $(
-                o.insert($o_pip as usize, $o_checkers as u8);
-            )*
-
-            Position::from(&x, &o)
-        }
-    };
 }
 
 /// A single position in backgammon without match information.
@@ -212,29 +183,6 @@ impl Position {
             x_off: self.o_off,
             o_off: self.x_off,
         }
-    }
-
-    pub fn from(x: &HashMap<usize, u8>, o: &HashMap<usize, u8>) -> Position {
-        let mut pips = [0; 26];
-        for (i, v) in x {
-            pips[*i] = *v as i8;
-        }
-        for (i, v) in o {
-            debug_assert!(pips[*i] == 0);
-            pips[*i] = -(*v as i8);
-        }
-        Position::try_from(pips).expect("Need legal position")
-    }
-
-    pub fn position_id(&self) -> String {
-        let key = self.encode();
-        let b64 = general_purpose::STANDARD.encode(key);
-        b64[..14].to_string()
-    }
-
-    pub fn from_id(id: String) -> Position {
-        let key = general_purpose::STANDARD.decode(id.add("==")).unwrap();
-        Position::decode(key.try_into().unwrap())
     }
 }
 
@@ -425,93 +373,11 @@ impl Position {
             None
         }
     }
-
-    fn encode(&self) -> [u8; 10] {
-        let mut key = [0u8; 10];
-        let mut bit_index = 0;
-
-        // Encoding the position for the player not on roll
-        for point in (1..=24).rev() {
-            for _ in 0..-self.pips[point] {
-                key[bit_index / 8] |= 1 << (bit_index % 8);
-                bit_index += 1; // Appending a 1
-            }
-            bit_index += 1; // Appending a 0
-        }
-        for _ in 0..self.pips[O_BAR] {
-            key[bit_index / 8] |= 1 << (bit_index % 8);
-            bit_index += 1; // Appending a 1
-        }
-        bit_index += 1; // Appending a 0
-
-        // Encoding the position for the player on roll
-        for point in 1..=24 {
-            for _ in 0..self.pips[point] {
-                key[bit_index / 8] |= 1 << (bit_index % 8);
-                bit_index += 1; // Appending a 1
-            }
-            bit_index += 1; // Appending a 0
-        }
-        for _ in 0..self.pips[X_BAR] {
-            key[bit_index / 8] |= 1 << (bit_index % 8);
-            bit_index += 1; // Appending a 1
-        }
-
-        key
-    }
-
-    fn decode(key: [u8; 10]) -> Position {
-        let mut bit_index = 0;
-        let mut pips = [0i8; 26];
-
-        let mut x_bar = 0;
-        let mut o_bar = 0;
-        let mut x_pieces = 0;
-        let mut o_pieces = 0;
-
-        for point in (0..24).rev() {
-            while (key[bit_index / 8] >> (bit_index % 8)) & 1 == 1 {
-                pips[point + 1] -= 1;
-                o_pieces += 1;
-                bit_index += 1;
-            }
-            bit_index += 1; // Appending a 0
-        }
-
-        while (key[bit_index / 8] >> (bit_index % 8)) & 1 == 1 {
-            o_bar += 1;
-            bit_index += 1;
-        }
-
-        bit_index += 1; // Appending a 0
-
-        for point in 0..24 {
-            while (key[bit_index / 8] >> (bit_index % 8)) & 1 == 1 {
-                pips[point + 1] += 1;
-                x_pieces += 1;
-                bit_index += 1;
-            }
-            bit_index += 1; // Appending a 0
-        }
-
-        while (key[bit_index / 8] >> (bit_index % 8)) & 1 == 1 {
-            x_bar += 1;
-            bit_index += 1;
-        }
-
-        pips[X_BAR] = x_bar;
-        pips[O_BAR] = -o_bar;
-
-        Position {
-            pips,
-            x_off: (NUM_OF_CHECKERS as i8 - x_pieces - x_bar) as u8,
-            o_off: (NUM_OF_CHECKERS as i8 - o_pieces - o_bar) as u8,
-        }
-    }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::pos;
     use crate::position::*;
     use std::collections::HashMap;
 
@@ -796,27 +662,6 @@ mod tests {
     }
 
     #[test]
-    fn start_id() {
-        let game = STARTING;
-        let id = game.position_id();
-        assert_eq!(id, "4HPwATDgc/ABMA");
-    }
-
-    #[test]
-    fn matching_ids() {
-        let pids = [
-            "4HPwATDgc/ABMA", // starting position
-            "jGfkASjg8wcBMA", // random position
-            "zGbiIQgxH/AAWA", // X bar
-            "zGbiIYCYD3gALA", // O off
-        ];
-        for pid in pids {
-            let game = super::Position::from_id(pid.to_string());
-            assert_eq!(pid, game.position_id());
-        }
-    }
-
-    #[test]
     fn number_of_moves_for_various_positions_and_dice() {
         // Thanks to Øystein for his test positions
         let positions = [
@@ -894,6 +739,7 @@ mod tests {
 
 #[cfg(test)]
 mod private_tests {
+    use crate::pos;
     use crate::position::{Position, O_BAR, STARTING};
     use std::collections::HashMap;
 
@@ -944,7 +790,7 @@ mod private_tests {
 
     #[test]
     fn cannot_move_opposing_checker() {
-        let given = Position::from(&HashMap::new(), &HashMap::from([(4, 10)]));
+        let given = Position::from_hash_maps(&HashMap::new(), &HashMap::from([(4, 10)]));
         assert!(!given.can_move_in_board(4, 2));
     }
 
