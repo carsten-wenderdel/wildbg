@@ -1,4 +1,4 @@
-use engine::dice::DiceGen;
+use engine::dice_gen::DiceGen;
 use engine::evaluator::Evaluator;
 use engine::position::GameState::{GameOver, Ongoing};
 use engine::position::STARTING;

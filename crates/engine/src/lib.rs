@@ -1,6 +1,7 @@
 pub mod complex;
 pub mod composite;
 pub mod dice;
+pub mod dice_gen;
 pub mod evaluator;
 pub mod inputs;
 pub mod multiply;

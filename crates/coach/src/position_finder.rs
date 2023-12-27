@@ -1,4 +1,4 @@
-use engine::dice::{DiceGen, FastrandDice};
+use engine::dice_gen::{DiceGen, FastrandDice};
 use engine::evaluator::Evaluator;
 use engine::position::GameState::Ongoing;
 use engine::position::OngoingPhase::Race;
@@ -145,7 +145,8 @@ impl<T: Evaluator, U: DiceGen> PositionFinder<T, U> {
 #[cfg(test)]
 mod private_tests {
     use crate::position_finder::PositionFinder;
-    use engine::dice::{Dice, DiceGen};
+    use engine::dice::Dice;
+    use engine::dice_gen::DiceGen;
     use engine::evaluator::RandomEvaluator;
     use engine::pos;
     use engine::position::Position;

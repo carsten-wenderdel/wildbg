@@ -1,4 +1,5 @@
-use engine::dice::{Dice, DiceGen, FastrandDice, ALL_441};
+use engine::dice::{Dice, ALL_441};
+use engine::dice_gen::{DiceGen, FastrandDice};
 use engine::evaluator::{Evaluator, RandomEvaluator};
 use engine::position::GameState::{GameOver, Ongoing};
 use engine::position::{GameResult, Position};
@@ -198,7 +199,8 @@ mod tests {
 #[cfg(test)]
 mod private_tests {
     use crate::rollout::RolloutEvaluator;
-    use engine::dice::{Dice, DiceGenMock};
+    use engine::dice::Dice;
+    use engine::dice_gen::DiceGenMock;
     use engine::pos;
     use engine::position::GameResult::{
         LoseBg, LoseGammon, LoseNormal, WinBg, WinGammon, WinNormal,
