@@ -43,7 +43,7 @@ https://github.com/carsten-wenderdel/wildbg/blob/d5c7280a60a52cb61c92af78018fb81
 Examples of implementations are
 - `GameOverEvaluator` for positions where the game is over and the probabilities are known.
 - `OnnxEvaluator` which uses a neural net in `ONNX` format to calculate the probabilities.
-- `ComplexEvaluator` which consists of a `GameOverEvaluator` and other evaluators for different game phases. It decides which evaluator to use based on the position.
+- `CompositeEvaluator` which consists of a `GameOverEvaluator` and other evaluators for different game phases. It decides which evaluator to use based on the position.
 - `RolloutEvaluator` which uses another evaluator to do rollouts.
 
 ## Inputs generation

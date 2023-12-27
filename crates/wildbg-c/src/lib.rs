@@ -1,5 +1,5 @@
 use core::ffi::*;
-use engine::complex::ComplexEvaluator;
+use engine::composite::CompositeEvaluator;
 use engine::dice::Dice;
 use engine::position::Position;
 use engine::probabilities::Probabilities;
@@ -15,9 +15,9 @@ use logic::wildbg_api::{WildbgApi, WildbgConfig};
 // https://docs.rust-embedded.org/book/interoperability/rust-with-c.html
 // http://jakegoulding.com/rust-ffi-omnibus/objects/
 
-// Wrap the WildbgApi into a new struct, so that we don't have to expose the ComplexEvaluator
+// Wrap the WildbgApi into a new struct, so that we don't have to expose the CompositeEvaluator
 pub struct Wildbg {
-    api: WildbgApi<ComplexEvaluator>,
+    api: WildbgApi<CompositeEvaluator>,
 }
 
 /// Configuration needed for the evaluation of positions.

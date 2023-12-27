@@ -1,4 +1,4 @@
-use engine::complex::ComplexEvaluator;
+use engine::composite::CompositeEvaluator;
 use engine::dice::Dice;
 use engine::evaluator::Evaluator;
 use engine::position::Position;
@@ -12,9 +12,9 @@ pub struct WebApi<T: Evaluator> {
     evaluator: T,
 }
 
-impl WebApi<ComplexEvaluator> {
+impl WebApi<CompositeEvaluator> {
     pub fn try_default() -> Option<Self> {
-        ComplexEvaluator::try_default().map(|complex| Self { evaluator: complex })
+        CompositeEvaluator::try_default().map(|evaluator| Self { evaluator })
     }
 }
 

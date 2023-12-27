@@ -1,5 +1,5 @@
 use coach::duel::Duel;
-use engine::complex::ComplexEvaluator;
+use engine::composite::CompositeEvaluator;
 use engine::dice_gen::FastrandDice;
 use engine::probabilities::{Probabilities, ResultCounter};
 use mimalloc::MiMalloc;
@@ -24,7 +24,7 @@ fn main() {
     for file_name in paths {
         print!("Load current neural nets");
         stdout().flush().unwrap();
-        let current = ComplexEvaluator::from_file_paths_optimized(
+        let current = CompositeEvaluator::from_file_paths_optimized(
             "neural-nets/contact.onnx",
             "neural-nets/race.onnx",
         )
@@ -34,7 +34,7 @@ fn main() {
         print!("\rTry {}", path_string);
         stdout().flush().unwrap();
         let contender =
-            ComplexEvaluator::from_file_paths_optimized(&path_string, "neural-nets/race.onnx")
+            CompositeEvaluator::from_file_paths_optimized(&path_string, "neural-nets/race.onnx")
                 .expect("Failed creating neural net for contender");
 
         let duel = Duel::new(contender, current);

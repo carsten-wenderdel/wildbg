@@ -4,13 +4,16 @@ use crate::onnx::OnnxEvaluator;
 use crate::position::{GamePhase, GameResult, GameState, OngoingPhase, Position};
 use crate::probabilities::Probabilities;
 
-pub struct ComplexEvaluator {
+/// Evaluates each position with the matching of three evaluators: contact, race, game over.
+///
+/// This is pretty much the same as the "Composite" GoF design pattern.
+pub struct CompositeEvaluator {
     contact_evaluator: OnnxEvaluator<ContactInputsGen>,
     race_evaluator: OnnxEvaluator<RaceInputsGen>,
     game_over_evaluator: GameOverEvaluator,
 }
 
-impl BatchEvaluator for ComplexEvaluator {
+impl BatchEvaluator for CompositeEvaluator {
     fn eval_positions(&self, positions: Vec<Position>) -> Vec<(Position, Probabilities)> {
         let length = positions.len();
         let mut game_over: Vec<(Position, Probabilities)> = Vec::with_capacity(length);
@@ -36,7 +39,7 @@ impl BatchEvaluator for ComplexEvaluator {
                 GamePhase::GameOver(_) => {
                     // The `try_eval` runs `match pos.game_state()` a second time.
                     // This is not a performance problem for rollouts: When the array of positions/moves contains a
-                    // position which is game over, the `ComplexEvaluator` is not used anyway, so we never get here.
+                    // position which is game over, the `CompositeEvaluator` is not used anyway, so we never get here.
                     let probabilities = self
                         .game_over_evaluator
                         .try_eval(&position)
@@ -54,7 +57,7 @@ impl BatchEvaluator for ComplexEvaluator {
     }
 }
 
-impl ComplexEvaluator {
+impl CompositeEvaluator {
     pub fn try_default() -> Option<Self> {
         let contact_evaluator = OnnxEvaluator::contact_default()?;
         let race_evaluator = OnnxEvaluator::race_default()?;
@@ -136,7 +139,7 @@ impl PartialEvaluator for GameOverEvaluator {
 }
 
 #[cfg(test)]
-mod tests {
+mod composite_tests {
     use crate::evaluator::Evaluator;
     use crate::onnx::OnnxEvaluator;
     use crate::pos;
@@ -144,7 +147,7 @@ mod tests {
     #[test]
     fn game_over() {
         // Given
-        let evaluator = super::ComplexEvaluator::default_tests();
+        let evaluator = super::CompositeEvaluator::default_tests();
         let pos_1 = pos![x 1:1; o];
         let pos_2 = pos![x 1: 1; o 24:1];
 
@@ -166,7 +169,7 @@ mod tests {
     #[test]
     fn uses_correct_evaluator_for_race_and_contact() {
         // Given
-        let evaluator = super::ComplexEvaluator::default_tests();
+        let evaluator = super::CompositeEvaluator::default_tests();
         let contact = pos![x 1:1, 24:1; o 10:1];
         let race = pos![x 1: 1; o 24:1];
 
@@ -203,7 +206,7 @@ mod game_over_tests {
 
     #[test]
     fn game_over_lose_normal() {
-        let evaluator = super::ComplexEvaluator::default_tests();
+        let evaluator = super::CompositeEvaluator::default_tests();
         let position = pos!(x 12:1; o);
         let probabilities = evaluator.eval(&position);
         assert_eq!(probabilities.lose_normal, 1.);
@@ -212,7 +215,7 @@ mod game_over_tests {
 
     #[test]
     fn game_over_lose_gammon() {
-        let evaluator = super::ComplexEvaluator::default_tests();
+        let evaluator = super::CompositeEvaluator::default_tests();
         let position = pos!(x 12:15; o);
         let probabilities = evaluator.eval(&position);
         assert_eq!(probabilities.lose_gammon, 1.);
@@ -221,7 +224,7 @@ mod game_over_tests {
 
     #[test]
     fn game_over_lose_bg() {
-        let evaluator = super::ComplexEvaluator::default_tests();
+        let evaluator = super::CompositeEvaluator::default_tests();
         let position = pos!(x 20:15; o);
         let probabilities = evaluator.eval(&position);
         assert_eq!(probabilities.lose_bg, 1.);
@@ -230,7 +233,7 @@ mod game_over_tests {
 
     #[test]
     fn game_over_win_normal() {
-        let evaluator = super::ComplexEvaluator::default_tests();
+        let evaluator = super::CompositeEvaluator::default_tests();
         let position = pos!(x 12:1; o).switch_sides();
         let probabilities = evaluator.eval(&position);
         // The following numbers should be random
@@ -240,7 +243,7 @@ mod game_over_tests {
 
     #[test]
     fn game_over_win_gammon() {
-        let evaluator = super::ComplexEvaluator::default_tests();
+        let evaluator = super::CompositeEvaluator::default_tests();
         let position = pos!(x 15:15; o).switch_sides();
         let probabilities = evaluator.eval(&position);
         // The following numbers should be random
@@ -250,7 +253,7 @@ mod game_over_tests {
 
     #[test]
     fn game_over_win_backgammon() {
-        let evaluator = super::ComplexEvaluator::default_tests();
+        let evaluator = super::CompositeEvaluator::default_tests();
         let position = pos!(x 22:15; o).switch_sides();
         let probabilities = evaluator.eval(&position);
         // The following numbers should be random
@@ -260,7 +263,7 @@ mod game_over_tests {
 
     #[test]
     fn game_over_ongoing() {
-        let evaluator = super::ComplexEvaluator::default_tests();
+        let evaluator = super::CompositeEvaluator::default_tests();
         let position = pos!(x 1:1; o 2:2).switch_sides();
         let probabilities = evaluator.eval(&position);
         // The probabilities now come from the onnx evaluator

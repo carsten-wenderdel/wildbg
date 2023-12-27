@@ -55,14 +55,14 @@ impl<T: Evaluator> Evaluator for MultiPlyEvaluator<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::complex::ComplexEvaluator;
+    use crate::composite::CompositeEvaluator;
     use crate::evaluator::Evaluator;
     use crate::multiply::MultiPlyEvaluator;
     use crate::pos;
 
     #[test]
     fn equity_is_average_of_1ply_ahead_equities() {
-        let evaluator = ComplexEvaluator::default_tests();
+        let evaluator = CompositeEvaluator::default_tests();
 
         // From this position `x` will always win, unless the roll is 2-1, 3-1 or 1-1.
         let position = pos!(x 5:1; o 24:1);

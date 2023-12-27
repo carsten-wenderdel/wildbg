@@ -1,5 +1,5 @@
 use coach::duel::Duel;
-use engine::complex::ComplexEvaluator;
+use engine::composite::CompositeEvaluator;
 use engine::dice_gen::FastrandDice;
 use engine::probabilities::{Probabilities, ResultCounter};
 use mimalloc::MiMalloc;
@@ -10,13 +10,13 @@ use std::io::{stdout, Write};
 static GLOBAL: MiMalloc = MiMalloc;
 
 fn main() {
-    let evaluator_1 = ComplexEvaluator::from_file_paths_optimized(
+    let evaluator_1 = CompositeEvaluator::from_file_paths_optimized(
         "neural-nets/contact.onnx",
         "neural-nets/race.onnx",
     )
     .expect("Could not find nets for evaluator_1");
 
-    let evaluator_2 = ComplexEvaluator::from_file_paths_optimized(
+    let evaluator_2 = CompositeEvaluator::from_file_paths_optimized(
         "neural-nets/contact.onnx",
         "neural-nets/race.onnx",
     )

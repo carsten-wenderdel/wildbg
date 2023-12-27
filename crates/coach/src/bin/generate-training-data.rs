@@ -1,7 +1,7 @@
 use coach::data::PositionRecord;
 use coach::position_finder::PositionFinder;
 use coach::rollout::RolloutEvaluator;
-use engine::complex::ComplexEvaluator;
+use engine::composite::CompositeEvaluator;
 use engine::evaluator::{Evaluator, RandomEvaluator};
 use engine::position::OngoingPhase;
 use mimalloc::MiMalloc;
@@ -20,8 +20,8 @@ fn main() -> std::io::Result<()> {
     // Change the next 4 lines to configure what, how and how much you want to roll out.
     let phase = OngoingPhase::Race;
     let amount = 200_000;
-    let rollout_evaluator = ComplexEvaluator::try_default().map(RolloutEvaluator::with_evaluator);
-    let finder_evaluator = ComplexEvaluator::try_default();
+    let rollout_evaluator = CompositeEvaluator::try_default().map(RolloutEvaluator::with_evaluator);
+    let finder_evaluator = CompositeEvaluator::try_default();
 
     match (rollout_evaluator, finder_evaluator) {
         (Some(rollout_evaluator), Some(finder_evaluator)) => {

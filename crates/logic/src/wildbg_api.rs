@@ -1,5 +1,5 @@
 use crate::bg_move::BgMove;
-use engine::complex::ComplexEvaluator;
+use engine::composite::CompositeEvaluator;
 use engine::dice::Dice;
 use engine::evaluator::Evaluator;
 use engine::position::Position;
@@ -16,9 +16,9 @@ pub struct WildbgApi<T: Evaluator> {
     evaluator: T,
 }
 
-impl WildbgApi<ComplexEvaluator> {
+impl WildbgApi<CompositeEvaluator> {
     pub fn try_default() -> Option<Self> {
-        ComplexEvaluator::try_default().map(|evaluator| Self { evaluator })
+        CompositeEvaluator::try_default().map(|evaluator| Self { evaluator })
     }
 }
 
