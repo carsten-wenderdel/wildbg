@@ -78,8 +78,6 @@ mod tests {
     use crate::bg_move::{BgMove, MoveDetail};
     use engine::dice::MixedDice;
     use engine::pos;
-    use engine::position::Position;
-    use std::collections::HashMap;
 
     #[test]
     fn double_could_move_only_one_pieces() {

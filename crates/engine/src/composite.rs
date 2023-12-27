@@ -61,8 +61,6 @@ mod tests {
     use crate::composite::{CompositeEvaluator, GameOverEvaluator};
     use crate::evaluator::{Evaluator, RandomEvaluator};
     use crate::pos;
-    use crate::position::Position;
-    use std::collections::HashMap;
 
     #[test]
     fn game_over_lose_normal() {

@@ -60,8 +60,6 @@ mod tests {
     use crate::multiply::MultiPlyEvaluator;
     use crate::onnx::OnnxEvaluator;
     use crate::pos;
-    use crate::position::Position;
-    use std::collections::HashMap;
 
     #[test]
     fn equity_is_average_of_1ply_ahead_equities() {

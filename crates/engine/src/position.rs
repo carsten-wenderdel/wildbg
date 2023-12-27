@@ -379,7 +379,6 @@ impl Position {
 mod tests {
     use crate::pos;
     use crate::position::*;
-    use std::collections::HashMap;
 
     #[test]
     fn x_off() {

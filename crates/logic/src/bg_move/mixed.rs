@@ -102,8 +102,7 @@ mod tests {
     use crate::bg_move::{BgMove, MoveDetail};
     use engine::dice::MixedDice;
     use engine::pos;
-    use engine::position::{Position, O_BAR, X_BAR};
-    use std::collections::HashMap;
+    use engine::position::{O_BAR, X_BAR};
 
     #[test]
     fn could_not_move() {

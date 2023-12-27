@@ -172,7 +172,6 @@ mod tests {
     use engine::position::Position;
     use engine::probabilities::{Probabilities, ResultCounter};
     use hyper::{Body, Request, StatusCode};
-    use std::collections::HashMap;
     use std::sync::Arc;
     use tower::ServiceExt; // for `oneshot
 

@@ -24,8 +24,6 @@ impl BgMove {
 mod tests {
     use crate::bg_move::{BgMove, MoveDetail};
     use engine::pos;
-    use engine::position::Position;
-    use std::collections::HashMap;
 
     #[test]
     fn could_not_move() {

@@ -156,7 +156,6 @@ mod evaluator_trait_tests {
     use crate::evaluator::{Evaluator, Probabilities};
     use crate::pos;
     use crate::position::Position;
-    use std::collections::HashMap;
 
     fn position_with_lowest_equity() -> Position {
         pos!(x 5:1, 3:1; o 20:2).switch_sides()

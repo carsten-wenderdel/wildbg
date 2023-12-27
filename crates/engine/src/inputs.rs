@@ -149,8 +149,7 @@ mod input_tests {
 mod contact_tests {
     use crate::inputs::{ContactInputsGen, InputsGen};
     use crate::pos;
-    use crate::position::{Position, O_BAR};
-    use std::collections::HashMap;
+    use crate::position::O_BAR;
 
     #[test]
     fn contact_cvs_line() {
@@ -185,8 +184,6 @@ mod contact_tests {
 mod race_tests {
     use crate::inputs::{InputsGen, RaceInputsGen};
     use crate::pos;
-    use crate::position::Position;
-    use std::collections::HashMap;
 
     #[test]
     fn race_cvs_line() {

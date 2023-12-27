@@ -149,9 +149,7 @@ mod private_tests {
     use engine::dice_gen::DiceGen;
     use engine::evaluator::RandomEvaluator;
     use engine::pos;
-    use engine::position::Position;
     use engine::probabilities::{Probabilities, ResultCounter};
-    use std::collections::HashMap;
 
     struct DiceGenChooseMock {}
 

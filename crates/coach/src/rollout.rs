@@ -148,8 +148,6 @@ mod tests {
     use crate::rollout::RolloutEvaluator;
     use engine::evaluator::Evaluator;
     use engine::pos;
-    use engine::position::Position;
-    use std::collections::HashMap;
 
     #[test]
     fn correct_results_after_first_or_second_half_move() {
@@ -205,8 +203,6 @@ mod private_tests {
     use engine::position::GameResult::{
         LoseBg, LoseGammon, LoseNormal, WinBg, WinGammon, WinNormal,
     };
-    use engine::position::Position;
-    use std::collections::HashMap;
 
     #[test]
     fn single_rollout_with_generator_win_normal() {

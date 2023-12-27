@@ -3,9 +3,7 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use engine::complex::ComplexEvaluator;
 use engine::evaluator::Evaluator;
 use engine::pos;
-use engine::position::Position;
 use mimalloc::MiMalloc;
-use std::collections::HashMap;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;

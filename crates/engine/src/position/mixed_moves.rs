@@ -269,8 +269,7 @@ enum MovePossibilities {
 mod tests {
     use crate::dice::MixedDice;
     use crate::pos;
-    use crate::position::{Position, O_BAR, X_BAR};
-    use std::collections::HashMap;
+    use crate::position::{O_BAR, X_BAR};
 
     // Two checkers on bar
 

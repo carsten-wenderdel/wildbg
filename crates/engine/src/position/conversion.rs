@@ -14,18 +14,18 @@ macro_rules! pos {
     ( x $( $x_pip:tt:$x_checkers:tt ), * ;o $( $o_pip:tt:$o_checkers:tt ), * ) => {
         {
             #[allow(unused_mut)]
-            let mut x = HashMap::new();
+            let mut x = std::collections::HashMap::new();
             $(
                 x.insert($x_pip as usize, $x_checkers as u8);
             )*
 
             #[allow(unused_mut)]
-            let mut o = HashMap::new();
+            let mut o = std::collections::HashMap::new();
             $(
                 o.insert($o_pip as usize, $o_checkers as u8);
             )*
 
-            Position::from_hash_maps(&x, &o)
+            $crate::position::Position::from_hash_maps(&x, &o)
         }
     };
 }

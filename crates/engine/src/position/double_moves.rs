@@ -143,8 +143,7 @@ impl Position {
 #[cfg(test)]
 mod tests {
     use crate::pos;
-    use crate::position::{Position, O_BAR, X_BAR};
-    use std::collections::HashMap;
+    use crate::position::{O_BAR, X_BAR};
 
     #[test]
     fn cannot_enter_from_the_bar() {
@@ -234,8 +233,6 @@ mod tests {
 #[cfg(test)]
 mod private_tests {
     use crate::pos;
-    use crate::position::Position;
-    use std::collections::HashMap;
 
     #[test]
     fn number_of_movable_checkers_when_completely_blocked() {

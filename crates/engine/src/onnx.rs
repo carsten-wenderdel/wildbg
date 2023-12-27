@@ -168,8 +168,6 @@ mod tests {
     use crate::evaluator::Evaluator;
     use crate::onnx::OnnxEvaluator;
     use crate::pos;
-    use crate::position::Position;
-    use std::collections::HashMap;
 
     #[test]
     fn eval_certain_win_normal() {
