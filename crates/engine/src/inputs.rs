@@ -30,33 +30,53 @@ pub trait InputsGen {
     }
 }
 
-/// 4 inputs representing a single pip from the point of view of one player.
+/// Inputs for one pip. One entry for every legal number of checkers (-15 to 15).
 ///
 /// Custom format, probably same as GnuBG
 /// For ideas see https://stackoverflow.com/questions/32428237/board-encoding-in-tesauros-td-gammon
+const TD_INPUTS: [[f32; 4]; 31] = [
+    [0.; 4], // opponent checkers (-15)
+    [0.; 4], // opponent checkers (-14)
+    [0.; 4],
+    [0.; 4],
+    [0.; 4],
+    [0.; 4],
+    [0.; 4],
+    [0.; 4],
+    [0.; 4],
+    [0.; 4],
+    [0.; 4],
+    [0.; 4],
+    [0.; 4],
+    [0.; 4],
+    [0.; 4],          // opponent checker (-1)
+    [0.; 4],          // no checker
+    [1., 0., 0., 0.], // own checker (1)
+    [0., 1., 0., 0.], // own checkers (2)
+    [0., 0., 1., 0.],
+    [0., 0., 1., 1.],
+    [0., 0., 1., 2.],
+    [0., 0., 1., 3.],
+    [0., 0., 1., 4.],
+    [0., 0., 1., 5.],
+    [0., 0., 1., 6.],
+    [0., 0., 1., 7.],
+    [0., 0., 1., 8.],
+    [0., 0., 1., 9.],
+    [0., 0., 1., 10.],
+    [0., 0., 1., 11.],
+    [0., 0., 1., 12.], // own checkers (15)
+];
+
+/// 4 inputs representing a single pip from the point of view of one player.
 #[inline]
 fn td_inputs(pip: &i8) -> [f32; 4] {
-    match pip {
-        1 => [1.0, 0.0, 0.0, 0.0],
-        2 => [0.0, 1.0, 0.0, 0.0],
-        // The next lines are an optimization resulting in an average 20% speedup of this method.
-        // Instead we could also write:
-        // &p if p > 0 => [0.0, 0.0, 1.0, (p - 3) as f32],
-        3 => [0.0, 0.0, 1.0, 0.0],
-        4 => [0.0, 0.0, 1.0, 1.0],
-        5 => [0.0, 0.0, 1.0, 2.0],
-        6 => [0.0, 0.0, 1.0, 3.0],
-        7 => [0.0, 0.0, 1.0, 4.0],
-        8 => [0.0, 0.0, 1.0, 5.0],
-        9 => [0.0, 0.0, 1.0, 6.0],
-        10 => [0.0, 0.0, 1.0, 7.0],
-        11 => [0.0, 0.0, 1.0, 8.0],
-        12 => [0.0, 0.0, 1.0, 9.0],
-        13 => [0.0, 0.0, 1.0, 10.0],
-        14 => [0.0, 0.0, 1.0, 11.0],
-        15 => [0.0, 0.0, 1.0, 12.0],
-        _ => [0.0; 4], // both for no checker and for opponent's checker
-    }
+    // We need to add `15` to `pip` to make sure that the index is non negative.
+    // `pip` might be negative, but casting it first and then adding 15 is faster than first adding 15 and then casting.
+    // We also have a unit test to make sure that everything works as expected.
+    let array_index = ((*pip as isize) + 15) as usize;
+    // Using a lookup table for the 31 different cases (-15 to 15) is much faster than for example a match statement.
+    TD_INPUTS[array_index]
 }
 
 pub struct ContactInputsGen {}
@@ -71,7 +91,6 @@ impl InputsGen for ContactInputsGen {
         // The inputs for the own player `x`
         // In an earlier implementation we messed up the order of the inputs
         // If one day there will be more inputs, streamline the next three lines:
-        // X_BAR
         vec.extend_from_slice(&td_inputs(&pos.pips[X_BAR]));
         for td_inputs in pos.pips[1..X_BAR].iter().map(td_inputs) {
             vec.extend_from_slice(&td_inputs);
@@ -110,8 +129,8 @@ mod input_tests {
     use crate::inputs::td_inputs;
 
     #[test]
-    fn td_inputs2() {
-        for pip in 0i8..16 {
+    fn test_td_inputs() {
+        for pip in -15_i8..16 {
             let inputs = td_inputs(&pip);
 
             // Check input one
