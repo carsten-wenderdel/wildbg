@@ -70,11 +70,13 @@ const TD_INPUTS: [[f32; 4]; 31] = [
 
 /// 4 inputs representing a single pip from the point of view of one player.
 #[inline]
-fn td_inputs(pip: isize) -> [f32; 4] {
+fn td_inputs(number_of_checkers: isize) -> &'static [f32; 4] {
     // We need to add `15` to `pip` to make sure that the index is non negative.
-    let array_index = (pip + 15) as usize;
+    let array_index = (number_of_checkers + 15) as usize;
     // Using a lookup table for the 31 different cases (-15 to 15) is much faster than for example a match statement.
-    TD_INPUTS[array_index]
+    TD_INPUTS
+        .get(array_index)
+        .expect("number of pips needs to be between -15 and 15")
 }
 
 pub struct ContactInputsGen {}
@@ -89,15 +91,15 @@ impl InputsGen for ContactInputsGen {
         // The inputs for the own player `x`
         // In an earlier implementation we messed up the order of the inputs
         // If one day there will be more inputs, streamline the next three lines:
-        vec.extend_from_slice(&td_inputs(pos.pips[X_BAR] as isize));
-        for td_inputs in pos.pips[1..X_BAR].iter().map(|p| td_inputs(*p as isize)) {
-            vec.extend_from_slice(&td_inputs);
-        }
+        vec.extend_from_slice(td_inputs(pos.pips[X_BAR] as isize));
+        pos.pips[1..X_BAR].iter().for_each(|p| {
+            vec.extend_from_slice(td_inputs(*p as isize));
+        });
 
         // The inputs for the opponent `o`.
-        for td_inputs in pos.pips[0..X_BAR].iter().map(|p| td_inputs(-(*p as isize))) {
-            vec.extend_from_slice(&td_inputs);
-        }
+        pos.pips[0..X_BAR].iter().for_each(|p| {
+            vec.extend_from_slice(td_inputs(-(*p as isize)));
+        });
     }
 }
 
@@ -111,14 +113,14 @@ impl InputsGen for RaceInputsGen {
         vec.push(pos.o_off() as f32);
 
         // The inputs for the own player `x`. No checkers on bar or on 24 during race.
-        for td_inputs in pos.pips[1..24].iter().map(|p| td_inputs(*p as isize)) {
-            vec.extend_from_slice(&td_inputs);
-        }
+        pos.pips[1..24].iter().for_each(|p| {
+            vec.extend_from_slice(td_inputs(*p as isize));
+        });
 
         // The inputs for the opponent `o`. No checkers on bar or on 1 during race.
-        for td_inputs in pos.pips[2..X_BAR].iter().map(|p| td_inputs(-(*p as isize))) {
-            vec.extend_from_slice(&td_inputs);
-        }
+        pos.pips[2..X_BAR].iter().for_each(|p| {
+            vec.extend_from_slice(td_inputs(-(*p as isize)));
+        });
     }
 }
 
