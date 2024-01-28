@@ -2,7 +2,7 @@
 
 `wildbg` is a backgammon engine based on neural networks. Currently, it's in alpha stage.
 
-As of November 2023, it reaches an ELO rating of roughly 1800 and an error rate mEMG of roughly 7.5 when being analyzed with GnuBG.
+As of January 2024, it reaches an error rate of roughly 5.9 for 1-pointers when being analyzed with GnuBG 2-ply.
 
 For discussions, please join the Discord Server [Computer Backgammon](https://discord.gg/BcU9AzunGx) ![Discord Shield](https://discordapp.com/api/guilds/1159408833999945798/widget.png?style=shield).
 
@@ -16,16 +16,27 @@ A graphical user interface (GUI) is not part of this project.
 
 ## Try it out
 
-#### FIBS
-
-Thanks to [@oysteijo](https://github.com/oysteijo) you can play against `wildbg` on the backgammon server [FIBS](http://www.fibs.com). As FIBS client I recommend [JavaFibs](http://www.fibs.com/javafibs/).
+### Bots on Backgammon Servers
 
 #### bgammon.org
 
 Thanks to [@tslocum](https://github.com/tslocum) you can play against `BOT_wildbg` on his new backgammon server https://bgammon.org.
-The source code of the bot can be found [here](https://code.rocket9labs.com/tslocum/bgammon-wildbg-bot).
+No need to download a client or register.
 
-#### Online API
+The source code of the bot can be found [here](https://code.rocket9labs.com/tslocum/bgammon-wildbg-bot).
+There are also [winning statistics](https://bgammon.org/stats-wildbg/) available.
+
+#### OpenGammon
+
+On [OpenGammon.org](https://beta.opengammon.com/home/) you can play against `WildBG`.
+
+#### FIBS
+
+Thanks to [@oysteijo](https://github.com/oysteijo) you can play against `wildbg` on the backgammon server [FIBS](http://www.fibs.com). As FIBS client I recommend [JavaFibs](http://www.fibs.com/javafibs/).
+
+### HTTP API
+
+#### Online
 
 You can access the API and see yourself how `wildbg` would move: https://wildbg.shuttleapp.rs/swagger-ui/
 
@@ -51,6 +62,15 @@ You can find the latest training progress and networks here: https://github.com/
 - Training process: [docs/dev/training.md](docs/dev/training.md)
 
 Also see the [CHANGELOG](CHANGELOG.md) for a list of changes.
+
+## Acknowledgments
+
+This project is inspired and influenced by other backgammon engines:
+
+- [TD-Gammon](https://bkgm.com/articles/authors.html#tesauro_gerald) by Gerald Tesauro brought the idea of using neural networks to backgammon
+- [GnuBG](https://www.gnu.org/software/gnubg/) - The strongest open source backgammon engine
+
+Thanks to JetBrains for providing a free license for their IDEs via their [Open Source Support Program](https://jb.gg/OpenSourceSupport).
 
 ## Contributing
 
