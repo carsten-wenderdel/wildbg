@@ -8,5 +8,6 @@ license.workspace = true
 [dependencies]
 # external
 fastrand = "2.0.1"
-tract-onnx = "0.20.21"
+tract-onnx = { path = "../../../tract/onnx" }
+#tract-onnx = "0.20.21"
 base64 = "0.21.5"
