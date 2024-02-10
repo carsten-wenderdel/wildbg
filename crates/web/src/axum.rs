@@ -164,6 +164,7 @@ mod tests {
     use crate::axum::router;
     use crate::axum::DynWebApi;
     use crate::web_api::WebApi;
+    use axum::body::Body;
     use axum::http::header::CONTENT_TYPE;
     use engine::evaluator::Evaluator;
     use engine::inputs::ContactInputsGen;
@@ -171,7 +172,8 @@ mod tests {
     use engine::pos;
     use engine::position::Position;
     use engine::probabilities::{Probabilities, ResultCounter};
-    use hyper::{Body, Request, StatusCode};
+    use http_body_util::BodyExt;
+    use hyper::{Request, StatusCode};
     use std::sync::Arc;
     use tower::ServiceExt; // for `oneshot
 
@@ -207,7 +209,7 @@ mod tests {
 
     /// Consumes the response, so use it at the end of the test
     async fn body_string(response: axum::response::Response) -> String {
-        let body_bytes = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        let body_bytes = response.into_body().collect().await.unwrap().to_bytes();
         std::str::from_utf8(&body_bytes).unwrap().to_string()
     }
 
