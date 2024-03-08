@@ -50,11 +50,12 @@ impl From<&BgConfig> for WildbgConfig {
 ///
 /// To free the memory after usage, call `wildbg_free`.
 pub extern "C" fn wildbg_new() -> *mut Wildbg {
-    if let Some(api) = WildbgApi::try_default() {
-        Box::into_raw(Box::new(Wildbg { api }))
-    } else {
-        eprintln!("Could not find neural networks");
-        std::ptr::null_mut()
+    match WildbgApi::try_default() {
+        Ok(api) => Box::into_raw(Box::new(Wildbg { api })),
+        Err(message) => {
+            eprintln!("{message}");
+            std::ptr::null_mut()
+        }
     }
 }
 

@@ -17,7 +17,7 @@ pub struct WildbgApi<T: Evaluator> {
 }
 
 impl WildbgApi<CompositeEvaluator> {
-    pub fn try_default() -> Option<Self> {
+    pub fn try_default() -> Result<Self, String> {
         CompositeEvaluator::try_default().map(|evaluator| Self { evaluator })
     }
 }

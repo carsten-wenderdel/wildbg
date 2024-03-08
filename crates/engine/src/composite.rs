@@ -4,6 +4,8 @@ use crate::onnx::OnnxEvaluator;
 use crate::position::{GamePhase, GameResult, GameState, OngoingPhase, Position};
 use crate::probabilities::Probabilities;
 
+type Error = String;
+
 /// Evaluates each position with the matching of three evaluators: contact, race, game over.
 ///
 /// This is pretty much the same as the "Composite" GoF design pattern.
@@ -58,10 +60,10 @@ impl BatchEvaluator for CompositeEvaluator {
 }
 
 impl CompositeEvaluator {
-    pub fn try_default() -> Option<Self> {
+    pub fn try_default() -> Result<Self, Error> {
         let contact_evaluator = OnnxEvaluator::contact_default()?;
         let race_evaluator = OnnxEvaluator::race_default()?;
-        Some(Self {
+        Ok(Self {
             contact_evaluator,
             race_evaluator,
             game_over_evaluator: GameOverEvaluator {},
@@ -70,10 +72,10 @@ impl CompositeEvaluator {
 
     /// Compared to `try_default`, this function takes much longer to execute and the
     /// resulting struct is about 50 times bigger. But rollouts are about 2% faster.
-    pub fn try_default_optimized() -> Option<Self> {
+    pub fn try_default_optimized() -> Result<Self, Error> {
         let contact_evaluator = OnnxEvaluator::contact_default_optimized()?;
         let race_evaluator = OnnxEvaluator::race_default_optimized()?;
-        Some(Self {
+        Ok(Self {
             contact_evaluator,
             race_evaluator,
             game_over_evaluator: GameOverEvaluator {},
@@ -90,11 +92,11 @@ impl CompositeEvaluator {
         }
     }
 
-    pub fn from_file_paths_optimized(contact_path: &str, race_path: &str) -> Option<Self> {
+    pub fn from_file_paths_optimized(contact_path: &str, race_path: &str) -> Result<Self, Error> {
         let contact_evaluator =
             OnnxEvaluator::from_file_path_optimized(contact_path, ContactInputsGen {})?;
         let race_evaluator = OnnxEvaluator::from_file_path_optimized(race_path, RaceInputsGen {})?;
-        Some(Self {
+        Ok(Self {
             contact_evaluator,
             race_evaluator,
             game_over_evaluator: GameOverEvaluator {},

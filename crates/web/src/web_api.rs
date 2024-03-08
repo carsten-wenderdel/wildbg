@@ -14,7 +14,10 @@ pub struct WebApi<T: Evaluator> {
 
 impl WebApi<CompositeEvaluator> {
     pub fn try_default() -> Option<Self> {
-        CompositeEvaluator::try_default().map(|evaluator| Self { evaluator })
+        match CompositeEvaluator::try_default() {
+            Ok(evaluator) => Some(Self { evaluator }),
+            Err(_) => None,
+        }
     }
 }
 

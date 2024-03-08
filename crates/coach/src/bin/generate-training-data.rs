@@ -24,7 +24,7 @@ fn main() -> std::io::Result<()> {
     let finder_evaluator = CompositeEvaluator::try_default();
 
     match (rollout_evaluator, finder_evaluator) {
-        (Some(rollout_evaluator), Some(finder_evaluator)) => {
+        (Ok(rollout_evaluator), Ok(finder_evaluator)) => {
             println!("Use onnx evaluators.");
             find_and_roll_out(finder_evaluator, rollout_evaluator, amount, phase)?;
         }

@@ -6,6 +6,7 @@ use tract_onnx::prelude::*;
 use tract_onnx::tract_hir::shapefactoid;
 
 type TractModel = RunnableModel<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>;
+type Error = String;
 
 pub struct OnnxEvaluator<T: InputsGen> {
     /// Onnx models optimized for different batch sizes.
@@ -67,13 +68,13 @@ const CONTACT_FILE_PATH: &str = "neural-nets/contact.onnx";
 const RACE_FILE_PATH: &str = "neural-nets/race.onnx";
 
 impl OnnxEvaluator<RaceInputsGen> {
-    pub fn race_default() -> Option<Self> {
+    pub fn race_default() -> Result<Self, Error> {
         OnnxEvaluator::from_file_path(RACE_FILE_PATH, RaceInputsGen {})
     }
 
     /// Compared to `race_default`, this function takes much longer to execute and the
     /// resulting struct is about 50 times bigger. But rollouts are about 2% faster.   
-    pub fn race_default_optimized() -> Option<Self> {
+    pub fn race_default_optimized() -> Result<Self, Error> {
         OnnxEvaluator::from_file_path_optimized(RACE_FILE_PATH, RaceInputsGen {})
     }
 
@@ -85,13 +86,13 @@ impl OnnxEvaluator<RaceInputsGen> {
 }
 
 impl OnnxEvaluator<ContactInputsGen> {
-    pub fn contact_default() -> Option<Self> {
+    pub fn contact_default() -> Result<Self, Error> {
         OnnxEvaluator::from_file_path(CONTACT_FILE_PATH, ContactInputsGen {})
     }
 
     /// Compared to `contact_default`, this function takes much longer to execute and the
     /// resulting struct is about 50 times bigger. But rollouts are about 2% faster.   
-    pub fn contact_default_optimized() -> Option<Self> {
+    pub fn contact_default_optimized() -> Result<Self, Error> {
         OnnxEvaluator::from_file_path_optimized(CONTACT_FILE_PATH, ContactInputsGen {})
     }
 
@@ -109,7 +110,7 @@ impl<T: InputsGen> OnnxEvaluator<T> {
     /// Load the onnx model from the file path and optimize it for any batch size.
     ///
     /// Use it when you are low on memory or if this initializer is called very often.
-    pub fn from_file_path(file_path: &str, inputs_gen: T) -> Option<OnnxEvaluator<T>> {
+    pub fn from_file_path(file_path: &str, inputs_gen: T) -> Result<OnnxEvaluator<T>, Error> {
         Self::from_file_path_with_variable_number_of_models(file_path, inputs_gen, 1)
     }
 
@@ -117,7 +118,10 @@ impl<T: InputsGen> OnnxEvaluator<T> {
     ///
     /// Compared to `from_file_path`, this function takes much longer to execute and the
     /// resulting struct is about 50 times bigger. But rollouts are about 2% faster.
-    pub fn from_file_path_optimized(file_path: &str, inputs_gen: T) -> Option<OnnxEvaluator<T>> {
+    pub fn from_file_path_optimized(
+        file_path: &str,
+        inputs_gen: T,
+    ) -> Result<OnnxEvaluator<T>, Error> {
         Self::from_file_path_with_variable_number_of_models(file_path, inputs_gen, 50)
     }
 
@@ -125,10 +129,10 @@ impl<T: InputsGen> OnnxEvaluator<T> {
         file_path: &str,
         inputs_gen: T,
         number_of_optimized_models: usize,
-    ) -> Option<OnnxEvaluator<T>> {
+    ) -> Result<OnnxEvaluator<T>, Error> {
         match Self::models(file_path, number_of_optimized_models) {
-            Ok(models) => Some(OnnxEvaluator { models, inputs_gen }),
-            Err(_) => None,
+            Ok(models) => Ok(OnnxEvaluator { models, inputs_gen }),
+            Err(_) => Err(format!("Could not find onnx file {file_path}")),
         }
     }
 
