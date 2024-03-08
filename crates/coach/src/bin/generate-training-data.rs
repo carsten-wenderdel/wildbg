@@ -1,8 +1,9 @@
 use coach::data::PositionRecord;
 use coach::position_finder::PositionFinder;
 use coach::rollout::RolloutEvaluator;
+use coach::unwrap::UnwrapHelper;
 use engine::composite::CompositeEvaluator;
-use engine::evaluator::{Evaluator, RandomEvaluator};
+use engine::evaluator::Evaluator;
 use engine::position::OngoingPhase;
 use mimalloc::MiMalloc;
 use std::fs::File;
@@ -17,24 +18,16 @@ static GLOBAL: MiMalloc = MiMalloc;
 /// The data is persisted with position ID and the "classic" 5 values for the probabilities.
 /// The resulting file cannot be read by the Python scripts, they have to be converted first with `convert-to-inputs.rs`.
 fn main() -> std::io::Result<()> {
-    // Change the next 4 lines to configure what, how and how much you want to roll out.
+    // Change the next couple of lines to configure what, how and how much you want to roll out.
     let phase = OngoingPhase::Race;
     let amount = 200_000;
-    let rollout_evaluator = CompositeEvaluator::try_default().map(RolloutEvaluator::with_evaluator);
-    let finder_evaluator = CompositeEvaluator::try_default();
+    let rollout_evaluator = CompositeEvaluator::try_default()
+        .map(RolloutEvaluator::with_evaluator)
+        .unwrap_or_exit_with_message();
+    let finder_evaluator = CompositeEvaluator::try_default().unwrap_or_exit_with_message();
 
-    match (rollout_evaluator, finder_evaluator) {
-        (Ok(rollout_evaluator), Ok(finder_evaluator)) => {
-            println!("Use onnx evaluators.");
-            find_and_roll_out(finder_evaluator, rollout_evaluator, amount, phase)?;
-        }
-        (_, _) => {
-            println!("Couldn't find neural nets, use random evaluator.");
-            let rollout_evaluator = RolloutEvaluator::with_evaluator(RandomEvaluator {});
-            let finder_evaluator = RandomEvaluator {};
-            find_and_roll_out(finder_evaluator, rollout_evaluator, amount, phase)?;
-        }
-    }
+    find_and_roll_out(finder_evaluator, rollout_evaluator, amount, phase)?;
+
     println!("\nDone!");
     Ok(())
 }

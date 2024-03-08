@@ -1,4 +1,5 @@
 use coach::duel::Duel;
+use coach::unwrap::UnwrapHelper;
 use engine::composite::CompositeEvaluator;
 use engine::dice_gen::FastrandDice;
 use engine::probabilities::{Probabilities, ResultCounter};
@@ -14,13 +15,13 @@ fn main() {
         "neural-nets/contact.onnx",
         "neural-nets/race.onnx",
     )
-    .expect("Could not find nets for evaluator_1");
+    .unwrap_or_exit_with_message();
 
     let evaluator_2 = CompositeEvaluator::from_file_paths_optimized(
         "neural-nets/contact.onnx",
         "neural-nets/race.onnx",
     )
-    .expect("Could not find nets for evaluator_2");
+    .unwrap_or_exit_with_message();
     // let evaluator_2 = engine::multiply::MultiPlyEvaluator {
     //     evaluator: evaluator_2,
     // };

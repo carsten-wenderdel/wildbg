@@ -1,4 +1,5 @@
 use coach::duel::Duel;
+use coach::unwrap::UnwrapHelper;
 use engine::composite::CompositeEvaluator;
 use engine::dice_gen::FastrandDice;
 use engine::probabilities::{Probabilities, ResultCounter};
@@ -28,14 +29,14 @@ fn main() {
             "neural-nets/contact.onnx",
             "neural-nets/race.onnx",
         )
-        .expect("Could not find nets for current");
+        .unwrap_or_exit_with_message();
 
         let path_string = folder_name.to_string() + "/" + file_name.as_str();
         print!("\rTry {}", path_string);
         stdout().flush().unwrap();
         let contender =
             CompositeEvaluator::from_file_paths_optimized(&path_string, "neural-nets/race.onnx")
-                .expect("Failed creating neural net for contender");
+                .unwrap_or_exit_with_message();
 
         let duel = Duel::new(contender, current);
 
