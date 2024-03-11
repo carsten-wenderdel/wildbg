@@ -21,6 +21,7 @@ tokio = { version = "*", features = ["full"] }
 tower = "*"
 utoipa = { workspace = true, features = ["axum_extras", "preserve_order"] }
 utoipa-swagger-ui = { version = "*", features = ["axum"] }
+clap = { version = "4.5.2", features = ["derive"] }
 
 [dev-dependencies]
 http-body-util = "0.1.0"
