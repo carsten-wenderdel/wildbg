@@ -1,5 +1,6 @@
 use coach::data::PositionRecord;
 use coach::position_finder::PositionFinder;
+use coach::print_helpers::{duration, print_progress};
 use coach::rollout::RolloutEvaluator;
 use coach::unwrap::UnwrapHelper;
 use engine::composite::CompositeEvaluator;
@@ -7,7 +8,6 @@ use engine::evaluator::Evaluator;
 use engine::position::OngoingPhase;
 use mimalloc::MiMalloc;
 use std::fs::File;
-use std::io::{stdout, Write};
 use std::time::Instant;
 
 #[global_allocator]
@@ -70,27 +70,4 @@ fn find_and_roll_out<T: Evaluator, U: Evaluator>(
         print_progress(i, amount, rollout_start)?;
     }
     Ok(())
-}
-
-fn print_progress(i: usize, amount: usize, start: Instant) -> std::io::Result<()> {
-    let done = (i + 1) as f32 / amount as f32;
-    let todo = 1.0 - done;
-    let seconds_done = start.elapsed().as_secs();
-    let seconds_todo = (seconds_done as f32 * (todo / done)) as u64;
-    print!(
-        "\rProgress: {:2.2} %. Time elapsed: {}. Time left: {}.  ",
-        done * 100.0,
-        duration(seconds_done),
-        duration(seconds_todo),
-    );
-    stdout().flush()?;
-    Ok(())
-}
-
-fn duration(seconds: u64) -> String {
-    let minutes = seconds / 60;
-    let hours = minutes / 60;
-    let minutes = minutes % 60;
-    let seconds = seconds % 60;
-    format!("{:02}:{:02}:{:02} h", hours, minutes, seconds)
 }
