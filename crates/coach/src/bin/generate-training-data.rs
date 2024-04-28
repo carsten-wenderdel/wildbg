@@ -1,11 +1,10 @@
+use coach::coach_helpers::{positions_file_name, print_progress};
 use coach::data::PositionRecord;
-use coach::position_finder::PositionFinder;
-use coach::print_helpers::{duration, print_progress};
 use coach::rollout::RolloutEvaluator;
 use coach::unwrap::UnwrapHelper;
 use engine::composite::CompositeEvaluator;
 use engine::evaluator::Evaluator;
-use engine::position::OngoingPhase;
+use engine::position::{OngoingPhase, Position};
 use mimalloc::MiMalloc;
 use std::fs::File;
 use std::time::Instant;
@@ -20,46 +19,43 @@ static GLOBAL: MiMalloc = MiMalloc;
 fn main() -> std::io::Result<()> {
     // Change the next couple of lines to configure what, how and how much you want to roll out.
     let phase = OngoingPhase::Race;
-    let amount = 200_000;
     let rollout_evaluator = CompositeEvaluator::try_default()
         .map(RolloutEvaluator::with_evaluator)
         .unwrap_or_exit_with_message();
-    let finder_evaluator = CompositeEvaluator::try_default().unwrap_or_exit_with_message();
-
-    find_and_roll_out(finder_evaluator, rollout_evaluator, amount, phase)?;
+    find_and_roll_out(rollout_evaluator, phase)?;
 
     println!("\nDone!");
     Ok(())
 }
 
-fn find_and_roll_out<T: Evaluator, U: Evaluator>(
-    finder_evaluator: T,
-    rollout_evaluator: U,
-    amount: usize,
+fn find_and_roll_out<T: Evaluator>(
+    rollout_evaluator: T,
     phase: OngoingPhase,
 ) -> std::io::Result<()> {
-    let path = format!("training-data/{:?}.csv", phase).to_lowercase();
-    _ = std::fs::create_dir("training-data");
-    _ = std::fs::remove_file(&path);
+    let positions_path = positions_file_name(&phase);
+    let training_path = format!("training-data/{:?}.csv", phase).to_lowercase();
 
+    println!(
+        "Read positions from {} and write training data to {}",
+        positions_path, training_path
+    );
+
+    let reader = csv::ReaderBuilder::new()
+        .has_headers(true)
+        .from_path(&positions_path)?;
+    let positions: Vec<Position> = reader
+        .into_records()
+        .map(|record| Position::from_id(record.unwrap().as_slice().to_string()))
+        .collect();
+
+    _ = std::fs::create_dir("training-data");
+    _ = std::fs::remove_file(&training_path);
     let mut csv_writer = csv::WriterBuilder::new()
         .has_headers(false)
-        .from_writer(File::create(&path)?);
+        .from_writer(File::create(&training_path)?);
     csv_writer.write_record(PositionRecord::csv_header())?;
 
-    println!(
-        "Find {} '{:?}' positions, roll them out and write data to {}.",
-        amount, phase, path
-    );
-    let find_start = Instant::now();
-    let mut finder = PositionFinder::with_random_dice(finder_evaluator);
-    let positions = finder.find_positions(amount, phase);
-
-    println!(
-        "All positions found in {}. Now performing rollouts on {} threads:",
-        duration(find_start.elapsed().as_secs()),
-        rayon::current_num_threads()
-    );
+    println!("Roll out {} '{:?}' positions", positions.len(), phase);
 
     let rollout_start = Instant::now();
     for (i, position) in positions.iter().enumerate() {
@@ -67,7 +63,7 @@ fn find_and_roll_out<T: Evaluator, U: Evaluator>(
         let record = PositionRecord::new(position, &probabilities);
         csv_writer.serialize(record)?;
         csv_writer.flush()?;
-        print_progress(i, amount, rollout_start)?;
+        print_progress(i, positions.len(), rollout_start)?;
     }
     Ok(())
 }
