@@ -15,7 +15,7 @@ axum = "0.7.4"
 hyper = "*"
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
-shuttle-axum = { version = "0.39.0" }
+shuttle-axum = { version = "0.45.0" }
 shuttle-runtime = "*"
 tokio = { version = "*", features = ["full"] }
 tower = "*"

@@ -1,6 +1,6 @@
 [workspace]
-members = [ "crates/*" ]
-default-members = [ "crates/web" ]
+members = ["crates/*"]
+default-members = ["crates/web"]
 resolver = "2"
 
 [workspace.package]
@@ -9,7 +9,7 @@ license = "Apache-2.0 OR MIT"
 version = "0.2.1-pre"
 
 [workspace.dependencies]
-rayon = "1.8.0"
-serde =  "1.0.193"
-serde_json = "1.0.108"
-utoipa = "4.1.0"
+rayon = "1"
+serde = "1"
+serde_json = "1"
+utoipa = "4"
