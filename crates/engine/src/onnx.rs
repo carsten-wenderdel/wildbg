@@ -1,12 +1,20 @@
+use std::fs::File;
+
+use tract_onnx::prelude::*;
+use tract_onnx::tract_hir::shapefactoid;
+
 use crate::evaluator::BatchEvaluator;
 use crate::inputs::{ContactInputsGen, InputsGen, RaceInputsGen};
 use crate::position::Position;
 use crate::probabilities::Probabilities;
-use tract_onnx::prelude::*;
-use tract_onnx::tract_hir::shapefactoid;
 
 type TractModel = RunnableModel<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>;
 type Error = String;
+
+mod number_of_models {
+    pub(super) const SINGLE: usize = 1;
+    pub(super) const OPTIMIZED: usize = 50;
+}
 
 pub struct OnnxEvaluator<T: InputsGen> {
     /// Onnx models optimized for different batch sizes.
@@ -64,45 +72,45 @@ impl<T: InputsGen> BatchEvaluator for OnnxEvaluator<T> {
     }
 }
 
-const CONTACT_FILE_PATH: &str = "neural-nets/contact.onnx";
-const RACE_FILE_PATH: &str = "neural-nets/race.onnx";
-
 impl OnnxEvaluator<RaceInputsGen> {
     pub fn race_default() -> Result<Self, Error> {
-        OnnxEvaluator::from_file_path(RACE_FILE_PATH, RaceInputsGen {})
+        Self::race_default_number(number_of_models::SINGLE)
     }
 
     /// Compared to `race_default`, this function takes much longer to execute and the
     /// resulting struct is about 50 times bigger. But rollouts are about 2% faster.   
     pub fn race_default_optimized() -> Result<Self, Error> {
-        OnnxEvaluator::from_file_path_optimized(RACE_FILE_PATH, RaceInputsGen {})
+        Self::race_default_number(number_of_models::OPTIMIZED)
     }
 
-    pub fn race_default_tests() -> Self {
-        // Tests are executed from a different path than binary crates - so we need to slightly change the folder for them.
-        OnnxEvaluator::from_file_path(&("../../".to_owned() + RACE_FILE_PATH), RaceInputsGen {})
-            .expect("onnx file should exist at that path.")
+    fn race_default_number(number_of_optimized_models: usize) -> Result<Self, Error> {
+        let mut bytes = include_bytes!("../../../neural-nets/race.onnx").as_slice();
+        OnnxEvaluator::from_reader_with_variable_number_of_models(
+            &mut bytes,
+            RaceInputsGen {},
+            number_of_optimized_models,
+        )
     }
 }
 
 impl OnnxEvaluator<ContactInputsGen> {
     pub fn contact_default() -> Result<Self, Error> {
-        OnnxEvaluator::from_file_path(CONTACT_FILE_PATH, ContactInputsGen {})
+        Self::contact_default_number(number_of_models::SINGLE)
     }
 
     /// Compared to `contact_default`, this function takes much longer to execute and the
     /// resulting struct is about 50 times bigger. But rollouts are about 2% faster.   
     pub fn contact_default_optimized() -> Result<Self, Error> {
-        OnnxEvaluator::from_file_path_optimized(CONTACT_FILE_PATH, ContactInputsGen {})
+        Self::contact_default_number(number_of_models::OPTIMIZED)
     }
 
-    pub fn contact_default_tests() -> Self {
-        // Tests are executed from a different path than binary crates - so we need to slightly change the folder for them.
-        OnnxEvaluator::from_file_path(
-            &("../../".to_owned() + CONTACT_FILE_PATH),
+    fn contact_default_number(number_of_optimized_models: usize) -> Result<Self, Error> {
+        let mut bytes = include_bytes!("../../../neural-nets/contact.onnx").as_slice();
+        OnnxEvaluator::from_reader_with_variable_number_of_models(
+            &mut bytes,
             ContactInputsGen {},
+            number_of_optimized_models,
         )
-        .expect("onnx file should exist at that path.")
     }
 }
 
@@ -111,7 +119,11 @@ impl<T: InputsGen> OnnxEvaluator<T> {
     ///
     /// Use it when you are low on memory or if this initializer is called very often.
     pub fn from_file_path(file_path: &str, inputs_gen: T) -> Result<OnnxEvaluator<T>, Error> {
-        Self::from_file_path_with_variable_number_of_models(file_path, inputs_gen, 1)
+        Self::from_file_path_with_variable_number_of_models(
+            file_path,
+            inputs_gen,
+            number_of_models::SINGLE,
+        )
     }
 
     /// Load the onnx model from the file path and optimize it several times for various batch sizes.
@@ -122,7 +134,11 @@ impl<T: InputsGen> OnnxEvaluator<T> {
         file_path: &str,
         inputs_gen: T,
     ) -> Result<OnnxEvaluator<T>, Error> {
-        Self::from_file_path_with_variable_number_of_models(file_path, inputs_gen, 50)
+        Self::from_file_path_with_variable_number_of_models(
+            file_path,
+            inputs_gen,
+            number_of_models::OPTIMIZED,
+        )
     }
 
     fn from_file_path_with_variable_number_of_models(
@@ -130,21 +146,43 @@ impl<T: InputsGen> OnnxEvaluator<T> {
         inputs_gen: T,
         number_of_optimized_models: usize,
     ) -> Result<OnnxEvaluator<T>, Error> {
-        match Self::models(file_path, number_of_optimized_models) {
-            Ok(models) => Ok(OnnxEvaluator { models, inputs_gen }),
+        match File::open(file_path) {
+            Ok(mut file) => {
+                match Self::from_reader_with_variable_number_of_models(
+                    &mut file,
+                    inputs_gen,
+                    number_of_optimized_models,
+                ) {
+                    Ok(evaluator) => Ok(evaluator),
+                    Err(_) => Err(format!("Could not process onnx file {file_path}")),
+                }
+            }
             Err(_) => Err(format!("Could not find onnx file {file_path}")),
         }
     }
 
-    /// Load the onnx model from the file path and optimize it several times for different batch sizes.
+    fn from_reader_with_variable_number_of_models(
+        reader: &mut dyn std::io::Read,
+        inputs_gen: T,
+        number_of_optimized_models: usize,
+    ) -> Result<OnnxEvaluator<T>, Error> {
+        match Self::models(reader, number_of_optimized_models) {
+            Ok(models) => Ok(OnnxEvaluator { models, inputs_gen }),
+            Err(_) => Err("Could not process onnx file".to_string()),
+        }
+    }
+
+    /// Load the onnx model from the `reader` and optimize it several times for different batch sizes.
     ///
     /// `number_of_optimized_models` is the number of models that will be optimized for a specific batch size.
     /// Use `1` for a single model that is optimized for any batch size.
     /// When using for example `50`, one model is optimized for any batch size (at index `0` in
     /// the returning array), the other 49 are optimized for batch sizes from `1` to `49`.
-    fn models(file_path: &str, number_of_optimized_models: usize) -> TractResult<Vec<TractModel>> {
-        let model = onnx().model_for_path(file_path)?;
-
+    fn models(
+        reader: &mut dyn std::io::Read,
+        number_of_optimized_models: usize,
+    ) -> TractResult<Vec<TractModel>> {
+        let model = onnx().model_for_read(reader)?;
         let mut models: Vec<TractModel> = Vec::new();
         for i in 0..number_of_optimized_models {
             let fact: InferenceFact = if i == 0 {
@@ -175,7 +213,7 @@ mod tests {
 
     #[test]
     fn eval_certain_win_normal() {
-        let onnx = OnnxEvaluator::contact_default_tests();
+        let onnx = OnnxEvaluator::contact_default().unwrap();
         let position = pos![x 1:1; o 24:1];
 
         let probabilities = onnx.eval(&position);
@@ -185,7 +223,7 @@ mod tests {
 
     #[test]
     fn eval_certain_win_gammon() {
-        let onnx = OnnxEvaluator::contact_default_tests();
+        let onnx = OnnxEvaluator::contact_default().unwrap();
         let position = pos![x 1:1; o 18:15];
 
         let probabilities = onnx.eval(&position);
@@ -195,7 +233,7 @@ mod tests {
 
     #[test]
     fn eval_certain_win_bg() {
-        let onnx = OnnxEvaluator::contact_default_tests();
+        let onnx = OnnxEvaluator::contact_default().unwrap();
         let position = pos![x 1:1; o 6:15];
 
         let probabilities = onnx.eval(&position);
@@ -205,7 +243,7 @@ mod tests {
 
     #[test]
     fn eval_certain_lose_normal() {
-        let onnx = OnnxEvaluator::contact_default_tests();
+        let onnx = OnnxEvaluator::contact_default().unwrap();
         let position = pos![x 1:6; o 24:1];
 
         let probabilities = onnx.eval(&position);
@@ -215,7 +253,7 @@ mod tests {
 
     #[test]
     fn eval_certain_lose_gammon() {
-        let onnx = OnnxEvaluator::contact_default_tests();
+        let onnx = OnnxEvaluator::contact_default().unwrap();
         let position = pos![x 7:15; o 24:1];
 
         let probabilities = onnx.eval(&position);
@@ -225,7 +263,7 @@ mod tests {
 
     #[test]
     fn eval_certain_lose_bg() {
-        let onnx = OnnxEvaluator::contact_default_tests();
+        let onnx = OnnxEvaluator::contact_default().unwrap();
         let position = pos![x 19:15; o 24:1];
 
         let probabilities = onnx.eval(&position);

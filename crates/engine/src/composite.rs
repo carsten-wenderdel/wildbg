@@ -83,8 +83,8 @@ impl CompositeEvaluator {
     }
 
     pub fn default_tests() -> Self {
-        let contact_evaluator = OnnxEvaluator::contact_default_tests();
-        let race_evaluator = OnnxEvaluator::race_default_tests();
+        let contact_evaluator = OnnxEvaluator::contact_default().unwrap();
+        let race_evaluator = OnnxEvaluator::race_default().unwrap();
         Self {
             contact_evaluator,
             race_evaluator,
@@ -187,7 +187,7 @@ mod composite_tests {
             .unwrap();
         assert_eq!(
             positions_and_probabilities[race_index].1,
-            OnnxEvaluator::race_default_tests().eval(&race)
+            OnnxEvaluator::race_default().unwrap().eval(&race)
         );
 
         let contact_index = positions_and_probabilities
@@ -196,7 +196,7 @@ mod composite_tests {
             .unwrap();
         assert_eq!(
             positions_and_probabilities[contact_index].1,
-            OnnxEvaluator::contact_default_tests().eval(&contact)
+            OnnxEvaluator::contact_default().unwrap().eval(&contact)
         );
     }
 }

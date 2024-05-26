@@ -8,11 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 As long as the mayor version is `0`, the API is not stable and may change with minor versions.
 
 The minor version will be incremented if any of the following changes:
+
 - The HTTP API
 - The C API
 - The inputs for the neural networks
 
 This means you can reuse the same neural networks between for example 0.2.0 and 0.2.1, but not between 0.1.0 and 0.2.0.
+
+## Unreleased
+
+- `changed` Default neural nets are now compiled into the executable
 
 ## 0.2.0 - 2023-11-26
 
@@ -42,6 +47,7 @@ Initial release of `wildbg`.
 - `added` Simple C API for best move in 1-pointer.
 
 ### Thanks for contributions
+
 - [@bungogood](https://github.com/bungogood)
 - [@carsten-wenderdel](https://github.com/carsten-wenderdel)
 - [@oradwastaken](https://github.com/oradwastaken)
