@@ -19,41 +19,51 @@ impl Position {
     fn moves_with_1_checker_on_bar(&self, dice: &MixedDice) -> Vec<Position> {
         debug_assert!(self.pips[X_BAR] == 1);
 
+        let mut moves: Vec<Position> = Vec::with_capacity(MOVES_CAPACITY);
+        let mut enter_big: Option<Position> = None;
+        let mut enter_small: Option<Position> = None;
+
         if self.can_enter(dice.big) {
-            let enter_big = self.clone_and_enter_single_checker(dice.big);
-            let moves_after_entering_big = enter_big.one_checker_moves(dice.small);
-            if self.can_enter(dice.small) {
-                let enter_small = self.clone_and_enter_single_checker(dice.small);
-                let moves_after_entering_small = enter_small.one_checker_moves(dice.big);
-                match moves_after_entering_small {
-                    None => moves_after_entering_big.unwrap_or(vec![enter_big]),
-                    Some(small_moves) => match moves_after_entering_big {
-                        None => small_moves,
-                        Some(mut big_moves) => {
-                            small_moves.iter().for_each(|&position| {
-                                if !big_moves.contains(&position) {
-                                    // Lets say 21 is rolled: bar/24/22 and bar/23/22 will appear in both vectors.
-                                    big_moves.push(position);
-                                }
-                            });
-                            big_moves
-                        }
-                    },
+            let position = self.clone_and_enter_single_checker(dice.big);
+            enter_big = Some(position);
+            (dice.small + 1..X_BAR).for_each(|i| {
+                if position.can_move_when_bearoff_is_legal(i, dice.small) {
+                    let position = position.clone_and_move_single_checker(i, dice.small);
+                    moves.push(position);
                 }
+            });
+        }
+
+        let different_outcomes =
+            self.pips[X_BAR - dice.big] < 0 || self.pips[X_BAR - dice.small] < 0;
+        if self.can_enter(dice.small) {
+            let position = self.clone_and_enter_single_checker(dice.small);
+            enter_small = Some(position);
+            let range = if different_outcomes {
+                #[allow(clippy::reversed_empty_ranges)]
+                (dice.big + 1..X_BAR).chain(1..0)
             } else {
-                moves_after_entering_big.unwrap_or(vec![enter_big])
-            }
-        } else {
-            // bigger die can't enter
-            if self.can_enter(dice.small) {
-                let position = self.clone_and_enter_single_checker(dice.small);
-                let moved_twice = position.one_checker_moves(dice.big);
-                moved_twice.unwrap_or(vec![position])
+                // In case move a single checker with both dice, we don't want to count that twice.
+                (dice.big + 1..X_BAR - dice.small).chain(X_BAR - dice.small + 1..X_BAR)
+            };
+            range.for_each(|i| {
+                if position.can_move_when_bearoff_is_legal(i, dice.big) {
+                    let position = position.clone_and_move_single_checker(i, dice.big);
+                    moves.push(position);
+                }
+            });
+        }
+
+        if moves.is_empty() {
+            if let Some(position) = enter_big {
+                moves.push(position);
+            } else if let Some(position) = enter_small {
+                moves.push(position);
             } else {
-                // Neither big nor small die allow entering - return the identity move.
-                vec![*self]
+                moves.push(*self);
             }
         }
+        moves
     }
 
     /// Mixed moves with no checkers on the bar.
@@ -62,16 +72,14 @@ impl Position {
 
         match self.move_possibilities(dice) {
             MovePossibilities::None => vec![*self],
-            MovePossibilities::One { die } => self
-                .one_checker_moves(die)
-                .expect("We already checked that moving one checker is possible"),
+            MovePossibilities::One { die } => self.one_checker_moves(die),
             MovePossibilities::Two => self.two_checker_moves(dice),
         }
     }
 
     /// All positions after moving a single checker once. If no move is possible it returns `None`.
     /// So if the return value is not `None`, the Vector is not empty.
-    fn one_checker_moves(&self, die: usize) -> Option<Vec<Position>> {
+    fn one_checker_moves(&self, die: usize) -> Vec<Position> {
         debug_assert!(self.pips[X_BAR] == 0);
 
         let mut moves: Vec<Position> = Vec::with_capacity(MOVES_CAPACITY);
@@ -81,11 +89,8 @@ impl Position {
                 moves.push(position);
             }
         });
-        if moves.is_empty() {
-            None
-        } else {
-            Some(moves)
-        }
+        debug_assert!(!moves.is_empty());
+        moves
     }
 
     // All moves with no checkers on the bar where two checkers can be moved.
