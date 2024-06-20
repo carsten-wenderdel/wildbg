@@ -1,4 +1,6 @@
 use crate::position::{Position, X_BAR};
+use std::collections::binary_heap::Iter;
+use std::iter::FlatMap;
 
 pub trait InputsGen {
     /// The number of inputs for the neural network.
@@ -8,13 +10,14 @@ pub trait InputsGen {
     ///
     /// The length of the returned vector matches `NUM_INPUTS`.
     fn inputs_for_single(&self, pos: &Position) -> Vec<f32> {
-        self.inputs_for_all(&[*pos])
+        // self.inputs_for_all(&[*pos])
+        vec![]
     }
 
     /// A single vector with neural net inputs for all positions. This is useful for batch evaluation.
     ///
     /// The length of the returned vector is `NUM_INPUTS * positions.len()`.
-    fn inputs_for_all(&self, positions: &[Position]) -> Vec<f32>;
+    fn inputs_for_all<'a>(&'a self, positions: &'a [Position]) -> impl Iterator<Item = f32> + '_;
 }
 
 /// Inputs for one pip. One entry for every legal number of checkers (-15 to 15).
@@ -71,11 +74,12 @@ pub struct ContactInputsGen {}
 impl InputsGen for ContactInputsGen {
     const NUM_INPUTS: usize = 202;
 
-    fn inputs_for_all(&self, positions: &[Position]) -> Vec<f32> {
-        let mut vec = Vec::with_capacity(positions.len() * Self::NUM_INPUTS);
-        let iter = positions.iter().flat_map(|p| self.fill_inputs(p));
-        vec.extend(iter);
-        vec
+    fn inputs_for_all<'a>(&'a self, positions: &'a [Position]) -> impl Iterator<Item = f32> + '_ {
+        // let mut vec = Vec::with_capacity(positions.len() * Self::NUM_INPUTS);
+        positions.iter().flat_map(move |p| self.fill_inputs(p))
+        // vec.extend(iter);
+        // vec
+        // iter
     }
 }
 
@@ -116,8 +120,8 @@ pub struct RaceInputsGen {}
 impl InputsGen for RaceInputsGen {
     const NUM_INPUTS: usize = 186;
 
-    fn inputs_for_all(&self, positions: &[Position]) -> Vec<f32> {
-        positions.iter().flat_map(|p| self.fill_inputs(p)).collect()
+    fn inputs_for_all<'a>(&'a self, positions: &'a [Position]) -> impl Iterator<Item = f32> + '_ {
+        positions.iter().flat_map(|p| self.fill_inputs(p))
     }
 }
 

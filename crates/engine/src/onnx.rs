@@ -42,7 +42,7 @@ impl<T: InputsGen> BatchEvaluator for OnnxEvaluator<T> {
         }
 
         let inputs = self.inputs_gen.inputs_for_all(&positions);
-        let tract_inputs = tract_ndarray::Array1::from_vec(inputs)
+        let tract_inputs = tract_ndarray::Array1::from_iter(inputs)
             .into_shape((positions.len(), T::NUM_INPUTS))
             .unwrap();
         let tensor = tract_inputs.into_tensor();
