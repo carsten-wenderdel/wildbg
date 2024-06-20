@@ -21,7 +21,11 @@ pub trait InputsGen {
     ///
     /// The length of the returned vector is `NUM_INPUTS * positions.len()`.
     fn inputs_for_all(&self, positions: &[Position]) -> Vec<f32> {
-        let mut vec: Vec<f32> = vec![0.; Self::NUM_INPUTS * positions.len()];
+        // let mut vec: Vec<f32> = vec![0.; Self::NUM_INPUTS * positions.len()];
+        let mut vec: Vec<f32> = Vec::with_capacity(Self::NUM_INPUTS * positions.len());
+        unsafe {
+            vec.set_len(vec.capacity());
+        }
         positions.iter().enumerate().for_each(|(index, pos)| {
             let start = index * Self::NUM_INPUTS;
             let slice = &mut vec[start..start + Self::NUM_INPUTS];
@@ -80,6 +84,15 @@ fn td_inputs(number_of_checkers: isize) -> &'static [f32; 4] {
         .expect("number of pips needs to be between -15 and 15")
 }
 
+fn fill_td_inputs(slice: &mut [f32], pips: &[i8]) {
+    assert_eq!(slice.len(), 4 * pips.len());
+
+    pips.iter().enumerate().for_each(|(index, p)| {
+        let start = 4 * index;
+        slice[start..start + 4].copy_from_slice(td_inputs(*p as isize));
+    });
+}
+
 pub struct ContactInputsGen {}
 
 impl InputsGen for ContactInputsGen {
@@ -95,6 +108,8 @@ impl InputsGen for ContactInputsGen {
         // In an earlier implementation we messed up the order of the inputs
         // If one day there will be more inputs, streamline the next few lines:
         inputs[2..6].copy_from_slice(td_inputs(pos.pips[X_BAR] as isize));
+
+        // fill_td_inputs(&mut inputs[6..102], &pos.pips[1..X_BAR]);
         pos.pips[1..X_BAR]
             .iter()
             .enumerate()
