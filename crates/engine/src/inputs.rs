@@ -4,12 +4,11 @@ pub trait InputsGen {
     /// The number of inputs for the neural network.
     const NUM_INPUTS: usize;
 
-    /// Fill the given vector with the neural net inputs for a single position.
-    /// The returned vector is the same as the given vector, the length should have been
-    /// increased by `NUM_INPUTS`.
+    /// Fill the given slice with the neural net inputs for a single position.
+    /// The slice is expected to have a length of `NUM_INPUTS`.
     ///
     /// This is the only method that needs to be implemented.
-    fn fill_inputs(&self, pos: &Position, vec: &mut Vec<f32>);
+    fn fill_inputs(&self, pos: &Position, slice: &mut [f32]);
 
     /// The neural net inputs for a single position.
     ///
@@ -22,10 +21,12 @@ pub trait InputsGen {
     ///
     /// The length of the returned vector is `NUM_INPUTS * positions.len()`.
     fn inputs_for_all(&self, positions: &[Position]) -> Vec<f32> {
-        let mut vec = Vec::with_capacity(Self::NUM_INPUTS * positions.len());
-        positions
-            .iter()
-            .for_each(|pos| self.fill_inputs(pos, &mut vec));
+        let mut vec: Vec<f32> = vec![0.; Self::NUM_INPUTS * positions.len()];
+        positions.iter().enumerate().for_each(|(index, pos)| {
+            let start = index * Self::NUM_INPUTS;
+            let slice = &mut vec[start..start + Self::NUM_INPUTS];
+            self.fill_inputs(pos, slice)
+        });
         vec
     }
 }
@@ -84,22 +85,32 @@ pub struct ContactInputsGen {}
 impl InputsGen for ContactInputsGen {
     const NUM_INPUTS: usize = 202;
 
-    fn fill_inputs(&self, pos: &Position, vec: &mut Vec<f32>) {
-        vec.push(pos.x_off() as f32);
-        vec.push(pos.o_off() as f32);
+    fn fill_inputs(&self, pos: &Position, inputs: &mut [f32]) {
+        let inputs = <&mut [f32; Self::NUM_INPUTS]>::try_from(inputs).unwrap();
+
+        inputs[0] = pos.x_off() as f32;
+        inputs[1] = pos.o_off() as f32;
 
         // The inputs for the own player `x`
         // In an earlier implementation we messed up the order of the inputs
-        // If one day there will be more inputs, streamline the next three lines:
-        vec.extend_from_slice(td_inputs(pos.pips[X_BAR] as isize));
-        pos.pips[1..X_BAR].iter().for_each(|p| {
-            vec.extend_from_slice(td_inputs(*p as isize));
-        });
+        // If one day there will be more inputs, streamline the next few lines:
+        inputs[2..6].copy_from_slice(td_inputs(pos.pips[X_BAR] as isize));
+        pos.pips[1..X_BAR]
+            .iter()
+            .enumerate()
+            .for_each(|(index, p)| {
+                let start = 6 + 4 * index;
+                inputs[start..start + 4].copy_from_slice(td_inputs(*p as isize));
+            });
 
         // The inputs for the opponent `o`.
-        pos.pips[0..X_BAR].iter().for_each(|p| {
-            vec.extend_from_slice(td_inputs(-(*p as isize)));
-        });
+        pos.pips[0..X_BAR]
+            .iter()
+            .enumerate()
+            .for_each(|(index, p)| {
+                let start = 102 + 4 * index;
+                inputs[start..start + 4].copy_from_slice(td_inputs(-(*p as isize)));
+            });
     }
 }
 
@@ -108,19 +119,26 @@ pub struct RaceInputsGen {}
 impl InputsGen for RaceInputsGen {
     const NUM_INPUTS: usize = 186;
 
-    fn fill_inputs(&self, pos: &Position, vec: &mut Vec<f32>) {
-        vec.push(pos.x_off() as f32);
-        vec.push(pos.o_off() as f32);
+    fn fill_inputs(&self, pos: &Position, inputs: &mut [f32]) {
+        let inputs = <&mut [f32; Self::NUM_INPUTS]>::try_from(inputs).unwrap();
+
+        inputs[0] = pos.x_off() as f32;
+        inputs[1] = pos.o_off() as f32;
 
         // The inputs for the own player `x`. No checkers on bar or on 24 during race.
-        pos.pips[1..24].iter().for_each(|p| {
-            vec.extend_from_slice(td_inputs(*p as isize));
+        pos.pips[1..24].iter().enumerate().for_each(|(index, p)| {
+            let start = 2 + 4 * index;
+            inputs[start..start + 4].copy_from_slice(td_inputs(*p as isize));
         });
 
         // The inputs for the opponent `o`. No checkers on bar or on 1 during race.
-        pos.pips[2..X_BAR].iter().for_each(|p| {
-            vec.extend_from_slice(td_inputs(-(*p as isize)));
-        });
+        pos.pips[2..X_BAR]
+            .iter()
+            .enumerate()
+            .for_each(|(index, p)| {
+                let start = 94 + 4 * index;
+                inputs[start..start + 4].copy_from_slice(td_inputs(-(*p as isize)));
+            });
     }
 }
 
