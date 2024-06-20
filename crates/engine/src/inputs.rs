@@ -8,7 +8,7 @@ pub trait InputsGen {
     /// The slice is expected to have a length of `NUM_INPUTS`.
     ///
     /// This is the only method that needs to be implemented.
-    fn fill_inputs(&self, pos: &Position, slice: &mut [f32]);
+    // fn fill_inputs(&self, pos: &Position, slice: &mut [f32]);
 
     /// The neural net inputs for a single position.
     ///
@@ -20,19 +20,7 @@ pub trait InputsGen {
     /// A single vector with neural net inputs for all positions. This is useful for batch evaluation.
     ///
     /// The length of the returned vector is `NUM_INPUTS * positions.len()`.
-    fn inputs_for_all(&self, positions: &[Position]) -> Vec<f32> {
-        // let mut vec: Vec<f32> = vec![0.; Self::NUM_INPUTS * positions.len()];
-        let mut vec: Vec<f32> = Vec::with_capacity(Self::NUM_INPUTS * positions.len());
-        unsafe {
-            vec.set_len(vec.capacity());
-        }
-        positions.iter().enumerate().for_each(|(index, pos)| {
-            let start = index * Self::NUM_INPUTS;
-            let slice = &mut vec[start..start + Self::NUM_INPUTS];
-            self.fill_inputs(pos, slice)
-        });
-        vec
-    }
+    fn inputs_for_all(&self, positions: &[Position]) -> Vec<f32>;
 }
 
 /// Inputs for one pip. One entry for every legal number of checkers (-15 to 15).
@@ -98,9 +86,25 @@ pub struct ContactInputsGen {}
 impl InputsGen for ContactInputsGen {
     const NUM_INPUTS: usize = 202;
 
-    fn fill_inputs(&self, pos: &Position, inputs: &mut [f32]) {
-        let inputs = <&mut [f32; Self::NUM_INPUTS]>::try_from(inputs).unwrap();
+    fn inputs_for_all(&self, positions: &[Position]) -> Vec<f32> {
+        // let mut vec: Vec<f32> = vec![0.; Self::NUM_INPUTS * positions.len()];
+        let mut vec: Vec<f32> = Vec::with_capacity(Self::NUM_INPUTS * positions.len());
+        unsafe {
+            vec.set_len(vec.capacity());
+        }
+        positions.iter().enumerate().for_each(|(index, pos)| {
+            let start = index * Self::NUM_INPUTS;
+            let slice = &mut vec[start..start + Self::NUM_INPUTS];
+            let slice = <&mut [f32; Self::NUM_INPUTS]>::try_from(slice).unwrap();
 
+            self.fill_inputs(pos, slice)
+        });
+        vec
+    }
+}
+
+impl ContactInputsGen {
+    fn fill_inputs(&self, pos: &Position, inputs: &mut [f32; Self::NUM_INPUTS]) {
         inputs[0] = pos.x_off() as f32;
         inputs[1] = pos.o_off() as f32;
 
@@ -134,9 +138,25 @@ pub struct RaceInputsGen {}
 impl InputsGen for RaceInputsGen {
     const NUM_INPUTS: usize = 186;
 
-    fn fill_inputs(&self, pos: &Position, inputs: &mut [f32]) {
-        let inputs = <&mut [f32; Self::NUM_INPUTS]>::try_from(inputs).unwrap();
+    fn inputs_for_all(&self, positions: &[Position]) -> Vec<f32> {
+        // let mut vec: Vec<f32> = vec![0.; Self::NUM_INPUTS * positions.len()];
+        let mut vec: Vec<f32> = Vec::with_capacity(Self::NUM_INPUTS * positions.len());
+        unsafe {
+            vec.set_len(vec.capacity());
+        }
+        positions.iter().enumerate().for_each(|(index, pos)| {
+            let start = index * Self::NUM_INPUTS;
+            let slice = &mut vec[start..start + Self::NUM_INPUTS];
+            let slice = <&mut [f32; Self::NUM_INPUTS]>::try_from(slice).unwrap();
 
+            self.fill_inputs(pos, slice)
+        });
+        vec
+    }
+}
+
+impl RaceInputsGen {
+    fn fill_inputs(&self, pos: &Position, inputs: &mut [f32; Self::NUM_INPUTS]) {
         inputs[0] = pos.x_off() as f32;
         inputs[1] = pos.o_off() as f32;
 
