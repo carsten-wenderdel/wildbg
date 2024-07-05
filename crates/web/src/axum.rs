@@ -152,7 +152,7 @@ async fn get_move<T: Evaluator>(
             ErrorMessage::json("Neural net could not be constructed."),
         )),
         Some(web_api) => match web_api.get_move(pips, dice) {
-            Err((status_code, message)) => Err((status_code, ErrorMessage::json(message.as_str()))),
+            Err(message) => Err((StatusCode::BAD_REQUEST, ErrorMessage::json(message))),
             Ok(move_response) => Ok(Json(move_response)),
         },
     }

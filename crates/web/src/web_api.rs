@@ -46,33 +46,25 @@ impl<T: Evaluator> WebApi<T> {
         &self,
         pip_params: PipParams,
         dice_params: DiceParams,
-    ) -> Result<MoveResponse, (StatusCode, String)> {
-        let position = Position::try_from(pip_params);
-        let dice = Dice::try_from((dice_params.die1, dice_params.die2));
-        match position {
-            Err(error) => Err((StatusCode::BAD_REQUEST, error.to_string())),
-            Ok(position) => match dice {
-                Err(error) => Err((StatusCode::BAD_REQUEST, error.to_string())),
-                Ok(dice) => {
-                    let pos_and_probs = self
-                        .evaluator
-                        .positions_and_probabilities_by_equity(&position, &dice);
-                    let moves: Vec<MoveInfo> = pos_and_probs
-                        .into_iter()
-                        .map(|(new_pos, probabilities)| {
-                            let bg_move = BgMove::new(&position, &new_pos, &dice);
-                            let play = bg_move.into_details();
-                            let probabilities = probabilities.into(); // convert model into view model
-                            MoveInfo {
-                                play,
-                                probabilities,
-                            }
-                        })
-                        .collect();
-                    Ok(MoveResponse { moves })
+    ) -> Result<MoveResponse, &'static str> {
+        let position = Position::try_from(pip_params)?;
+        let dice = Dice::try_from((dice_params.die1, dice_params.die2))?;
+        let pos_and_probs = self
+            .evaluator
+            .positions_and_probabilities_by_equity(&position, &dice);
+        let moves: Vec<MoveInfo> = pos_and_probs
+            .into_iter()
+            .map(|(new_pos, probabilities)| {
+                let bg_move = BgMove::new(&position, &new_pos, &dice);
+                let play = bg_move.into_details();
+                let probabilities = probabilities.into(); // convert model into view model
+                MoveInfo {
+                    play,
+                    probabilities,
                 }
-            },
-        }
+            })
+            .collect();
+        Ok(MoveResponse { moves })
     }
 }
 
