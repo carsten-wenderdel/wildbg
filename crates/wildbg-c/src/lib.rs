@@ -97,19 +97,18 @@ impl From<&Probabilities> for CProbabilities {
     }
 }
 
-/// When no move is possible, all member variables in all details will be `-1`.
+/// When no move is possible, move_count will be 0.
 ///
-/// If only one checker can be moved once, `detail1` will contain this information,
-/// `detail2`, `detail3` and `detail4` will contain `-1` for both `from` and `to`.
+/// If only one checker can be moved once, `moves[0]` will contain this information,
+/// `moves[1]`, `moves[2]` and `moves[3]` will contain `-1` for both `from` and `to`.
+/// move_count will contain a value between 0 and 4.
 ///
 /// If the same checker is moved twice, this is encoded in two details.
 #[repr(C)]
 #[derive(Default)]
 pub struct CMove {
-    detail1: CMoveDetail,
-    detail2: CMoveDetail,
-    detail3: CMoveDetail,
-    detail4: CMoveDetail,
+    moves: [CMoveDetail; 4],
+    move_count: c_int,
 }
 
 impl From<BgMove> for CMove {
@@ -118,17 +117,18 @@ impl From<BgMove> for CMove {
         let mut c_move = CMove::default();
         #[allow(clippy::len_zero)]
         if details.len() > 0 {
-            c_move.detail1 = (&details[0]).into();
+            c_move.moves[0] = (&details[0]).into();
         }
         if details.len() > 1 {
-            c_move.detail2 = (&details[1]).into();
+            c_move.moves[1] = (&details[1]).into();
         }
         if details.len() > 2 {
-            c_move.detail3 = (&details[2]).into();
+            c_move.moves[2] = (&details[2]).into();
         }
         if details.len() > 3 {
-            c_move.detail4 = (&details[3]).into();
+            c_move.moves[3] = (&details[3]).into();
         }
+        c_move.move_count = details.len() as c_int;
         c_move
     }
 }
@@ -212,7 +212,10 @@ pub extern "C" fn probabilities(wildbg: &Wildbg, pips: &[c_int; 26]) -> CProbabi
 
 #[cfg(test)]
 mod tests {
+
     use crate::CProbabilities;
+    use engine::position::X_BAR;
+    use engine::{dice::Dice, pos};
 
     #[test]
     fn from_probabilities() {
@@ -231,5 +234,46 @@ mod tests {
         assert_eq!(c_probs.win_bg, 0.12);
         assert_eq!(c_probs.lose_g, 0.15);
         assert_eq!(c_probs.lose_bg, 0.05);
+    }
+
+    #[test]
+    fn from_bgmove_mixed_dice() {
+        let old = pos!(x 24:2, 13:5, 8:3, 6:5; o 19:5, 17:3, 12:5, 1:2);
+        let new = pos!(x 23: 1, 22:1, 13:5, 8:3, 6:5; o 19:5, 17:3, 12:5, 1:2);
+        let dice = Dice::new(2, 1);
+        let bg_move = logic::bg_move::BgMove::new(&old, &new, &dice);
+        let c_move = crate::CMove::from(bg_move);
+        assert_eq!(c_move.move_count, 2);
+        assert_eq!(c_move.moves[0].from, 24);
+        assert_eq!(c_move.moves[0].to, 22);
+        assert_eq!(c_move.moves[1].from, 24);
+        assert_eq!(c_move.moves[1].to, 23);
+    }
+
+    #[test]
+    fn from_bgmove_double_dice() {
+        let old = pos!(x 24:2, 13:5, 8:3, 6:5; o 19:5, 17:3, 12:5, 1:2);
+        let new = pos!(x 18:2, 13:3, 7:2, 8:3, 6:5; o 19:5, 17:3, 12:5, 1:2);
+        let dice = Dice::new(6, 6);
+        let bg_move = logic::bg_move::BgMove::new(&old, &new, &dice);
+        let c_move = crate::CMove::from(bg_move);
+        assert_eq!(c_move.move_count, 4);
+        assert_eq!(c_move.moves[0].from, 24);
+        assert_eq!(c_move.moves[0].to, 18);
+        assert_eq!(c_move.moves[1].from, 24);
+        assert_eq!(c_move.moves[1].to, 18);
+        assert_eq!(c_move.moves[2].from, 13);
+        assert_eq!(c_move.moves[2].to, 7);
+        assert_eq!(c_move.moves[3].from, 13);
+        assert_eq!(c_move.moves[3].to, 7);
+    }
+
+    #[test]
+    fn from_bgmove_nomoves() {
+        let pos = pos!(x X_BAR:15; o 24:3, 23:3, 22:3, 21:2, 20: 2, 19: 2);
+        let dice = Dice::new(1, 1);
+        let bg_move = logic::bg_move::BgMove::new(&pos, &pos, &dice);
+        let c_move = crate::CMove::from(bg_move);
+        assert_eq!(c_move.move_count, 0);
     }
 }
