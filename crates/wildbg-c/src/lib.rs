@@ -97,38 +97,27 @@ impl From<&Probabilities> for CProbabilities {
     }
 }
 
-/// When no move is possible, move_count will be 0.
+/// When no move is possible, detail_count will be 0.
 ///
-/// If only one checker can be moved once, `moves[0]` will contain this information,
-/// `moves[1]`, `moves[2]` and `moves[3]` will contain `-1` for both `from` and `to`.
-/// move_count will contain a value between 0 and 4.
+/// If only one checker can be moved once, `details[0]` will contain this information,
+/// `detail_count` will contain a value between 0 and 4.
 ///
 /// If the same checker is moved twice, this is encoded in two details.
 #[repr(C)]
 #[derive(Default)]
 pub struct CMove {
-    moves: [CMoveDetail; 4],
-    move_count: c_int,
+    details: [CMoveDetail; 4],
+    detail_count: c_int,
 }
 
 impl From<BgMove> for CMove {
     fn from(value: BgMove) -> Self {
         let details = value.into_details();
         let mut c_move = CMove::default();
-        #[allow(clippy::len_zero)]
-        if details.len() > 0 {
-            c_move.moves[0] = (&details[0]).into();
-        }
-        if details.len() > 1 {
-            c_move.moves[1] = (&details[1]).into();
-        }
-        if details.len() > 2 {
-            c_move.moves[2] = (&details[2]).into();
-        }
-        if details.len() > 3 {
-            c_move.moves[3] = (&details[3]).into();
-        }
-        c_move.move_count = details.len() as c_int;
+        details.iter().enumerate().for_each(|(i, detail)| {
+            c_move.details[i] = detail.into();
+        });
+        c_move.detail_count = details.len() as c_int;
         c_move
     }
 }
@@ -243,11 +232,11 @@ mod tests {
         let dice = Dice::new(2, 1);
         let bg_move = logic::bg_move::BgMove::new(&old, &new, &dice);
         let c_move = crate::CMove::from(bg_move);
-        assert_eq!(c_move.move_count, 2);
-        assert_eq!(c_move.moves[0].from, 24);
-        assert_eq!(c_move.moves[0].to, 22);
-        assert_eq!(c_move.moves[1].from, 24);
-        assert_eq!(c_move.moves[1].to, 23);
+        assert_eq!(c_move.detail_count, 2);
+        assert_eq!(c_move.details[0].from, 24);
+        assert_eq!(c_move.details[0].to, 22);
+        assert_eq!(c_move.details[1].from, 24);
+        assert_eq!(c_move.details[1].to, 23);
     }
 
     #[test]
@@ -257,15 +246,15 @@ mod tests {
         let dice = Dice::new(6, 6);
         let bg_move = logic::bg_move::BgMove::new(&old, &new, &dice);
         let c_move = crate::CMove::from(bg_move);
-        assert_eq!(c_move.move_count, 4);
-        assert_eq!(c_move.moves[0].from, 24);
-        assert_eq!(c_move.moves[0].to, 18);
-        assert_eq!(c_move.moves[1].from, 24);
-        assert_eq!(c_move.moves[1].to, 18);
-        assert_eq!(c_move.moves[2].from, 13);
-        assert_eq!(c_move.moves[2].to, 7);
-        assert_eq!(c_move.moves[3].from, 13);
-        assert_eq!(c_move.moves[3].to, 7);
+        assert_eq!(c_move.detail_count, 4);
+        assert_eq!(c_move.details[0].from, 24);
+        assert_eq!(c_move.details[0].to, 18);
+        assert_eq!(c_move.details[1].from, 24);
+        assert_eq!(c_move.details[1].to, 18);
+        assert_eq!(c_move.details[2].from, 13);
+        assert_eq!(c_move.details[2].to, 7);
+        assert_eq!(c_move.details[3].from, 13);
+        assert_eq!(c_move.details[3].to, 7);
     }
 
     #[test]
@@ -274,6 +263,6 @@ mod tests {
         let dice = Dice::new(1, 1);
         let bg_move = logic::bg_move::BgMove::new(&pos, &pos, &dice);
         let c_move = crate::CMove::from(bg_move);
-        assert_eq!(c_move.move_count, 0);
+        assert_eq!(c_move.detail_count, 0);
     }
 }

@@ -18,17 +18,16 @@ typedef struct CMoveDetail {
 } CMoveDetail;
 
 /**
- * When no move is possible, move_count will be 0.
+ * When no move is possible, detail_count will be 0.
  *
- * If only one checker can be moved once, `moves[0]` will contain this information,
- * `moves[1]`, `moves[2]` and `moves[3]` will contain `-1` for both `from` and `to`.
- * move_count will contain a value between 0 and 4.
+ * If only one checker can be moved once, `details[0]` will contain this information,
+ * `detail_count` will contain a value between 0 and 4.
  *
  * If the same checker is moved twice, this is encoded in two details.
  */
 typedef struct CMove {
-  struct CMoveDetail moves[4];
-  int move_count;
+  struct CMoveDetail details[4];
+  int detail_count;
 } CMove;
 
 /**
