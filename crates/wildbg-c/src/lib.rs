@@ -99,7 +99,7 @@ impl From<&Probabilities> for CProbabilities {
 
 /// When no move is possible, detail_count will be 0.
 ///
-/// If only one checker can be moved once, `details[0]` will contain this information,
+/// If only a single move is possible, `details[0]` will contain this information.
 /// `detail_count` will contain a value between 0 and 4.
 ///
 /// If the same checker is moved twice, this is encoded in two details.
