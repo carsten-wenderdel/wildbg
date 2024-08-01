@@ -42,12 +42,15 @@ int main() {
   CProbabilities p = probabilities(wildbg, &starting);
   printf("The estimated probability to win is %.2f percent.\n", 100 * p.win);
   
-  // Specify 1 pointer:
+  // Specify 1 pointer game type:
   BgConfig config = { .x_away = 1, .o_away = 1 };
   
   // Find and print best move:
-  CMove move = best_move(wildbg, &starting, 3, 1, &config); 
-  printf("The computer would move from %d to %d and from %d to %d.\n", move.detail1.from, move.detail1.to, move.detail2.from, move.detail2.to);
+  CMove move = best_move(wildbg, &starting, 3, 1, &config);
+  printf("The computer would make the following moves:\n")
+  for (int i = 0; i < move.detail_count; i ++){
+    printf("\tfrom %d to %d.\n", move.details[i].from, move.details[i].to);
+  }
   
   // Deconstruct the engine and free the memory:
   wildbg_free(wildbg);  
