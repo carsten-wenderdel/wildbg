@@ -63,9 +63,9 @@ impl<T: Evaluator, U: DiceGen> PositionFinder<T, U> {
     /// 1. The positon at th top of the array
     /// 2. `next`, the position to which the `PositionFinder` is about to move.
     /// 3. Added is then a position from the middle of the input array, so that we also rollout
-    /// positions that are not so good.
+    ///    positions that are not so good.
     /// 4. If `all` contains both contact and race positions,
-    /// we make sure that at least one position from either phase is returned.
+    ///    we make sure that at least one position from either phase is returned.
     ///
     /// Some of those positions could appear more than once in the array, but that's ok, we enter
     /// all them into a HashSet later on.
