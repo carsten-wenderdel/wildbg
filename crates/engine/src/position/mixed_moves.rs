@@ -1,6 +1,6 @@
 use crate::dice::MixedDice;
 use crate::position::{Position, MOVES_CAPACITY, O_BAR, X_BAR};
-use std::cmp::{max, min};
+use std::cmp::max;
 
 impl Position {
     /// Returns all legal positions after rolling a double and then moving.
@@ -98,69 +98,49 @@ impl Position {
         debug_assert!(self.pips[X_BAR] == 0);
 
         let mut moves: Vec<Position> = Vec::with_capacity(MOVES_CAPACITY);
-        (self.smallest_pip_to_check(dice.big)..X_BAR).rev().for_each(|i| {
-            // Looking at moves where the big die *can* be used first
-            let can_move_big_from_i = self.can_move_when_bearoff_is_legal(i, dice.big);
-            if can_move_big_from_i {
-                let position = self.clone_and_move_single_checker(i, dice.big);
-                (position.smallest_pip_to_check(dice.small)..X_BAR).rev().for_each(|j| {
-                    // Checking `j != i + dice.small`: in this case we could have moved the smaller first which will be handled later.
-                    if position.can_move_when_bearoff_is_legal(j, dice.small)
-                        && (j != i + dice.small)
-                    {
-                        let final_position = position.clone_and_move_single_checker(j, dice.small);
-                        moves.push(final_position);
-                    }
-                });
-            }
-            // Looking at moves where the small die *must* be moved first
-            // This can be because of two reasons:
-            // 1. We make two movements with the same checker, but for the big die it's initially blocked.
-            // 2. We make two movements with the same checker and hit something with the first movement, either with the big or the small die.
-            // 3. We make two movements with the same checker, but we could have born off with the bigger die from the initial pip.
-            // 4. After moving the small die, we now can bear off with the big die, which was illegal before.
-            if self.can_move_when_bearoff_is_legal(i, dice.small) {
-                let position = self.clone_and_move_single_checker(i, dice.small);
-                // We have to look at all pips in the home board, in case bearing off just became possible. This is why the 7 appears in the max function.
-                (position.smallest_pip_to_check(dice.big)..max(7, i + 1)).for_each(|j| {
-                    if position.can_move_when_bearoff_is_legal(j, dice.big) {
-                        let two_movements_with_same_checker = i == j + dice.small;
-                        let must_move_small_first: bool = if two_movements_with_same_checker {
-                            // This describes cases 1 and 2:
-                            let different_outcomes = self.pips[i - min(i, dice.big)] < 0
-                                || self.pips[i - min(i, dice.small)] < 0;
-                            // This describes case 3:
-                            let bear_off_with_big = can_move_big_from_i && i <= dice.big;
-                            if different_outcomes || bear_off_with_big {
-                                true
-                            } else {
-                                // Now we look of a special case of case 4:
-                                // Can we bear off with the same checker after two movements, but it would not have possible if the big dice was used first?
-                                let bear_off_from_not_exact_pip = j < dice.big;
-                                // is there a checker between (i - dice.small) and (i - dice.big) that would prevent moving out if moving the big first?
-                                let checker_between = self.pips
-                                    [(i - dice.big + 1)..(i - dice.small + 1)]
-                                    .iter()
-                                    .any(|p| *p > 0);
-                                bear_off_from_not_exact_pip && checker_between
+
+        // All moves where the `small` die is moved first
+        (self.smallest_pip_to_check(dice.small)..X_BAR)
+            .rev()
+            .for_each(|i| {
+                if self.can_move_when_bearoff_is_legal(i, dice.small) {
+                    let position = self.clone_and_move_single_checker(i, dice.small);
+                    (position.smallest_pip_to_check(dice.big)..i + 1)
+                        .rev()
+                        .for_each(|i| {
+                            if position.can_move_when_bearoff_is_legal(i, dice.big) {
+                                let position = position.clone_and_move_single_checker(i, dice.big);
+                                moves.push(position);
                             }
-                        } else {
-                            // This describes case 4:
-                            let bear_off_was_illegal_but_not_anymore = i > 6 && j <= dice.big;
-                            let could_not_bear_off_because_die_bigger_than_pip_and_checker_was_on_bigger_pip =
-                                dice.big > j && i > j;
-                            bear_off_was_illegal_but_not_anymore
-                                || could_not_bear_off_because_die_bigger_than_pip_and_checker_was_on_bigger_pip
-                        };
-                        if must_move_small_first {
-                            let final_position =
-                                position.clone_and_move_single_checker(j, dice.big);
-                            moves.push(final_position);
-                        }
+                        });
+                }
+            });
+
+        // All moves where the `big` die is moved first
+        (self.smallest_pip_to_check(dice.big)..X_BAR).for_each(|i| {
+            if self.can_move_when_bearoff_is_legal(i, dice.big) {
+                let position = self.clone_and_move_single_checker(i, dice.big);
+                let different_outcomes =
+                    i >= dice.big && (self.pips[i - dice.big] < 0 || self.pips[i - dice.small] < 0);
+                let smallest_pip = position.smallest_pip_to_check(dice.small);
+                let range = if different_outcomes {
+                    #[allow(clippy::reversed_empty_ranges)]
+                    (smallest_pip..i).chain(0..0)
+                } else {
+                    // If we move a single checker with both dice, this position was already
+                    // included above when `small` was moved first. So we omit it here.
+                    let omitted_pip = i.saturating_sub(dice.big);
+                    (smallest_pip..omitted_pip).chain(max(smallest_pip, omitted_pip + 1)..i)
+                };
+                range.for_each(|i| {
+                    if position.can_move_when_bearoff_is_legal(i, dice.small) {
+                        let position = position.clone_and_move_single_checker(i, dice.small);
+                        moves.push(position);
                     }
                 });
             }
         });
+
         debug_assert!(!moves.is_empty());
         moves
     }
@@ -479,7 +459,7 @@ mod tests {
         let expected1 = pos!(x 4:1, 2:1; o 20:2);
         let expected2 = pos!(x 5:1, 1:1; o 20:2);
         let expected3 = pos!(x 6:1; o 20:2);
-        assert_eq!(resulting_positions, vec![expected1, expected2, expected3]);
+        assert_eq!(resulting_positions, vec![expected2, expected3, expected1]);
     }
 
     #[test]
@@ -497,7 +477,7 @@ mod tests {
         let expected6 = pos!(x 5:2, 4:2; o 20:1);
         assert_eq!(
             resulting_positions,
-            vec![expected1, expected2, expected3, expected4, expected5, expected6]
+            vec![expected1, expected4, expected5, expected6, expected3, expected2]
         );
     }
 
@@ -532,7 +512,7 @@ mod tests {
         // Then
         let expected1 = pos!(x 4:1; o O_BAR:1);
         let expected2 = pos!(x 4:1; o 6:1);
-        assert_eq!(resulting_positions, vec![expected1, expected2]);
+        assert_eq!(resulting_positions, vec![expected2, expected1]);
     }
 
     #[test]
@@ -544,7 +524,7 @@ mod tests {
         // Then
         let expected1 = pos!(x 1:1; o 4:1);
         let expected2 = pos!(x 1:1; o O_BAR:1);
-        assert_eq!(resulting_positions, vec![expected1, expected2]);
+        assert_eq!(resulting_positions, vec![expected2, expected1]);
     }
 
     #[test]
@@ -567,7 +547,7 @@ mod tests {
         // Then
         let expected1 = pos!(x 1:4; o);
         let expected2 = pos!(x 1:5; o);
-        assert_eq!(resulting_positions, vec![expected1, expected2]);
+        assert_eq!(resulting_positions, vec![expected2, expected1]);
     }
 
     #[test]
