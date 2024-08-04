@@ -22,11 +22,21 @@ pub trait InputsGen {
     /// The length of the returned vector is `NUM_INPUTS * positions.len()`.
     fn inputs_for_all(&self, positions: &[Position]) -> Vec<f32> {
         let mut vec: Vec<f32> = vec![0.; Self::NUM_INPUTS * positions.len()];
-        positions.iter().enumerate().for_each(|(index, pos)| {
-            let start = index * Self::NUM_INPUTS;
-            let slice = &mut vec[start..start + Self::NUM_INPUTS];
-            self.fill_inputs(pos, slice)
-        });
+
+        // Instead of initializing the vector with zeros, the following would be faster.
+        // But let's avoid unsafe code for now.
+
+        // let mut vec: Vec<f32> = Vec::with_capacity(Self::NUM_INPUTS * positions.len());
+        // unsafe {
+        //     vec.set_len(vec.capacity());
+        // }
+
+        vec.chunks_exact_mut(Self::NUM_INPUTS)
+            .zip(positions)
+            .rev()
+            .for_each(|(slice, pos)| {
+                self.fill_inputs(pos, slice);
+            });
         vec
     }
 }
@@ -80,6 +90,28 @@ fn td_inputs(number_of_checkers: isize) -> &'static [f32; 4] {
         .expect("number of pips needs to be between -15 and 15")
 }
 
+/// Copies TD inputs for all pips into the given slice.
+/// The function usually casts 'i8' into 'isize'; for the opponent it's multiplied by '-1'.
+#[inline(always)]
+fn fill_td_inputs_with_function(inputs: &mut [f32], pips: &[i8], f: fn(&i8) -> isize) {
+    pips.iter().map(f).enumerate().rev().for_each(|(index, p)| {
+        let start = 4 * index;
+        inputs[start..start + 4].copy_from_slice(td_inputs(p));
+    });
+}
+
+/// Copies TD inputs for all pips of player `x` into the give slice.
+#[inline(always)]
+fn fill_x_td_inputs(inputs: &mut [f32], pips: &[i8]) {
+    fill_td_inputs_with_function(inputs, pips, |&p| p as isize)
+}
+
+/// Copies TD inputs for all pips of the opponent `o` into the given slice.
+#[inline(always)]
+fn fill_o_td_inputs(inputs: &mut [f32], pips: &[i8]) {
+    fill_td_inputs_with_function(inputs, pips, |&p| -(p as isize))
+}
+
 pub struct ContactInputsGen {}
 
 /// The slice indices for the inputs
@@ -107,22 +139,10 @@ impl InputsGen for ContactInputsGen {
         // In an earlier implementation we messed up the order of the inputs
         // If one day there will be more inputs, streamline the next few lines:
         inputs[X_BAR_PIPS..X_PIPS].copy_from_slice(td_inputs(pos.pips[X_BAR] as isize));
-        pos.pips[1..X_BAR]
-            .iter()
-            .enumerate()
-            .for_each(|(index, p)| {
-                let start = X_PIPS + 4 * index;
-                inputs[start..start + 4].copy_from_slice(td_inputs(*p as isize));
-            });
+        fill_x_td_inputs(&mut inputs[X_PIPS..O_PIPS], &pos.pips[1..X_BAR]);
 
         // The inputs for the opponent `o`.
-        pos.pips[0..X_BAR]
-            .iter()
-            .enumerate()
-            .for_each(|(index, p)| {
-                let start = O_PIPS + 4 * index;
-                inputs[start..start + 4].copy_from_slice(td_inputs(-(*p as isize)));
-            });
+        fill_o_td_inputs(&mut inputs[O_PIPS..Self::NUM_INPUTS], &pos.pips[0..X_BAR]);
     }
 }
 
@@ -149,19 +169,10 @@ impl InputsGen for RaceInputsGen {
         inputs[O_OFF] = pos.o_off() as f32;
 
         // The inputs for the own player `x`. No checkers on bar or on 24 during race.
-        pos.pips[1..24].iter().enumerate().for_each(|(index, p)| {
-            let start = X_PIPS + 4 * index;
-            inputs[start..start + 4].copy_from_slice(td_inputs(*p as isize));
-        });
+        fill_x_td_inputs(&mut inputs[X_PIPS..O_PIPS], &pos.pips[1..24]);
 
         // The inputs for the opponent `o`. No checkers on bar or on 1 during race.
-        pos.pips[2..X_BAR]
-            .iter()
-            .enumerate()
-            .for_each(|(index, p)| {
-                let start = O_PIPS + 4 * index;
-                inputs[start..start + 4].copy_from_slice(td_inputs(-(*p as isize)));
-            });
+        fill_o_td_inputs(&mut inputs[O_PIPS..Self::NUM_INPUTS], &pos.pips[2..X_BAR]);
     }
 }
 
