@@ -175,13 +175,16 @@ impl Position {
         new_positions
     }
 
+    #[inline]
     pub fn sides_switched(&self) -> Position {
-        let mut pips = self.pips.map(|x| -x);
-        pips.reverse();
+        let mut pips = [0; 26];
+        for (i, pip) in self.pips.iter().enumerate() {
+            pips[25 - i] = -pip;
+        }
         Position {
-            pips,
             x_off: self.o_off,
             o_off: self.x_off,
+            pips,
         }
     }
 }
