@@ -35,7 +35,7 @@ impl<T: Evaluator> WildbgApi<T> {
             |p| p.equity()
         };
         let new_position = self.evaluator.best_position(position, dice, value);
-        BgMove::new(position, &new_position.switch_sides(), dice)
+        BgMove::new(position, &new_position.sides_switched(), dice)
     }
 }
 
@@ -50,7 +50,7 @@ mod tests {
     use engine::probabilities::Probabilities;
 
     fn position_with_lowest_equity() -> Position {
-        pos!(x 5:1, 3:1; o 20:2).switch_sides()
+        pos!(x 5:1, 3:1; o 20:2).sides_switched()
     }
 
     /// Test double. Returns not so good probabilities for `expected_pos`, better for everything else.

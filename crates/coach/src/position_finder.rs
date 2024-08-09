@@ -46,7 +46,7 @@ impl<T: Evaluator, U: DiceGen> PositionFinder<T, U> {
                 .positions_and_probabilities_by_equity(&pos, &dice);
             let next = self.next_position(&positions_and_probabilities);
             if next.game_state() == Ongoing {
-                pos = next.switch_sides();
+                pos = next.sides_switched();
                 dice = self.dice_gen.roll();
                 let rollout_positions =
                     Self::positions_from_one_move(next, positions_and_probabilities);
@@ -78,19 +78,19 @@ impl<T: Evaluator, U: DiceGen> PositionFinder<T, U> {
     ) -> Vec<Position> {
         let mut positions: Vec<Position> = Vec::new();
         // Best position:
-        positions.push(all[0].0.switch_sides());
+        positions.push(all[0].0.sides_switched());
         // Best position with different game phase:
         if let Some(different_phase) = all.iter().position(|(pos, _)| {
             pos.game_state() == Ongoing && pos.game_phase() != next.game_phase()
         }) {
-            positions.push(all[different_phase].0.switch_sides());
+            positions.push(all[different_phase].0.sides_switched());
         }
         // Next position:
-        positions.push(next.switch_sides());
+        positions.push(next.sides_switched());
         // Mediocre position:
         if all.len() > 1 {
             let middle = positions.len() / 2;
-            positions.push(all[middle].0.switch_sides());
+            positions.push(all[middle].0.sides_switched());
         }
         positions
     }

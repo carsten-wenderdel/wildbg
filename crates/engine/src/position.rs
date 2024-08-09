@@ -170,12 +170,12 @@ impl Position {
             Dice::Mixed(dice) => self.all_positions_after_mixed_move(dice),
         };
         for position in new_positions.iter_mut() {
-            *position = position.switch_sides();
+            *position = position.sides_switched();
         }
         new_positions
     }
 
-    pub fn switch_sides(&self) -> Position {
+    pub fn sides_switched(&self) -> Position {
         let mut pips = self.pips.map(|x| -x);
         pips.reverse();
         Position {
@@ -401,7 +401,7 @@ mod tests {
         let given = pos!(x 25:1, 1:14; o);
         assert_eq!(given.game_state(), GameOver(LoseBg));
         assert_eq!(
-            given.switch_sides().game_state(),
+            given.sides_switched().game_state(),
             GameOver(LoseBg.reverse())
         );
     }
@@ -411,7 +411,7 @@ mod tests {
         let given = pos!(x 19:15; o);
         assert_eq!(given.game_state(), GameOver(LoseBg));
         assert_eq!(
-            given.switch_sides().game_state(),
+            given.sides_switched().game_state(),
             GameOver(LoseBg.reverse())
         );
     }
@@ -421,7 +421,7 @@ mod tests {
         let given = pos!(x 18:15; o);
         assert_eq!(given.game_state(), GameOver(LoseGammon));
         assert_eq!(
-            given.switch_sides().game_state(),
+            given.sides_switched().game_state(),
             GameOver(LoseGammon.reverse())
         );
     }
@@ -432,17 +432,17 @@ mod tests {
         assert_eq!(given.game_state(), GameOver(LoseNormal));
         assert!(given.has_lost());
         assert_eq!(
-            given.switch_sides().game_state(),
+            given.sides_switched().game_state(),
             GameOver(LoseNormal.reverse())
         );
-        assert!(!given.switch_sides().has_lost());
+        assert!(!given.sides_switched().has_lost());
     }
 
     #[test]
     fn game_state_ongoing() {
         let given = pos!(x 19:14; o 1:4);
         assert_eq!(given.game_state(), Ongoing);
-        assert_eq!(given.switch_sides().game_state(), Ongoing);
+        assert_eq!(given.sides_switched().game_state(), Ongoing);
     }
 
     #[test]
@@ -450,7 +450,7 @@ mod tests {
         let given = pos!(x 1:1; o);
         assert_eq!(given.game_phase(), GamePhase::GameOver(LoseNormal));
         assert_eq!(
-            given.switch_sides().game_phase(),
+            given.sides_switched().game_phase(),
             GamePhase::GameOver(WinNormal)
         );
     }
@@ -460,7 +460,7 @@ mod tests {
         let given = pos!(x 12:15; o);
         assert_eq!(given.game_phase(), GamePhase::GameOver(LoseGammon));
         assert_eq!(
-            given.switch_sides().game_phase(),
+            given.sides_switched().game_phase(),
             GamePhase::GameOver(WinGammon)
         );
     }
@@ -470,7 +470,7 @@ mod tests {
         let given = pos!(x 20:15; o);
         assert_eq!(given.game_phase(), GamePhase::GameOver(LoseBg));
         assert_eq!(
-            given.switch_sides().game_phase(),
+            given.sides_switched().game_phase(),
             GamePhase::GameOver(WinBg)
         );
     }
@@ -543,7 +543,7 @@ mod tests {
             o_off: 3,
         };
         // When
-        let actual = original.switch_sides();
+        let actual = original.sides_switched();
         // Then
         let expected = Position {
             pips: [
@@ -717,7 +717,7 @@ mod tests {
         ];
         fn number_of_moves(position: &Position, dice: &Dice) -> usize {
             let all = position.all_positions_after_moving(dice);
-            if all.len() == 1 && all.first().unwrap().switch_sides() == *position {
+            if all.len() == 1 && all.first().unwrap().sides_switched() == *position {
                 0
             } else {
                 all.len()
@@ -746,7 +746,7 @@ mod private_tests {
     fn starting_position_is_correct_and_symmetric() {
         let expected = pos!(x 24:2, 13:5, 8:3, 6:5; o 19:5, 17:3, 12:5, 1:2);
         assert_eq!(STARTING, expected);
-        assert_eq!(STARTING, STARTING.switch_sides());
+        assert_eq!(STARTING, STARTING.sides_switched());
     }
 
     #[test]

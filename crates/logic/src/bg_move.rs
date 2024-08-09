@@ -111,7 +111,7 @@ mod tests {
     fn bear_off_one_die_used() {
         // Given
         let old = pos!(x 1:1; o 23:4, 24:3);
-        let new = pos!(x 1:3, 2:4; o).switch_sides(); // The macro only works when `x` has checkers
+        let new = pos!(x 1:3, 2:4; o).sides_switched(); // The macro only works when `x` has checkers
 
         // When
         let bg_move = BgMove::new_mixed(&old, &new, &MixedDice::new(5, 2));
@@ -124,7 +124,7 @@ mod tests {
     fn bear_off_use_two_dice_instead_of_one() {
         // Given
         let old = pos!(x 4:1; o 23:4, 24:3);
-        let new = pos!(x 1:3, 2:4; o).switch_sides(); // The macro only works when `x` has checkers
+        let new = pos!(x 1:3, 2:4; o).sides_switched(); // The macro only works when `x` has checkers
 
         // When
         let bg_move = BgMove::new_mixed(&old, &new, &MixedDice::new(5, 2));

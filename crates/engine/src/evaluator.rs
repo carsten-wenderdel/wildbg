@@ -90,7 +90,7 @@ pub trait Evaluator {
         let mut pos_and_probs: Vec<(Position, Probabilities)> = self
             .eval_batch(after_moving)
             .into_iter()
-            .map(|(pos, probabilities)| (pos.switch_sides(), probabilities.switch_sides()))
+            .map(|(pos, probabilities)| (pos.sides_switched(), probabilities.switch_sides()))
             .collect();
         pos_and_probs.sort_unstable_by(|a, b| b.1.equity().partial_cmp(&a.1.equity()).unwrap());
         pos_and_probs
@@ -158,7 +158,7 @@ mod evaluator_trait_tests {
     use crate::position::Position;
 
     fn position_with_lowest_equity() -> Position {
-        pos!(x 5:1, 3:1; o 20:2).switch_sides()
+        pos!(x 5:1, 3:1; o 20:2).sides_switched()
     }
 
     /// Test double. Returns not so good probabilities for `expected_pos`, better for everything else.
@@ -208,7 +208,7 @@ mod evaluator_trait_tests {
         let best_pos = evaluator.best_position(&given_pos, &Dice::new(4, 2), |p| p.win());
         // Then
         let expected = pos!(x 7:1, 1:1; o 20: 2);
-        assert_eq!(best_pos, expected.switch_sides());
+        assert_eq!(best_pos, expected.sides_switched());
     }
 
     #[test]
@@ -220,7 +220,7 @@ mod evaluator_trait_tests {
         let values = evaluator.positions_and_probabilities_by_equity(&given_pos, &Dice::new(4, 2));
         // Then
         let (best_pos, best_probability) = values.first().unwrap();
-        let best_pos = best_pos.switch_sides();
+        let best_pos = best_pos.sides_switched();
         assert_eq!(
             &best_pos,
             &evaluator.best_position_by_equity(&given_pos, &Dice::new(4, 2))

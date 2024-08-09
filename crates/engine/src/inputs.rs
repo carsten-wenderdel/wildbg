@@ -234,7 +234,7 @@ mod contact_tests {
             .collect::<Vec<_>>()
             .join(";");
         let inputs_switched = inputs_gen
-            .inputs_for_single(&pos.switch_sides())
+            .inputs_for_single(&pos.sides_switched())
             .iter()
             .map(|x| x.to_string())
             .collect::<Vec<_>>()
@@ -268,7 +268,7 @@ mod race_tests {
             .collect::<Vec<_>>()
             .join(";");
         let inputs_switched = inputs_gen
-            .inputs_for_single(&pos.switch_sides())
+            .inputs_for_single(&pos.sides_switched())
             .iter()
             .map(|x| x.to_string())
             .collect::<Vec<_>>()

@@ -236,7 +236,7 @@ mod game_over_tests {
     #[test]
     fn game_over_win_normal() {
         let evaluator = super::CompositeEvaluator::default_tests();
-        let position = pos!(x 12:1; o).switch_sides();
+        let position = pos!(x 12:1; o).sides_switched();
         let probabilities = evaluator.eval(&position);
         // The following numbers should be random
         assert_eq!(probabilities.win_normal, 1.);
@@ -246,7 +246,7 @@ mod game_over_tests {
     #[test]
     fn game_over_win_gammon() {
         let evaluator = super::CompositeEvaluator::default_tests();
-        let position = pos!(x 15:15; o).switch_sides();
+        let position = pos!(x 15:15; o).sides_switched();
         let probabilities = evaluator.eval(&position);
         // The following numbers should be random
         assert_eq!(probabilities.win_gammon, 1.);
@@ -256,7 +256,7 @@ mod game_over_tests {
     #[test]
     fn game_over_win_backgammon() {
         let evaluator = super::CompositeEvaluator::default_tests();
-        let position = pos!(x 22:15; o).switch_sides();
+        let position = pos!(x 22:15; o).sides_switched();
         let probabilities = evaluator.eval(&position);
         // The following numbers should be random
         assert_eq!(probabilities.win_bg, 1.);
@@ -266,7 +266,7 @@ mod game_over_tests {
     #[test]
     fn game_over_ongoing() {
         let evaluator = super::CompositeEvaluator::default_tests();
-        let position = pos!(x 1:1; o 2:2).switch_sides();
+        let position = pos!(x 1:1; o 2:2).sides_switched();
         let probabilities = evaluator.eval(&position);
         // The probabilities now come from the onnx evaluator
         assert!(probabilities.equity() < 0.);

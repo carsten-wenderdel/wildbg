@@ -68,11 +68,11 @@ mod tests {
         let position = pos!(x 5:1; o 24:1);
 
         // That's the position after the roll 2-1. We switch sides to see it from the perspective of `o`.
-        let loser_position_1 = pos!(x 2:1; o 24:1).switch_sides();
+        let loser_position_1 = pos!(x 2:1; o 24:1).sides_switched();
         let loser_equity_1 = evaluator.eval(&loser_position_1).equity();
 
         // That's the position after the roll 3-1 or 1-1. We switch sides to see it from the perspective of `o`.
-        let loser_position_2 = pos!(x 1:1; o 24:1).switch_sides();
+        let loser_position_2 = pos!(x 1:1; o 24:1).sides_switched();
         let loser_equity_2 = evaluator.eval(&loser_position_2).equity();
 
         let multi = MultiPlyEvaluator { evaluator };

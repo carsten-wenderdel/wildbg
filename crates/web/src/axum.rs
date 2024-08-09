@@ -188,10 +188,10 @@ mod tests {
     /// Also sides are switched, so winning and losing values are switched.
     impl Evaluator for EvaluatorFake {
         fn eval(&self, position: &Position) -> Probabilities {
-            let forced_move = pos!(x 1:1; o 24:1).switch_sides();
-            let double_roll_1 = pos!(x 4:1, 2:1; o 24:1).switch_sides();
-            let double_roll_2 = pos!(x 5:1, 1:1; o 24:1).switch_sides();
-            let double_roll_3 = pos!(x 3:2; o 24:1).switch_sides();
+            let forced_move = pos!(x 1:1; o 24:1).sides_switched();
+            let double_roll_1 = pos!(x 4:1, 2:1; o 24:1).sides_switched();
+            let double_roll_2 = pos!(x 5:1, 1:1; o 24:1).sides_switched();
+            let double_roll_3 = pos!(x 3:2; o 24:1).sides_switched();
 
             if position == &forced_move {
                 Probabilities::from(&ResultCounter::new(874, 1, 1, 130, 1, 1))
