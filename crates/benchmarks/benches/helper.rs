@@ -15,6 +15,7 @@ pub fn contact_positions() -> Vec<Position> {
     positions
 }
 
+#[allow(dead_code)]
 pub fn race_positions() -> Vec<Position> {
     let file = File::open("resources/race.csv").unwrap();
     let positions = positions_from_file(file);

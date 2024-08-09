@@ -21,6 +21,10 @@ harness = false
 rayon.workspace = true
 
 [[bench]]
+name = "position_bench"
+harness = false
+
+[[bench]]
 name = "move_generation_bench"
 harness = false
 
