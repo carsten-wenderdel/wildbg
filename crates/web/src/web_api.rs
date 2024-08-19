@@ -5,17 +5,18 @@ use engine::position::Position;
 use hyper::StatusCode;
 use logic::bg_move::{BgMove, MoveDetail};
 use logic::cube::CubeInfo;
+use logic::wildbg_api::{ScoreConfig, WildbgApi};
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 
 pub struct WebApi<T: Evaluator> {
-    evaluator: T,
+    wildbg: WildbgApi<T>,
 }
 
 impl WebApi<CompositeEvaluator> {
     pub fn try_default() -> Option<Self> {
-        match CompositeEvaluator::try_default() {
-            Ok(evaluator) => Some(Self { evaluator }),
+        match WildbgApi::try_default() {
+            Ok(wildbg) => Some(Self { wildbg }),
             Err(_) => None,
         }
     }
@@ -23,7 +24,9 @@ impl WebApi<CompositeEvaluator> {
 
 impl<T: Evaluator> WebApi<T> {
     pub fn new(evaluator: T) -> Self {
-        Self { evaluator }
+        Self {
+            wildbg: WildbgApi::with_evaluator(evaluator),
+        }
     }
 
     pub fn get_eval(&self, pip_params: PipParams) -> Result<EvalResponse, (StatusCode, String)> {
@@ -31,7 +34,7 @@ impl<T: Evaluator> WebApi<T> {
         match position {
             Err(error) => Err((StatusCode::BAD_REQUEST, error.to_string())),
             Ok(position) => {
-                let evaluation = self.evaluator.eval(&position);
+                let evaluation = self.wildbg.probabilities(&position);
                 let cube = CubeInfo::from(&evaluation);
                 let probabilities = ProbabilitiesView::from(evaluation);
                 Ok(EvalResponse {
@@ -44,14 +47,14 @@ impl<T: Evaluator> WebApi<T> {
 
     pub fn get_move(
         &self,
-        pip_params: PipParams,
         dice_params: DiceParams,
+        away_params: AwayParams,
+        pip_params: PipParams,
     ) -> Result<MoveResponse, &'static str> {
         let position = Position::try_from(pip_params)?;
         let dice = Dice::try_from((dice_params.die1, dice_params.die2))?;
-        let pos_and_probs = self
-            .evaluator
-            .positions_and_probabilities_by_equity(&position, &dice);
+        let config = ScoreConfig::try_from(away_params)?;
+        let pos_and_probs = self.wildbg.all_moves(&position, &dice, &config);
         let moves: Vec<MoveInfo> = pos_and_probs
             .into_iter()
             .map(|(new_pos, probabilities)| {
@@ -238,6 +241,32 @@ impl TryFrom<PipParams> for Position {
             params.p25.unwrap_or_default(),
         ];
         Position::try_from(pips)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, IntoParams)]
+pub struct AwayParams {
+    /// Number of points the player on turn `x` needs to win.
+    ///
+    /// Currently only money game and one-pointers are supported.
+    ///
+    /// For a money game, omit both `x_away` and `o_away` or set both parameters to 0.
+    ///
+    /// For a one-pointer, set both `x_away` and `o_away` to 1.
+    #[param(minimum = 0, example = 0)]
+    x_away: Option<u32>,
+    /// Number of points the opponent `o` needs to win.
+    #[param(minimum = 0, example = 0)]
+    o_away: Option<u32>,
+}
+
+impl TryFrom<AwayParams> for ScoreConfig {
+    type Error = &'static str;
+
+    fn try_from(params: AwayParams) -> Result<Self, Self::Error> {
+        let x_away = params.x_away.unwrap_or_default();
+        let o_away = params.o_away.unwrap_or_default();
+        Self::try_from((x_away, o_away))
     }
 }
 

@@ -44,7 +44,7 @@ pub trait Evaluator {
             .collect()
     }
 
-    /// Returns the position after applying the *best* move to `pos`.
+    /// Returns the position by equity after applying the *best* move to `pos`.
     /// The returned `Position` has already switches sides.
     /// This means the returned position will have the *lowest* equity of possible positions.
     #[inline]
@@ -52,9 +52,10 @@ pub trait Evaluator {
         self.best_position(pos, dice, |probabilities| probabilities.equity())
     }
 
-    /// Returns the position after applying the *best* move to `pos`.
+    /// Returns the position according to the `value` closure after applying the *best* move to `pos`.
     /// The returned `Position` has already switches sides.
     /// This means the returned position will have the *lowest* value of possible positions.
+    #[inline]
     fn best_position<F>(&self, pos: &Position, dice: &Dice, value: F) -> Position
     where
         F: Fn(&Probabilities) -> f32,
@@ -78,7 +79,7 @@ pub trait Evaluator {
     }
 
     /// All legal positions after moving with the given dice.
-    /// Sorted, the best move/position is first in the vector.
+    /// Sorted, the best move/position by equity is first in the vector.
     /// The positions are again from the perspective of player `x`.
     /// The probabilities have switched sides, so they are from the perspective of player `x` who has to move.
     fn positions_and_probabilities_by_equity(
@@ -86,13 +87,31 @@ pub trait Evaluator {
         position: &Position,
         dice: &Dice,
     ) -> Vec<(Position, Probabilities)> {
+        self.positions_and_probabilities(position, dice, |probabilities| probabilities.equity())
+    }
+
+    /// All legal positions after moving with the given dice.
+    /// Sorted, the best move/position is first in the vector.
+    /// The positions are again from the perspective of player `x`.
+    /// The probabilities have switched sides, so they are from the perspective of player `x` who has to move.
+    #[inline]
+    fn positions_and_probabilities<F>(
+        &self,
+        position: &Position,
+        dice: &Dice,
+        value: F,
+    ) -> Vec<(Position, Probabilities)>
+    where
+        F: Fn(&Probabilities) -> f32,
+    {
         let after_moving = position.all_positions_after_moving(dice);
         let mut pos_and_probs: Vec<(Position, Probabilities)> = self
             .eval_batch(after_moving)
             .into_iter()
             .map(|(pos, probabilities)| (pos.sides_switched(), probabilities.switch_sides()))
             .collect();
-        pos_and_probs.sort_unstable_by(|a, b| b.1.equity().partial_cmp(&a.1.equity()).unwrap());
+        pos_and_probs
+            .sort_unstable_by(|(_, prob_a), (_, prob_b)| value(prob_b).total_cmp(&value(prob_a)));
         pos_and_probs
     }
 }
