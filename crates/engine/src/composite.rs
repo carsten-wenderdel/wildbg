@@ -1,18 +1,17 @@
-use crate::evaluator::{BatchEvaluator, Evaluator, PartialEvaluator};
+use crate::evaluator::{BatchEvaluator, Evaluator};
 use crate::inputs::{ContactInputsGen, RaceInputsGen};
 use crate::onnx::OnnxEvaluator;
-use crate::position::{GamePhase, GameResult, GameState, OngoingPhase, Position};
+use crate::position::{GamePhase, OngoingPhase, Position};
 use crate::probabilities::Probabilities;
 
 type Error = String;
 
-/// Evaluates each position with the matching of three evaluators: contact, race, game over.
+/// Evaluates each position with the matching of two evaluators (contact and race) plus game_over evaluations.
 ///
 /// This is pretty much the same as the "Composite" GoF design pattern.
 pub struct CompositeEvaluator {
     contact_evaluator: OnnxEvaluator<ContactInputsGen>,
     race_evaluator: OnnxEvaluator<RaceInputsGen>,
-    game_over_evaluator: GameOverEvaluator,
 }
 
 impl BatchEvaluator for CompositeEvaluator {
@@ -38,15 +37,8 @@ impl BatchEvaluator for CompositeEvaluator {
                         race.push(position);
                     }
                 },
-                GamePhase::GameOver(_) => {
-                    // The `try_eval` runs `match pos.game_state()` a second time.
-                    // This is not a performance problem for rollouts: When the array of positions/moves contains a
-                    // position which is game over, the `CompositeEvaluator` is not used anyway, so we never get here.
-                    let probabilities = self
-                        .game_over_evaluator
-                        .try_eval(&position)
-                        .expect("GameOver must be handled by this.");
-                    game_over.push((position, probabilities));
+                GamePhase::GameOver(result) => {
+                    game_over.push((position, Probabilities::from(result)));
                 }
             }
         }
@@ -66,7 +58,6 @@ impl CompositeEvaluator {
         Ok(Self {
             contact_evaluator,
             race_evaluator,
-            game_over_evaluator: GameOverEvaluator {},
         })
     }
 
@@ -78,7 +69,6 @@ impl CompositeEvaluator {
         Ok(Self {
             contact_evaluator,
             race_evaluator,
-            game_over_evaluator: GameOverEvaluator {},
         })
     }
 
@@ -88,7 +78,6 @@ impl CompositeEvaluator {
         Self {
             contact_evaluator,
             race_evaluator,
-            game_over_evaluator: GameOverEvaluator {},
         }
     }
 
@@ -99,44 +88,7 @@ impl CompositeEvaluator {
         Ok(Self {
             contact_evaluator,
             race_evaluator,
-            game_over_evaluator: GameOverEvaluator {},
         })
-    }
-}
-
-struct GameOverEvaluator {}
-
-impl PartialEvaluator for GameOverEvaluator {
-    fn try_eval(&self, pos: &Position) -> Option<Probabilities> {
-        match pos.game_state() {
-            GameState::Ongoing => None,
-            GameState::GameOver(result) => match result {
-                GameResult::WinNormal => Some(Probabilities {
-                    win_normal: 1.,
-                    ..Default::default()
-                }),
-                GameResult::WinGammon => Some(Probabilities {
-                    win_gammon: 1.,
-                    ..Default::default()
-                }),
-                GameResult::WinBg => Some(Probabilities {
-                    win_bg: 1.,
-                    ..Default::default()
-                }),
-                GameResult::LoseNormal => Some(Probabilities {
-                    lose_normal: 1.,
-                    ..Default::default()
-                }),
-                GameResult::LoseGammon => Some(Probabilities {
-                    lose_gammon: 1.,
-                    ..Default::default()
-                }),
-                GameResult::LoseBg => Some(Probabilities {
-                    lose_bg: 1.,
-                    ..Default::default()
-                }),
-            },
-        }
     }
 }
 

@@ -88,6 +88,37 @@ impl From<&ResultCounter> for Probabilities {
     }
 }
 
+impl From<GameResult> for Probabilities {
+    fn from(value: GameResult) -> Self {
+        match value {
+            WinNormal => Probabilities {
+                win_normal: 1.,
+                ..Default::default()
+            },
+            WinGammon => Probabilities {
+                win_gammon: 1.,
+                ..Default::default()
+            },
+            WinBg => Probabilities {
+                win_bg: 1.,
+                ..Default::default()
+            },
+            LoseNormal => Probabilities {
+                lose_normal: 1.,
+                ..Default::default()
+            },
+            LoseGammon => Probabilities {
+                lose_gammon: 1.,
+                ..Default::default()
+            },
+            LoseBg => Probabilities {
+                lose_bg: 1.,
+                ..Default::default()
+            },
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct ResultCounter {
     results: [u32; 6],
@@ -141,8 +172,20 @@ impl ResultCounter {
 
 #[cfg(test)]
 mod tests {
-    use crate::position::GameResult::{LoseBg, LoseGammon, LoseNormal, WinBg, WinGammon};
+    use crate::position::GameResult::{
+        LoseBg, LoseGammon, LoseNormal, WinBg, WinGammon, WinNormal,
+    };
     use crate::probabilities::{Probabilities, ResultCounter};
+
+    #[test]
+    fn from_game_result() {
+        assert_eq!(Probabilities::from(WinNormal).equity(), 1.0);
+        assert_eq!(Probabilities::from(WinGammon).equity(), 2.0);
+        assert_eq!(Probabilities::from(WinBg).equity(), 3.0);
+        assert_eq!(Probabilities::from(LoseNormal).equity(), -1.0);
+        assert_eq!(Probabilities::from(LoseGammon).equity(), -2.0);
+        assert_eq!(Probabilities::from(LoseBg).equity(), -3.0);
+    }
 
     #[test]
     fn from_result_counter() {
