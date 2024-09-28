@@ -15,6 +15,13 @@ The minor version will be incremented if any of the following changes:
 
 This means you can reuse the same neural networks between for example 0.2.0 and 0.2.1, but not between 0.1.0 and 0.2.0.
 
+## 0.1.1 - 2024-09-28
+
+### Fixed
+
+- Update the crate `time`, which fixes the compiler error `type annotations needed for Box<_>`.
+  See https://github.com/rust-lang/rust/issues/125319
+
 ## 0.1.0 - 2023-10-17
 
 Initial release of `wildbg`.
