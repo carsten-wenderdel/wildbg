@@ -79,7 +79,7 @@ impl<T: Evaluator> RolloutEvaluator<T> {
         &self,
         from: &Position,
         first_dice: &[Dice; 2],
-        seeds: &Vec<u64>,
+        seeds: &[u64],
     ) -> ResultCounter {
         let mut counter = ResultCounter::default();
         match self.single_rollout_with_dice(from, first_dice) {
