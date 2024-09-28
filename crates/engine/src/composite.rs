@@ -21,8 +21,9 @@ impl BatchEvaluator for CompositeEvaluator {
         let mut contact: Vec<Position> = Vec::new();
         let mut race: Vec<Position> = Vec::new();
 
-        for position in positions.into_iter() {
-            match position.game_phase() {
+        positions
+            .into_iter()
+            .for_each(|position| match position.game_phase() {
                 GamePhase::Ongoing(ongoing) => match ongoing {
                     OngoingPhase::Contact => {
                         if contact.is_empty() {
@@ -40,8 +41,7 @@ impl BatchEvaluator for CompositeEvaluator {
                 GamePhase::GameOver(result) => {
                     game_over.push((position, Probabilities::from(result)));
                 }
-            }
-        }
+            });
         let mut contact = self.contact_evaluator.eval_batch(contact);
         let mut race = self.race_evaluator.eval_batch(race);
         game_over.append(&mut contact);

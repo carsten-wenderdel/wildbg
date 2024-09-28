@@ -36,6 +36,7 @@ pub struct OnnxEvaluator<T: InputsGen> {
 }
 
 impl<T: InputsGen> BatchEvaluator for OnnxEvaluator<T> {
+    #[inline]
     fn eval_positions(&self, positions: Vec<Position>) -> Vec<(Position, Probabilities)> {
         if positions.is_empty() {
             return Vec::new();
