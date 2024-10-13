@@ -30,7 +30,8 @@ macro_rules! pos {
     };
 }
 
-/// GnuBG Position ID
+/// GnuBG Position ID.
+/// Details: https://www.gnu.org/software/gnubg/manual/html_node/A-technical-description-of-the-Position-ID.html
 impl Position {
     pub fn position_id(&self) -> String {
         let key = self.encode();
@@ -54,7 +55,7 @@ impl Position {
             }
             bit_index += 1; // Appending a 0
         }
-        for _ in 0..self.pips[O_BAR] {
+        for _ in 0..-self.pips[O_BAR] {
             key[bit_index / 8] |= 1 << (bit_index % 8);
             bit_index += 1; // Appending a 1
         }
@@ -140,7 +141,7 @@ impl Position {
 
 #[cfg(test)]
 mod tests {
-    use crate::position::STARTING;
+    use crate::position::{Position, O_BAR, STARTING, X_BAR};
 
     #[test]
     fn start_id() {
@@ -158,8 +159,18 @@ mod tests {
             "zGbiIYCYD3gALA", // O off
         ];
         for pid in pids {
-            let game = super::Position::from_id(pid.to_string());
+            let game = Position::from_id(pid.to_string());
             assert_eq!(pid, game.position_id());
+        }
+    }
+
+    #[test]
+    fn matching_positions() {
+        let pos1 = pos!(x 24:1, X_BAR:2; o 1:3, O_BAR: 4);
+        let pos2 = pos!(x 2:10, 1:5; o 24:9, 23:6);
+        for position in [pos1, pos2] {
+            let id = position.position_id();
+            assert_eq!(position, Position::from_id(id));
         }
     }
 }
