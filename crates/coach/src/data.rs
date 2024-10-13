@@ -55,7 +55,7 @@ pub struct InputsRecord {
 
 impl InputsRecord {
     pub fn new<T: InputsGen>(record: &PositionRecord, inputs_gen: &T) -> Self {
-        let position = Position::from_id(record.position_id.clone());
+        let position = Position::from_id(&record.position_id);
         InputsRecord {
             win_normal: record.win - record.win_g,
             win_gammon: record.win_g,

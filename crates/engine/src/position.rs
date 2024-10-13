@@ -727,7 +727,7 @@ mod tests {
             }
         }
         for (id, dice, number) in positions {
-            let position = Position::from_id(id.to_string());
+            let position = Position::from_id(id);
             let dice = Dice::new(dice.0, dice.1);
             assert_eq!(
                 number_of_moves(&position, &dice),
