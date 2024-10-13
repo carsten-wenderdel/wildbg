@@ -48,31 +48,22 @@ impl Position {
         let mut bit_index = 0;
 
         // Encoding the position for the player not on roll
-        for point in (1..=24).rev() {
+        for point in (O_BAR..X_BAR).rev() {
             for _ in 0..-self.pips[point] {
                 key[bit_index / 8] |= 1 << (bit_index % 8);
                 bit_index += 1; // Appending a 1
             }
             bit_index += 1; // Appending a 0
         }
-        for _ in 0..-self.pips[O_BAR] {
-            key[bit_index / 8] |= 1 << (bit_index % 8);
-            bit_index += 1; // Appending a 1
-        }
-        bit_index += 1; // Appending a 0
 
         // Encoding the position for the player on roll
-        for point in 1..=24 {
-            for _ in 0..self.pips[point] {
+        (O_BAR + 1..X_BAR + 1).for_each(|point| {
+            (0..self.pips[point]).for_each(|_| {
                 key[bit_index / 8] |= 1 << (bit_index % 8);
                 bit_index += 1; // Appending a 1
-            }
+            });
             bit_index += 1; // Appending a 0
-        }
-        for _ in 0..self.pips[X_BAR] {
-            key[bit_index / 8] |= 1 << (bit_index % 8);
-            bit_index += 1; // Appending a 1
-        }
+        });
 
         key
     }
@@ -81,48 +72,31 @@ impl Position {
         let mut bit_index = 0;
         let mut pips = [0i8; 26];
 
-        let mut x_bar = 0;
-        let mut o_bar = 0;
         let mut x_pieces = 0;
         let mut o_pieces = 0;
 
-        for point in (0..24).rev() {
+        (O_BAR..X_BAR).rev().for_each(|point| {
             while (key[bit_index / 8] >> (bit_index % 8)) & 1 == 1 {
-                pips[point + 1] -= 1;
+                pips[point] -= 1;
                 o_pieces += 1;
                 bit_index += 1;
             }
             bit_index += 1; // Appending a 0
-        }
+        });
 
-        while (key[bit_index / 8] >> (bit_index % 8)) & 1 == 1 {
-            o_bar += 1;
-            bit_index += 1;
-        }
-
-        bit_index += 1; // Appending a 0
-
-        for point in 0..24 {
+        (O_BAR + 1..X_BAR + 1).for_each(|point| {
             while (key[bit_index / 8] >> (bit_index % 8)) & 1 == 1 {
-                pips[point + 1] += 1;
+                pips[point] += 1;
                 x_pieces += 1;
                 bit_index += 1;
             }
             bit_index += 1; // Appending a 0
-        }
-
-        while (key[bit_index / 8] >> (bit_index % 8)) & 1 == 1 {
-            x_bar += 1;
-            bit_index += 1;
-        }
-
-        pips[X_BAR] = x_bar;
-        pips[O_BAR] = -o_bar;
+        });
 
         Position {
             pips,
-            x_off: (NUM_OF_CHECKERS as i8 - x_pieces - x_bar) as u8,
-            o_off: (NUM_OF_CHECKERS as i8 - o_pieces - o_bar) as u8,
+            x_off: NUM_OF_CHECKERS - x_pieces,
+            o_off: NUM_OF_CHECKERS - o_pieces,
         }
     }
 
