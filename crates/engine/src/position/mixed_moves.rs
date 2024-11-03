@@ -70,27 +70,34 @@ impl Position {
     fn moves_with_0_checkers_on_bar(&self, dice: &MixedDice) -> Vec<Position> {
         debug_assert!(self.pips[X_BAR] == 0);
 
-        match self.move_possibilities(dice) {
-            MovePossibilities::None => vec![*self],
-            MovePossibilities::One { die } => self.one_checker_moves(die),
-            MovePossibilities::Two => self.two_checker_moves(dice),
+        // Let's try to find moves where both dice are used.
+        let mut moves = self.two_checker_moves(dice);
+        if moves.is_empty() {
+            // No moves found with both dice used, so let's try the bigger die only.
+            self.one_checker_moves(dice.big, &mut moves);
+            if moves.is_empty() {
+                // No moves found with the bigger die used, so let's try the smaller one.
+                self.one_checker_moves(dice.small, &mut moves);
+                if moves.is_empty() {
+                    // The player can't move any checker, so we return the identical position.
+                    moves.push(*self);
+                }
+            }
         }
+        moves
     }
 
     /// All positions after moving a single checker once. If no move is possible it returns `None`.
     /// So if the return value is not `None`, the Vector is not empty.
-    fn one_checker_moves(&self, die: usize) -> Vec<Position> {
+    fn one_checker_moves(&self, die: usize, moves: &mut Vec<Position>) {
         debug_assert!(self.pips[X_BAR] == 0);
 
-        let mut moves: Vec<Position> = Vec::with_capacity(MOVES_CAPACITY);
         (self.smallest_pip_to_check(die)..X_BAR).for_each(|i| {
             if self.can_move_when_bearoff_is_legal(i, die) {
                 let position = self.clone_and_move_single_checker(i, die);
                 moves.push(position);
             }
         });
-        debug_assert!(!moves.is_empty());
-        moves
     }
 
     // All moves with no checkers on the bar where two checkers can be moved.
@@ -141,7 +148,6 @@ impl Position {
             }
         });
 
-        debug_assert!(!moves.is_empty());
         moves
     }
 
@@ -157,55 +163,6 @@ impl Position {
             position.enter_single_checker(dice.small);
         }
         vec![position]
-    }
-
-    /// Will return 2 if both dice can be used.
-    /// Will return 0 if no checker can be moved.
-    fn move_possibilities(&self, dice: &MixedDice) -> MovePossibilities {
-        debug_assert!(self.pips[X_BAR] == 0);
-
-        let mut can_move_big = false;
-        let mut can_move_small = false;
-
-        // Move dice.big first
-        for i in self.smallest_pip_to_check(dice.big)..X_BAR {
-            if self.can_move_when_bearoff_is_legal(i, dice.big) {
-                can_move_big = true;
-                let position = self.clone_and_move_single_checker(i, dice.big);
-                for j in position.smallest_pip_to_check(dice.small)..X_BAR {
-                    if position.can_move_when_bearoff_is_legal(j, dice.small) {
-                        return MovePossibilities::Two;
-                    }
-                }
-            }
-        }
-
-        // Move dice.small first, assuming dice.big cannot be moved first
-        for i in self.smallest_pip_to_check(dice.small)..X_BAR {
-            if self.can_move_when_bearoff_is_legal(i, dice.small) {
-                can_move_small = true;
-                let position = self.clone_and_move_single_checker(i, dice.small);
-                // If die1 and die2 could be used with different checkers without bearing off, then we would not get here.
-                // So, we only need to check if die1 can be moved with the same checker as die2.
-                if i > dice.small && position.can_move_in_board(i - dice.small, dice.big) {
-                    return MovePossibilities::Two;
-                }
-                // Now checking bearing off
-                for j in position.smallest_pip_to_check(dice.big)..7 {
-                    if position.can_move_when_bearoff_is_legal(j, dice.big) {
-                        return MovePossibilities::Two;
-                    }
-                }
-            }
-        }
-
-        if can_move_big {
-            MovePossibilities::One { die: dice.big }
-        } else if can_move_small {
-            MovePossibilities::One { die: dice.small }
-        } else {
-            MovePossibilities::None
-        }
     }
 
     fn can_enter(&self, die: usize) -> bool {
@@ -241,12 +198,6 @@ impl Position {
             self.pips[X_BAR - die] += 1;
         }
     }
-}
-
-enum MovePossibilities {
-    None,
-    One { die: usize },
-    Two,
 }
 
 #[cfg(test)]
