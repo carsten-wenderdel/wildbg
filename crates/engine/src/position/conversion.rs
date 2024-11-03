@@ -3,7 +3,8 @@ use base64::engine::general_purpose;
 use base64::Engine;
 use std::collections::HashMap;
 
-/// Simple way to create positions for testing
+/// Simple way to create positions for testing.
+///
 /// The starting position would be:
 /// pos!(x 24:2, 13:5, 8:3, 6:5; o 19:5, 17:3, 12:5, 1:2)
 /// The order is not important, so this is equivalent:

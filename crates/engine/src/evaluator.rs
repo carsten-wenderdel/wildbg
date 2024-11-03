@@ -83,6 +83,7 @@ pub trait Evaluator {
 
 /// [BatchEvaluator] is a subtrait of [Evaluator]. The function [Evaluator::eval_batch] is
 /// implemented by default. This trait is meant for evaluating all legal moves at once.
+///
 /// An example is [crate::onnx::OnnxEvaluator], where feeding several positions at once to the
 /// neural net is more performant than evaluating them one by one.
 ///

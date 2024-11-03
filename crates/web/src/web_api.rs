@@ -101,6 +101,8 @@ pub struct MoveInfo {
 // This is similar to evaluator::Probabilities. But while the former serves
 // as a model for calculations, this is more like a view model for the web API.
 // While in evaluator::Probabilities all 6 numbers add up to 1.0, this is different.
+/// Chances for winning/losing normal/gammon/backgammon.
+///
 /// `win` includes the chances to win gammon or BG.
 /// `winG` includes the chances to win BG and `loseG` includes the chance to lose BG.
 /// This way we use the same format as earlier engines like GnuBG have done.

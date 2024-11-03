@@ -306,7 +306,7 @@ impl Position {
 
     #[inline]
     fn can_move_internally(&self, from: usize, die: usize) -> bool {
-        return if self.pips[from] < 1 {
+        if self.pips[from] < 1 {
             // no checker to move
             false
         } else if from > die {
@@ -321,7 +321,7 @@ impl Position {
             // from < die, bear off
             let checker_on_bigger_pip = self.pips[from + 1..X_BAR].iter().any(|x| x > &0);
             !checker_on_bigger_pip
-        };
+        }
     }
 
     /// Works for all of moves, including those from the bar
