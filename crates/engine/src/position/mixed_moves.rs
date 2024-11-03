@@ -168,7 +168,7 @@ impl Position {
         let mut can_move_small = false;
 
         // Move dice.big first
-        for i in (self.smallest_pip_to_check(dice.big)..X_BAR).rev() {
+        for i in self.smallest_pip_to_check(dice.big)..X_BAR {
             if self.can_move_when_bearoff_is_legal(i, dice.big) {
                 can_move_big = true;
                 let position = self.clone_and_move_single_checker(i, dice.big);
@@ -181,7 +181,7 @@ impl Position {
         }
 
         // Move dice.small first, assuming dice.big cannot be moved first
-        for i in (self.smallest_pip_to_check(dice.small)..X_BAR).rev() {
+        for i in self.smallest_pip_to_check(dice.small)..X_BAR {
             if self.can_move_when_bearoff_is_legal(i, dice.small) {
                 can_move_small = true;
                 let position = self.clone_and_move_single_checker(i, dice.small);
@@ -191,7 +191,7 @@ impl Position {
                     return MovePossibilities::Two;
                 }
                 // Now checking bearing off
-                for j in (position.smallest_pip_to_check(dice.big)..7).rev() {
+                for j in position.smallest_pip_to_check(dice.big)..7 {
                     if position.can_move_when_bearoff_is_legal(j, dice.big) {
                         return MovePossibilities::Two;
                     }
