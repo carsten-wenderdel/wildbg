@@ -159,7 +159,7 @@ impl Position {
         vec![position]
     }
 
-    /// Will return 2 if 2 or more checkers can be moved.
+    /// Will return 2 if both dice can be used.
     /// Will return 0 if no checker can be moved.
     fn move_possibilities(&self, dice: &MixedDice) -> MovePossibilities {
         debug_assert!(self.pips[X_BAR] == 0);
@@ -172,8 +172,7 @@ impl Position {
             if self.can_move_when_bearoff_is_legal(i, dice.big) {
                 can_move_big = true;
                 let position = self.clone_and_move_single_checker(i, dice.big);
-                // We have to look at all pips in the home board, in case bearing off just became possible. This is why the 7 appears in the max function.
-                for j in (position.smallest_pip_to_check(dice.small)..max(7, i + 1)).rev() {
+                for j in position.smallest_pip_to_check(dice.small)..X_BAR {
                     if position.can_move_when_bearoff_is_legal(j, dice.small) {
                         return MovePossibilities::Two;
                     }
@@ -551,13 +550,24 @@ mod tests {
     }
 
     #[test]
-    fn use_smaller_die_from_bigger_pip() {
+    fn use_smaller_die_from_bigger_pip_case_when_bigger_pip_in_last_quarter() {
         // Given
         let position = pos!(x 7:1, 6:3; o 2:2);
         // When
         let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(5, 4));
         // Then
         let expected = pos!(x 6:2, 3:1, 1:1; o 2:2);
+        assert_eq!(resulting_positions, vec![expected]);
+    }
+
+    #[test]
+    fn use_smaller_die_from_bigger_pip_case_when_bigger_in_first_quarter() {
+        // Given
+        let position = pos!(x 24:1, 8:1, 6:5; o 20:4, 19:3, 18:4, 16:2, 4:2);
+        // When
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(6, 2));
+        // Then
+        let expected = pos!(x 22:1, 6:5, 2:1; o 20:4, 19:3, 18:4, 16:2, 4:2);
         assert_eq!(resulting_positions, vec![expected]);
     }
 
