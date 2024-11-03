@@ -41,9 +41,9 @@ For a given position in cubeless money game, it returns the probabilities to win
 https://github.com/carsten-wenderdel/wildbg/blob/d5c7280a60a52cb61c92af78018fb811cf3dd223/crates/engine/src/evaluator.rs#L31
 
 Examples of implementations are
-- `GameOverEvaluator` for positions where the game is over and the probabilities are known.
+
 - `OnnxEvaluator` which uses a neural net in `ONNX` format to calculate the probabilities.
-- `CompositeEvaluator` which consists of a `GameOverEvaluator` and other evaluators for different game phases. It decides which evaluator to use based on the position.
+- `CompositeEvaluator` which consists of various `OnnxEvaluator`s for different game phases.
 - `RolloutEvaluator` which uses another evaluator to do rollouts.
 
 ## Inputs generation
