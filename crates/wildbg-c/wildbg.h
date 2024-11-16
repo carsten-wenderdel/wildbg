@@ -71,8 +71,8 @@ typedef struct CProbabilities {
 } CProbabilities;
 
 typedef struct CCubeInfo {
-  bool double_;
-  bool accept;
+  bool should_double;
+  bool should_accept;
 } CCubeInfo;
 
 /**

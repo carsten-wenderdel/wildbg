@@ -152,15 +152,15 @@ impl From<&MoveDetail> for CMoveDetail {
 #[repr(C)]
 #[derive(Default)]
 pub struct CCubeInfo {
-    double: bool,
-    accept: bool,
+    should_double: bool,
+    should_accept: bool,
 }
 
 impl From<&CubeInfo> for CCubeInfo {
     fn from(value: &CubeInfo) -> Self {
         Self {
-            double: value.double(),
-            accept: value.accept(),
+            should_double: value.double(),
+            should_accept: value.accept(),
         }
     }
 }
@@ -223,7 +223,7 @@ pub extern "C" fn cube_info(wildbg: &Wildbg, pips: &[c_int; 26]) -> CCubeInfo {
         Ok(position) => (&wildbg.api.cube_info(&position)).into(),
         Err(error) => {
             eprintln!("{}", error);
-            CCubeInfo { double: false, accept: false }
+            CCubeInfo { should_double: false, should_accept: false }
         }
     }
 }
