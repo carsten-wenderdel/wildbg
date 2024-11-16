@@ -1,4 +1,5 @@
 use crate::bg_move::BgMove;
+use crate::cube::CubeInfo;
 use engine::composite::CompositeEvaluator;
 use engine::dice::Dice;
 use engine::evaluator::Evaluator;
@@ -36,6 +37,10 @@ impl<T: Evaluator> WildbgApi<T> {
         };
         let new_position = self.evaluator.best_position(position, dice, value);
         BgMove::new(position, &new_position.sides_switched(), dice)
+    }
+
+    pub fn cube_info(&self, position: &Position) -> CubeInfo {
+        CubeInfo::from(&self.evaluator.eval(position))
     }
 }
 

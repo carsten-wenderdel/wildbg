@@ -4,6 +4,7 @@ use engine::dice::Dice;
 use engine::position::Position;
 use engine::probabilities::Probabilities;
 use logic::bg_move::{BgMove, MoveDetail};
+use logic::cube::CubeInfo;
 use logic::wildbg_api::{WildbgApi, WildbgConfig};
 
 // When this file is changed, recreate the header file by executing this from the project's root:
@@ -148,6 +149,22 @@ impl From<&MoveDetail> for CMoveDetail {
     }
 }
 
+#[repr(C)]
+#[derive(Default)]
+pub struct CCubeInfo {
+    double: bool,
+    accept: bool,
+}
+
+impl From<&CubeInfo> for CCubeInfo {
+    fn from(value: &CubeInfo) -> Self {
+        Self {
+            double: value.double(),
+            accept: value.accept(),
+        }
+    }
+}
+
 type Error = &'static str;
 
 /// Returns the best move for the given position.
@@ -198,6 +215,19 @@ pub extern "C" fn probabilities(wildbg: &Wildbg, pips: &[c_int; 26]) -> CProbabi
         }
     }
 }
+
+#[no_mangle]
+pub extern "C" fn cube_info(wildbg: &Wildbg, pips: &[c_int; 26]) -> CCubeInfo {
+    let pips = pips.map(|pip| pip as i8);
+    match Position::try_from(pips) {
+        Ok(position) => (&wildbg.api.cube_info(&position)).into(),
+        Err(error) => {
+            eprintln!("{}", error);
+            CCubeInfo { double: false, accept: false }
+        }
+    }
+}
+
 
 #[cfg(test)]
 mod tests {

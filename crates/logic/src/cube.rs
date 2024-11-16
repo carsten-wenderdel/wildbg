@@ -22,3 +22,12 @@ impl From<&Probabilities> for CubeInfo {
         Self { double, accept }
     }
 }
+
+impl CubeInfo {
+    pub fn double(&self) -> bool {
+        self.double
+    }
+    pub fn accept(&self) -> bool {
+        self.accept
+    }
+}
