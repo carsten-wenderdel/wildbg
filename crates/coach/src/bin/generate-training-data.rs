@@ -45,7 +45,7 @@ fn find_and_roll_out<T: Evaluator>(
         .from_path(&positions_path)?;
     let positions: Vec<Position> = reader
         .into_records()
-        .map(|record| Position::from_id(record.unwrap().as_slice().to_string()))
+        .map(|record| Position::from_id(record.unwrap().as_slice()))
         .collect();
 
     _ = std::fs::create_dir("training-data");

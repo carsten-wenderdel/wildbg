@@ -117,7 +117,7 @@ impl Position {
             return max_return_value;
         }
         // bear off moves
-        return match position.pips.iter().rposition(|&p| p > 0) {
+        match position.pips.iter().rposition(|&p| p > 0) {
             None => number_of_checkers,
             Some(biggest_pip) => {
                 let bearoff_checkers: u32 = if biggest_pip > 6 {
@@ -136,7 +136,7 @@ impl Position {
                 number_of_checkers += bearoff_checkers;
                 min(number_of_checkers, max_return_value)
             }
-        };
+        }
     }
 }
 

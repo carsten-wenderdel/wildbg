@@ -3,8 +3,7 @@ use crate::position::Position;
 use crate::probabilities::Probabilities;
 
 /// [Evaluator] is one of the central parts of the engine. Implementing structs only have to
-/// implement the function [Evaluator::eval], Examples are [crate::composite::GameOverEvaluator]
-/// and `RolloutEvaluator`.
+/// implement the function [Evaluator::eval], Examples are `OnnxEvaluator` and `RolloutEvaluator`.
 ///
 /// The function [Evaluator::eval_batch] is implemented by default, building on `eval`.
 /// If there is way to optimize evaluations by looking at all legal moves at once, then don't
@@ -84,6 +83,7 @@ pub trait Evaluator {
 
 /// [BatchEvaluator] is a subtrait of [Evaluator]. The function [Evaluator::eval_batch] is
 /// implemented by default. This trait is meant for evaluating all legal moves at once.
+///
 /// An example is [crate::onnx::OnnxEvaluator], where feeding several positions at once to the
 /// neural net is more performant than evaluating them one by one.
 ///

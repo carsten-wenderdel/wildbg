@@ -2,9 +2,9 @@ use crate::position::{Position, NUM_OF_CHECKERS, O_BAR, X_BAR};
 use base64::engine::general_purpose;
 use base64::Engine;
 use std::collections::HashMap;
-use std::ops::Add;
 
-/// Simple way to create positions for testing
+/// Simple way to create positions for testing.
+///
 /// The starting position would be:
 /// pos!(x 24:2, 13:5, 8:3, 6:5; o 19:5, 17:3, 12:5, 1:2)
 /// The order is not important, so this is equivalent:
@@ -35,14 +35,17 @@ macro_rules! pos {
 impl Position {
     pub fn position_id(&self) -> String {
         let key = self.encode();
-        let b64 = general_purpose::STANDARD.encode(key);
-        b64[..14].to_string()
+        general_purpose::STANDARD_NO_PAD.encode(key)
     }
 
-    pub fn from_id(id: String) -> Position {
-        let key = general_purpose::STANDARD.decode(id.add("==")).unwrap();
-        Position::decode(key.try_into().unwrap())
+    pub fn from_id(id: &str) -> Position {
+        let mut bytes = [0; 10];
+        general_purpose::STANDARD_NO_PAD
+            .decode_slice(id, &mut bytes)
+            .expect("Position encoding expects valid id.");
+        Position::decode(bytes)
     }
+
     fn encode(&self) -> [u8; 10] {
         let mut key = [0u8; 10];
         let mut bit_index = 0;
@@ -133,7 +136,7 @@ mod tests {
             "zGbiIYCYD3gALA", // O off
         ];
         for pid in pids {
-            let game = Position::from_id(pid.to_string());
+            let game = Position::from_id(pid);
             assert_eq!(pid, game.position_id());
         }
     }
@@ -144,7 +147,7 @@ mod tests {
         let pos2 = pos!(x 2:10, 1:5; o 24:9, 23:6);
         for position in [pos1, pos2] {
             let id = position.position_id();
-            assert_eq!(position, Position::from_id(id));
+            assert_eq!(position, Position::from_id(&id));
         }
     }
 }

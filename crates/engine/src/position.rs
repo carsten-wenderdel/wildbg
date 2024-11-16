@@ -172,6 +172,7 @@ impl Position {
         for position in new_positions.iter_mut() {
             *position = position.sides_switched();
         }
+        debug_assert!(!new_positions.is_empty());
         new_positions
     }
 
@@ -295,18 +296,9 @@ impl Position {
         new
     }
 
-    /// Only call this if no checkers are on `X_BAR`
-    fn can_move_in_board(&self, from: usize, die: usize) -> bool {
-        debug_assert!(
-            self.pips[X_BAR] == 0,
-            "Don't call this function if x has checkers on the bar"
-        );
-        self.can_move_internally(from, die)
-    }
-
     #[inline]
     fn can_move_internally(&self, from: usize, die: usize) -> bool {
-        return if self.pips[from] < 1 {
+        if self.pips[from] < 1 {
             // no checker to move
             false
         } else if from > die {
@@ -321,7 +313,7 @@ impl Position {
             // from < die, bear off
             let checker_on_bigger_pip = self.pips[from + 1..X_BAR].iter().any(|x| x > &0);
             !checker_on_bigger_pip
-        };
+        }
     }
 
     /// Works for all of moves, including those from the bar
@@ -727,7 +719,7 @@ mod tests {
             }
         }
         for (id, dice, number) in positions {
-            let position = Position::from_id(id.to_string());
+            let position = Position::from_id(id);
             let dice = Dice::new(dice.0, dice.1);
             assert_eq!(
                 number_of_moves(&position, &dice),
@@ -787,54 +779,54 @@ mod private_tests {
     #[test]
     fn cannot_move_no_checker() {
         let given = pos!(x 4:10; o);
-        assert!(!given.can_move_in_board(5, 2));
+        assert!(!given.can_move(5, 2));
     }
 
     #[test]
     fn cannot_move_opposing_checker() {
         let given = Position::from_hash_maps(&HashMap::new(), &HashMap::from([(4, 10)]));
-        assert!(!given.can_move_in_board(4, 2));
+        assert!(!given.can_move(4, 2));
     }
 
     #[test]
     fn cannot_move_would_land_on_two_opposing_checkers() {
         let given = pos!(x 4:10; o 2:2);
-        assert!(!given.can_move_in_board(4, 2));
+        assert!(!given.can_move(4, 2));
     }
 
     #[test]
     fn can_move_will_land_on_one_opposing_checker() {
         let given = pos!(x 4:10; o 2:1);
-        assert!(given.can_move_in_board(4, 2));
+        assert!(given.can_move(4, 2));
     }
 
     #[test]
     fn can_move_will_land_on_checkers() {
         let given = pos!(x 4:10; o 2:1);
-        assert!(given.can_move_in_board(4, 2));
+        assert!(given.can_move(4, 2));
     }
 
     #[test]
     fn cannot_move_bear_off_illegal_because_other_checkers() {
         let given = pos!(x 10:2, 4:10; o);
-        assert!(!given.can_move_in_board(4, 4));
+        assert!(!given.can_move(4, 4));
     }
 
     #[test]
     fn can_move_will_bear_off_exactly() {
         let given = pos!(x 4:10; o);
-        assert!(given.can_move_in_board(4, 4));
+        assert!(given.can_move(4, 4));
     }
 
     #[test]
     fn cannot_move_bear_off_skipping_illegal_because_other_checkers() {
         let given = pos!(x 10:2, 4:10; o);
-        assert!(!given.can_move_in_board(4, 6));
+        assert!(!given.can_move(4, 6));
     }
 
     #[test]
     fn can_move_will_bear_off_skipping() {
         let given = pos!(x 4:10; o);
-        assert!(given.can_move_in_board(4, 6));
+        assert!(given.can_move(4, 6));
     }
 }

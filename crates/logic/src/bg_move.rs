@@ -19,6 +19,7 @@ pub struct BgMove {
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "web", derive(Serialize, ToSchema))]
 /// Single movement of one checker. We always move from bigger pips to smaller pips.
+///
 /// If the same checker is moved more than once, multiple `MoveDetail`s are given.
 /// Therefore: `from > to` and `from - to <= 6`.
 pub struct MoveDetail {
