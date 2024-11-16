@@ -223,11 +223,13 @@ pub extern "C" fn cube_info(wildbg: &Wildbg, pips: &[c_int; 26]) -> CCubeInfo {
         Ok(position) => (&wildbg.api.cube_info(&position)).into(),
         Err(error) => {
             eprintln!("{}", error);
-            CCubeInfo { should_double: false, should_accept: false }
+            CCubeInfo {
+                should_double: false,
+                should_accept: false,
+            }
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
