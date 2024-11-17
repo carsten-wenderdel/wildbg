@@ -70,6 +70,11 @@ typedef struct CProbabilities {
   float lose_bg;
 } CProbabilities;
 
+typedef struct CCubeInfo {
+  bool should_double;
+  bool should_accept;
+} CCubeInfo;
+
 /**
  * Loads the neural nets into memory and returns a pointer to the API.
  * Returns `NULL` if the neural nets cannot be found.
@@ -109,3 +114,5 @@ struct CMove best_move(const struct Wildbg *wildbg,
  */
 struct CProbabilities probabilities(const struct Wildbg *wildbg,
                                     const int (*pips)[26]);
+
+struct CCubeInfo cube_info(const struct Wildbg *wildbg, const int (*pips)[26]);

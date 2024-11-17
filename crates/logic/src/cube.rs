@@ -1,8 +1,10 @@
 use engine::probabilities::Probabilities;
+#[cfg(feature = "web")]
 use serde::Serialize;
+#[cfg(feature = "web")]
 use utoipa::ToSchema;
 
-#[derive(Serialize, ToSchema)]
+#[cfg_attr(feature = "web", derive(Serialize, ToSchema))]
 /// Information about proper cube decisions. Currently quick and dirty calculations.
 pub struct CubeInfo {
     /// `true` if the player `x` should double, `false` if no double yet or too good.
@@ -20,5 +22,14 @@ impl From<&Probabilities> for CubeInfo {
         let double = equity > 0.4 && equity < 0.6;
         let accept = equity < 0.5;
         Self { double, accept }
+    }
+}
+
+impl CubeInfo {
+    pub fn double(&self) -> bool {
+        self.double
+    }
+    pub fn accept(&self) -> bool {
+        self.accept
     }
 }
