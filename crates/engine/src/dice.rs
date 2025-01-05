@@ -17,12 +17,12 @@ pub struct MixedDice {
 /// As `usize` is also returned how often those dice on average appear in 1296 rolls.
 /// Two double rolls appear 1 time, two mixed rolls appear 4 times.
 /// A combination of a double and a mixed roll appears 2 times.
-pub const ALL_441: [([Dice; 2], usize); 441] = Dice::all_441();
+pub static ALL_441: [([Dice; 2], usize); 441] = Dice::all_441();
 
 /// Contains all 21 possibilities of dice and a number of how often they appear in 36 rolls.
 ///
 /// So doubles appear 1 time, mixed rolls appear 2 times.
-pub const ALL_21: [(Dice, usize); 21] = Dice::all_21();
+pub static ALL_21: [(Dice, usize); 21] = Dice::all_21();
 
 impl Dice {
     #[inline]
@@ -39,7 +39,7 @@ impl Dice {
     }
     const fn all_441() -> [([Dice; 2], usize); 441] {
         let mut dice_441 = [([Dice::Double(1), Dice::Double(1)], 0_usize); 441]; // Dummy values, will be replaced
-        let dice_21 = ALL_21;
+        let dice_21 = Self::all_21();
 
         let mut i = 0_usize;
         while i < 21 {
