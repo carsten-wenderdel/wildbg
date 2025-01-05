@@ -38,9 +38,10 @@ Thanks to [@oysteijo](https://github.com/oysteijo) you can play against `wildbg`
 
 #### Online
 
-You can access the API and see yourself how `wildbg` would move: https://wildbg.shuttleapp.rs/swagger-ui/
+You can access the API and see yourself how `wildbg` would move: https://wildbg-pwuo.shuttle.app/swagger-ui/
 
-An example for the starting position and rolling 3 and 1: https://wildbg.shuttleapp.rs/move?die1=3&die2=1&p24=2&p19=-5&p17=-3&p13=5&p12=-5&p8=3&p6=5&p1=-2
+An example for the starting position and rolling 3 and 1:
+https://wildbg-pwuo.shuttle.app/move?die1=3&die2=1&p24=2&p19=-5&p17=-3&p13=5&p12=-5&p8=3&p6=5&p1=-2
 
 #### Locally
 

@@ -2,16 +2,15 @@ use std::sync::Arc;
 use web::axum::router;
 use web::web_api::WebApi;
 
-// This binary is for deploying wildbg at shuttle.rs
+// This binary is for deploying wildbg at shuttle.dev
 // Currently it's available at:
-// https://wildbg.shuttleapp.rs/swagger-ui/
-// https://wildbg.shuttleapp.rs/move?die1=5&die2=2&p24=2&p19=-5&p17=-3&p13=5&p12=-5&p8=3&p6=5&p1=-2
+// https://wildbg-pwuo.shuttle.app/swagger-ui/
+// https://wildbg-pwuo.shuttle.app/move?die1=5&die2=2&p24=2&p19=-5&p17=-3&p13=5&p12=-5&p8=3&p6=5&p1=-2
 
-// Login at https://console.shuttle.rs
-// Login in console: cargo shuttle login
-// Locally: cargo shuttle run
-// Deploying: cargo shuttle deploy
-// If things are stuck, try running: cargo shuttle project restart
+// Login at https://console.shuttle.dev
+// Login in console: shuttle login
+// Locally: shuttle run
+// Deploying: shuttle deploy
 
 // If you don't want to use shuttle, but run the web server directly, use `server.rs`.
 // Both files use the same library functions.

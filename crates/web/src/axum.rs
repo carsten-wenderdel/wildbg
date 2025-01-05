@@ -165,7 +165,9 @@ mod tests {
     use crate::axum::DynWebApi;
     use crate::web_api::WebApi;
     use axum::body::Body;
+    use axum::extract::Request;
     use axum::http::header::CONTENT_TYPE;
+    use axum::http::StatusCode;
     use engine::evaluator::Evaluator;
     use engine::inputs::ContactInputsGen;
     use engine::onnx::OnnxEvaluator;
@@ -173,7 +175,6 @@ mod tests {
     use engine::position::Position;
     use engine::probabilities::{Probabilities, ResultCounter};
     use http_body_util::BodyExt;
-    use hyper::{Request, StatusCode};
     use std::sync::Arc;
     use tower::ServiceExt; // for `oneshot
 

@@ -1,8 +1,8 @@
+use axum::http::StatusCode;
 use engine::composite::CompositeEvaluator;
 use engine::dice::Dice;
 use engine::evaluator::Evaluator;
 use engine::position::Position;
-use hyper::StatusCode;
 use logic::bg_move::{BgMove, MoveDetail};
 use logic::cube::CubeInfo;
 use serde::{Deserialize, Serialize};
