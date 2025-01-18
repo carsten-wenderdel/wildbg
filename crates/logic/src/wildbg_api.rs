@@ -6,11 +6,34 @@ use engine::evaluator::Evaluator;
 use engine::position::Position;
 use engine::probabilities::Probabilities;
 
-pub struct WildbgConfig {
-    /// How many points needed to finish the match?
-    /// Index 0 is for the player on turn, index 1 for the opponent.
-    /// Zero indicates money game.
-    pub away: Option<(u32, u32)>,
+pub enum ScoreConfig {
+    MoneyGame,
+    OnePointer,
+}
+
+impl TryFrom<(u32, u32)> for ScoreConfig {
+    type Error = &'static str;
+
+    #[inline]
+    fn try_from((x_away, o_away): (u32, u32)) -> Result<Self, Self::Error> {
+        match (x_away, o_away) {
+            (0, 0) => Ok(ScoreConfig::MoneyGame),
+            (1, 1) => Ok(ScoreConfig::OnePointer),
+            (0, 1) => Err("If x_away is 0, then o_away must also be 0."),
+            (1, 0) => Err("If o_away is 0, then x_away must also be 0."),
+            (_, _) => Err("Currently only 1 pointers and money games are supported."),
+        }
+    }
+}
+
+impl ScoreConfig {
+    #[inline]
+    pub fn value(&self) -> impl Fn(&Probabilities) -> f32 {
+        match self {
+            ScoreConfig::OnePointer => |p: &Probabilities| p.win(),
+            ScoreConfig::MoneyGame => |p: &Probabilities| p.equity(),
+        }
+    }
 }
 
 pub struct WildbgApi<T: Evaluator> {
@@ -24,18 +47,14 @@ impl WildbgApi<CompositeEvaluator> {
 }
 
 impl<T: Evaluator> WildbgApi<T> {
+    #[inline]
     pub fn probabilities(&self, position: &Position) -> Probabilities {
         self.evaluator.eval(position)
     }
 
-    pub fn best_move(&self, position: &Position, dice: &Dice, config: &WildbgConfig) -> BgMove {
-        let value: fn(&Probabilities) -> f32 = if config.away == Some((1, 1)) {
-            |p| p.win()
-        } else {
-            // For now assume money game if not 1 pointer
-            |p| p.equity()
-        };
-        let new_position = self.evaluator.best_position(position, dice, value);
+    #[inline]
+    pub fn best_move(&self, position: &Position, dice: &Dice, config: &ScoreConfig) -> BgMove {
+        let new_position = self.evaluator.best_position(position, dice, config.value());
         BgMove::new(position, &new_position.sides_switched(), dice)
     }
 
@@ -47,7 +66,7 @@ impl<T: Evaluator> WildbgApi<T> {
 #[cfg(test)]
 mod tests {
     use crate::bg_move::{BgMove, MoveDetail};
-    use crate::wildbg_api::{WildbgApi, WildbgConfig};
+    use crate::wildbg_api::{ScoreConfig, WildbgApi};
     use engine::dice::Dice;
     use engine::evaluator::Evaluator;
     use engine::pos;
@@ -94,7 +113,7 @@ mod tests {
         let evaluator = EvaluatorFake {};
         let api = WildbgApi { evaluator };
         // When
-        let config = WildbgConfig { away: Some((1, 1)) };
+        let config = ScoreConfig::OnePointer;
         let bg_move = api.best_move(&given_pos, &Dice::new(4, 2), &config);
         // Then
         let expected_move = BgMove {
@@ -110,7 +129,7 @@ mod tests {
         let evaluator = EvaluatorFake {};
         let api = WildbgApi { evaluator };
         // When
-        let config = WildbgConfig { away: None };
+        let config = ScoreConfig::MoneyGame;
         let bg_move = api.best_move(&given_pos, &Dice::new(4, 2), &config);
         // Then
         let expected_move = BgMove {
