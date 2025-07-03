@@ -14,7 +14,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 /// Compare one evaluator with neural nets in the folder `training-data`.
 fn main() {
     let folder_name = "training-data";
-    println!("Start benchmarking, read contents of {}", folder_name);
+    println!("Start benchmarking, read contents of {folder_name}");
     let mut paths = fs::read_dir(folder_name)
         .unwrap()
         .map(|x| x.unwrap().file_name().into_string().unwrap())
@@ -32,7 +32,7 @@ fn main() {
         .unwrap_or_exit_with_message();
 
         let path_string = folder_name.to_string() + "/" + file_name.as_str();
-        print!("\rTry {}", path_string);
+        print!("\rTry {path_string}");
         stdout().flush().unwrap();
         let contender =
             CompositeEvaluator::from_file_paths_optimized(&path_string, "neural-nets/race.onnx")

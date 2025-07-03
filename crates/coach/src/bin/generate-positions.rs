@@ -38,10 +38,7 @@ fn find_and_roll_out<T: Evaluator>(
         .from_writer(File::create(&path)?);
     csv_writer.write_record(["position_id"])?;
 
-    println!(
-        "Find {} '{:?}' positions and write them to {}.",
-        amount, phase, path
-    );
+    println!("Find {amount} '{phase:?}' positions and write them to {path}.");
 
     let find_start = Instant::now();
     let mut finder = PositionFinder::with_random_dice(finder_evaluator);

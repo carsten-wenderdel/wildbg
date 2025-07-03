@@ -247,7 +247,7 @@ impl fmt::Debug for Position {
         s.pop(); // remove last ", "
         s.pop();
         writeln!(s, "}}").unwrap();
-        write!(f, "{}", s).unwrap();
+        write!(f, "{s}").unwrap();
 
         // Write o:
         let mut s = String::from("o: {");
@@ -265,7 +265,7 @@ impl fmt::Debug for Position {
         s.pop(); // remove last ", "
         s.pop();
         write!(s, "}}").unwrap();
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 
@@ -724,8 +724,7 @@ mod tests {
             assert_eq!(
                 number_of_moves(&position, &dice),
                 number,
-                "failing position is {}",
-                id
+                "failing position is {id}"
             );
         }
     }

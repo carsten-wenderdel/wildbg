@@ -3,7 +3,7 @@ use std::io::{stdout, Write};
 use std::time::Instant;
 
 pub fn positions_file_name(phase: &OngoingPhase) -> String {
-    format!("training-data/{:?}-positions.csv", phase).to_lowercase()
+    format!("training-data/{phase:?}-positions.csv").to_lowercase()
 }
 
 pub fn print_progress(done: usize, total: usize, start: Instant) -> std::io::Result<()> {
@@ -26,5 +26,5 @@ pub fn duration(seconds: u64) -> String {
     let hours = minutes / 60;
     let minutes = minutes % 60;
     let seconds = seconds % 60;
-    format!("{:02}:{:02}:{:02} h", hours, minutes, seconds)
+    format!("{hours:02}:{minutes:02}:{seconds:02} h")
 }

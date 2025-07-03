@@ -30,8 +30,7 @@ fn log_server_links(web_address: &str) {
 
     println!("You can access the server for example via");
     println!(
-        "http://{}/move?die1=3&die2=1&p24=2&p19=-5&p17=-3&p13=5&p12=-5&p8=3&p6=5&p1=-2",
-        web_address
+        "http://{web_address}/move?die1=3&die2=1&p24=2&p19=-5&p17=-3&p13=5&p12=-5&p8=3&p6=5&p1=-2"
     );
-    println!("http://{}/swagger-ui", web_address);
+    println!("http://{web_address}/swagger-ui");
 }

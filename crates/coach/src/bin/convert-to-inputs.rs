@@ -8,12 +8,9 @@ fn main() -> std::io::Result<()> {
     let phase = OngoingPhase::Race;
     let inputs_gen = inputs::RaceInputsGen {};
 
-    let training_path = format!("training-data/{:?}.csv", phase).to_lowercase();
-    let inputs_path = format!("training-data/{:?}-inputs.csv", phase).to_lowercase();
-    println!(
-        "Read training data from {} and write inputs to {}",
-        training_path, inputs_path
-    );
+    let training_path = format!("training-data/{phase:?}.csv").to_lowercase();
+    let inputs_path = format!("training-data/{phase:?}-inputs.csv").to_lowercase();
+    println!("Read training data from {training_path} and write inputs to {inputs_path}");
 
     let mut csv_reader = csv::ReaderBuilder::new()
         .has_headers(true)

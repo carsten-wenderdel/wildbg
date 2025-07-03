@@ -192,7 +192,7 @@ pub extern "C" fn best_move(
     match move_result() {
         Ok(bg_move) => CMove::from(bg_move),
         Err(error) => {
-            eprintln!("{}", error);
+            eprintln!("{error}");
             CMove::default()
         }
     }
@@ -210,7 +210,7 @@ pub extern "C" fn probabilities(wildbg: &Wildbg, pips: &[c_int; 26]) -> CProbabi
     match Position::try_from(pips) {
         Ok(position) => (&wildbg.api.probabilities(&position)).into(),
         Err(error) => {
-            eprintln!("{}", error);
+            eprintln!("{error}");
             CProbabilities::default()
         }
     }
@@ -222,7 +222,7 @@ pub extern "C" fn cube_info(wildbg: &Wildbg, pips: &[c_int; 26]) -> CCubeInfo {
     match Position::try_from(pips) {
         Ok(position) => (&wildbg.api.cube_info(&position)).into(),
         Err(error) => {
-            eprintln!("{}", error);
+            eprintln!("{error}");
             CCubeInfo {
                 should_double: false,
                 should_accept: false,

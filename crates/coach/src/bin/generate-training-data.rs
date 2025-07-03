@@ -33,12 +33,9 @@ fn find_and_roll_out<T: Evaluator>(
     phase: OngoingPhase,
 ) -> std::io::Result<()> {
     let positions_path = positions_file_name(&phase);
-    let training_path = format!("training-data/{:?}.csv", phase).to_lowercase();
+    let training_path = format!("training-data/{phase:?}.csv").to_lowercase();
 
-    println!(
-        "Read positions from {} and write training data to {}",
-        positions_path, training_path
-    );
+    println!("Read positions from {positions_path} and write training data to {training_path}");
 
     let reader = csv::ReaderBuilder::new()
         .has_headers(true)
