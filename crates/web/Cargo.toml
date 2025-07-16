@@ -11,16 +11,16 @@ default-run = "server"
 engine = { path = "../engine" }
 logic = { path = "../logic", features = ["web"] }
 # external
-axum = "0.7.4"
+axum = "0.8.4"
 hyper = "*"
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
-shuttle-axum = { version = "0.49.0" }
-shuttle-runtime = "0.49.0"
+shuttle-axum = { version = "0.56.0" }
+shuttle-runtime = "0.56.0"
 tokio = { version = "*", features = ["full"] }
 tower = "*"
 utoipa = { workspace = true, features = ["axum_extras", "preserve_order"] }
-utoipa-swagger-ui = { version = "*", features = ["axum"] }
+utoipa-swagger-ui = { version = "9", features = ["axum"] }
 clap = { version = "4.5.2", features = ["derive"] }
 
 [dev-dependencies]
