@@ -12,10 +12,9 @@ class Model(nn.Module):
         # Output layer, 6 outputs for win/lose - normal/gammon/bg
         self.output = nn.Linear(200, 6)
         
-        # Define activation function and softmax output 
-        self.activation = nn.Hardsigmoid()
-        self.softmax = nn.Softmax(dim=1)
-        
+        # Define activation function
+        self.activation = nn.ReLU()
+
     def forward(self, x):
         # Pass the input tensor through each of our operations
         x = self.hidden1(x)
@@ -25,5 +24,16 @@ class Model(nn.Module):
         x = self.hidden3(x)
         x = self.activation(x)
         x = self.output(x)
-        x = self.softmax(x)
         return x
+
+
+# Wrap a model with logits as output and add softmax so that all outputs add up to 1.
+class Wrapper(nn.Module):
+    def __init__(self, base_model):
+        super().__init__()
+        self.base_model = base_model
+        self.softmax = nn.Softmax(dim=1)
+
+    def forward(self, x):
+        logits = self.base_model(x)
+        return self.softmax(logits)

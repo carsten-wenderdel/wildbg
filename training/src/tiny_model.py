@@ -9,14 +9,12 @@ class TinyModel(nn.Module):
         # Output layer, 6 outputs for win/lose - normal/gammon/bg
         self.output = nn.Linear(16, 6)
         
-        # Define activation function and softmax output 
+        # Define activation function
         self.activation = nn.Tanh()
-        self.softmax = nn.Softmax(dim=1)
         
     def forward(self, x):
         # Pass the input tensor through each of our operations
         x = self.hidden(x)
         x = self.activation(x)
         x = self.output(x)
-        x = self.softmax(x)
         return x

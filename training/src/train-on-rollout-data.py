@@ -3,28 +3,24 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 from model import Model
+from model import Wrapper
 from tiny_model import TinyModel
 from dataset import WildBgDataSet
 
 def save_model(model: nn.Module, path: str, num_inputs: int) -> None:
+    # add softmax so that the 6 outputs add up to exactly 1.0
+    wrapper = Wrapper(model)
     dummy_input = torch.randn(1, num_inputs, requires_grad=True, device=device)
-    torch.onnx.export(model, dummy_input, path)
+    torch.onnx.export(wrapper, dummy_input, path)
 
 
 # `path_prefix` should be something like `../training-data/race-` or `../training-data/contact-`
 # It will then be appended with the epoch number and `.onnx` extension.
 def train(model: nn.Module, trainloader: DataLoader, path_prefix: str, epochs: int):
-    # L1Loss has had an advantage of 0.042 equity compared to MSELoss (both trained on 200k contact positions).
-    criterion = nn.L1Loss()
-
-    # Optimizer based on model, adjust the learning rate
-    # 4.0 has worked well for SGD, MSELoss, Tanh(), one layer, 20 epochs and 100k positions
-    # 3.0 has worked well for SGD, MSELoss/L1Loss, ReLU(), three layers, 20 epochs and 200k positions
-    # 700e-6 has worked well for Adam, L1Loss, ReLU(), three layers, 20 epochs and 200k positions
-    # 290e-6 has worked well for Adam, L1Loss, ReLU(), three layers, 50 epochs and 200k positions
-    # 350e-6 has worked well for AdamW, L1Loss, ReLU(), three layers, 50 epochs and 200k positions
-    # 1110e-6 has worked well for AdamW, L1Loss, Hardsigmoid(), three layers, 50 epochs and 200k positions
-    optimizer = torch.optim.AdamW(model.parameters(), lr=1000e-6)
+    # CrossEntropyLoss is the best for a multi-class classifier. The model has only logits as outputs,
+    # we add softmax later when we save the model to the disk.
+    criterion = nn.CrossEntropyLoss()
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-2)
 
     for epoch in range(epochs):
         epoch_loss = 0.0
@@ -46,8 +42,8 @@ def train(model: nn.Module, trainloader: DataLoader, path_prefix: str, epochs: i
         epoch_plus_one = epoch + 1
         print(f'[Epoch: {epoch_plus_one}] loss: {epoch_loss:.5f}')
 
-        if epoch_plus_one > epochs * 0.33:
-            # Save epochs for each iteration after half the epochs have passed
+        if epoch_plus_one > 4:
+            # Save epochs for each iteration after the first couple of epochs have passed
             save_model(model, path_prefix + f"{epoch_plus_one:03}" + ".onnx", num_inputs)
 
 
