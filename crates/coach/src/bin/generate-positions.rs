@@ -41,7 +41,7 @@ fn find_and_roll_out<T: Evaluator>(
     println!("Find {amount} '{phase:?}' positions and write them to {path}.");
 
     let find_start = Instant::now();
-    let mut finder = PositionFinder::with_random_dice(finder_evaluator);
+    let mut finder = PositionFinder::with_evaluator(finder_evaluator);
     let positions = finder.find_positions(amount, phase);
     for position in positions {
         csv_writer.write_record([position.position_id()])?;

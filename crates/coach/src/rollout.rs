@@ -5,8 +5,6 @@ use engine::position::GameState::{GameOver, Ongoing};
 use engine::position::{GameResult, Position};
 use engine::probabilities::{Probabilities, ResultCounter};
 use rayon::prelude::*;
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
 
 /// Two `RolloutEvaluator`s which are initialized with the same `seed` and the same evaluators,
 /// will always return the identical value when `eval` is called for the same position.
@@ -30,16 +28,7 @@ impl<T: Evaluator + Sync> Evaluator for RolloutEvaluator<T> {
     fn eval(&self, pos: &Position) -> Probabilities {
         debug_assert!(pos.game_state() == Ongoing);
 
-        // We don't want to have identical dice for rollouts of *all* positions.
-        // On the other hand, for a certain position, we always want the same dice, this helps in tests.
-        // So we initialize `FastrandDice` with a seed depending on the hash of the position combined
-        // with the seed of this RolloutEvaluator.
-        let mut hasher = DefaultHasher::new();
-        pos.hash(&mut hasher);
-        self.seed.hash(&mut hasher);
-        let seed = hasher.finish();
-        let mut dice_gen = FastrandDice::with_seed(seed);
-
+        let mut dice_gen = FastrandDice::with_seed(self.seed);
         let dice_and_seeds =
             ALL_441.map(|(dice, amount)| (dice, dice_seeds(&mut dice_gen, amount)));
         let game_results: ResultCounter = dice_and_seeds
@@ -63,9 +52,9 @@ impl RolloutEvaluator<RandomEvaluator> {
 }
 
 impl<T: Evaluator> RolloutEvaluator<T> {
+    /// Deterministic, seed is `0`
     pub fn with_evaluator(evaluator: T) -> Self {
-        let seed = FastrandDice::random_seed();
-        Self::with_evaluator_and_seed(evaluator, seed)
+        Self::with_evaluator_and_seed(evaluator, 0)
     }
 
     pub fn with_evaluator_and_seed(evaluator: T, seed: u64) -> Self {

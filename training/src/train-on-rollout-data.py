@@ -61,6 +61,9 @@ def main(model: nn.Module, data_path: str, path_prefix: str, num_inputs: int):
         print('Finished Training')
 
 if __name__ == "__main__":
+    # Make the training process deterministic
+    torch.manual_seed(0)
+
     # "mps" takes more time than "cpu" on Macs, so let's ignore it for now.
     device = (
         "cuda"

@@ -17,7 +17,8 @@ This means you can reuse the same neural networks between for example 0.2.0 and 
 
 ## Unreleased
 
-- `changed` Default neural nets are now compiled into the executable
+- `changed` Default neural nets are now compiled into the executable.
+- `changed` Rollouts and the training process are now deterministic.
 
 ## 0.2.0 - 2023-11-26
 

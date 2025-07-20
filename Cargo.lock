@@ -410,6 +410,7 @@ version = "0.2.1-pre"
 dependencies = [
  "csv",
  "engine",
+ "indexmap",
  "mimalloc",
  "rayon",
  "serde",

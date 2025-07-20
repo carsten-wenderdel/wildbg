@@ -4,7 +4,7 @@ use engine::position::GameState::Ongoing;
 use engine::position::OngoingPhase::Race;
 use engine::position::{GamePhase, OngoingPhase, Position, STARTING};
 use engine::probabilities::Probabilities;
-use std::collections::HashSet;
+use indexmap::IndexSet;
 
 /// Finds random positions for later rollout.
 pub struct PositionFinder<T: Evaluator, U: DiceGen> {
@@ -13,19 +13,19 @@ pub struct PositionFinder<T: Evaluator, U: DiceGen> {
 }
 
 impl<T: Evaluator> PositionFinder<T, FastrandDice> {
-    /// Contains different random number generator every time it's called.
-    pub fn with_random_dice(evaluator: T) -> Self {
+    /// Deterministic, always same dice.
+    pub fn with_evaluator(evaluator: T) -> Self {
         PositionFinder {
             evaluator,
-            dice_gen: FastrandDice::new(),
+            dice_gen: FastrandDice::with_seed(0),
         }
     }
 }
 
 impl<T: Evaluator, U: DiceGen> PositionFinder<T, U> {
-    pub fn find_positions(&mut self, amount: usize, phase: OngoingPhase) -> HashSet<Position> {
+    pub fn find_positions(&mut self, amount: usize, phase: OngoingPhase) -> IndexSet<Position> {
         let phase = GamePhase::Ongoing(phase);
-        let mut found: HashSet<Position> = HashSet::new();
+        let mut found: IndexSet<Position> = IndexSet::with_capacity(amount);
         while found.len() < amount {
             for position in self.positions_in_one_random_game() {
                 if found.len() < amount && position.game_phase() == phase {
@@ -68,7 +68,7 @@ impl<T: Evaluator, U: DiceGen> PositionFinder<T, U> {
     ///    we make sure that at least one position from either phase is returned.
     ///
     /// Some of those positions could appear more than once in the array, but that's ok, we enter
-    /// all them into a HashSet later on.
+    /// all of them into a set later on.
     ///
     /// The input values need to be from the perspective of the player who is about to move.
     /// The return values have switched sides, so they are in the proper format for a rollout.
