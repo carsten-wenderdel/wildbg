@@ -1,0 +1,36 @@
+name: Check cbindgen output
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check-cbindgen:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Install cbindgen
+        run: cargo install cbindgen
+
+      - name: Run cbindgen
+        run: |
+          cbindgen --config cbindgen.toml --crate wildbg-c --output crates/wildbg-c/wildbg.h --lang c
+
+      - name: Check for changes
+        run: |
+          if [[ -n $(git diff -- crates/wildbg-c/wildbg.h) ]]; then
+            echo "::error file=crates/wildbg-c/wildbg.h::cbindgen output is outdated. Please run cbindgen and commit the result."
+            git diff
+            exit 1
+          fi
