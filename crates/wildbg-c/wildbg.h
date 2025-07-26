@@ -49,21 +49,25 @@ typedef struct BgConfig {
 
 typedef struct CProbabilities {
   /**
-   * Cubeless probability to win the game. This includes gammons and backgammons.
+   * Cubeless probability to win the game without gammon or backgammon
    */
-  float win;
+  float win_normal;
   /**
-   * Probability to win gammon or backgammon.
+   * Probability to win gammon.
    */
-  float win_g;
+  float win_gammon;
   /**
    * Probability to win backgammon.
    */
   float win_bg;
   /**
-   * Probability to lose gammon or backgammon.
+   * Probability to lose the game without gammon or backgammon.
    */
-  float lose_g;
+  float lose_normal;
+  /**
+   * Probability to lose gammon.
+   */
+  float lose_gammon;
   /**
    * Probability to lose backgammon.
    */

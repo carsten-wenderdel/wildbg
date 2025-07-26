@@ -74,14 +74,16 @@ pub unsafe extern "C" fn wildbg_free(ptr: *mut Wildbg) {
 #[repr(C)]
 #[derive(Default)]
 pub struct CProbabilities {
-    /// Cubeless probability to win the game. This includes gammons and backgammons.
-    win: c_float,
-    /// Probability to win gammon or backgammon.
-    win_g: c_float,
+    /// Cubeless probability to win the game without gammon or backgammon
+    win_normal: c_float,
+    /// Probability to win gammon.
+    win_gammon: c_float,
     /// Probability to win backgammon.
     win_bg: c_float,
-    /// Probability to lose gammon or backgammon.
-    lose_g: c_float,
+    /// Probability to lose the game without gammon or backgammon.
+    lose_normal: c_float,
+    /// Probability to lose gammon.
+    lose_gammon: c_float,
     /// Probability to lose backgammon.
     lose_bg: c_float,
 }
@@ -89,10 +91,11 @@ pub struct CProbabilities {
 impl From<&Probabilities> for CProbabilities {
     fn from(value: &Probabilities) -> Self {
         Self {
-            win: value.win_normal + value.win_gammon + value.win_bg,
-            win_g: value.win_gammon + value.win_bg,
+            win_normal: value.win_normal,
+            win_gammon: value.win_gammon,
             win_bg: value.win_bg,
-            lose_g: value.lose_gammon + value.lose_bg,
+            lose_normal: value.lose_normal,
+            lose_gammon: value.lose_gammon,
             lose_bg: value.lose_bg,
         }
     }
@@ -250,10 +253,11 @@ mod tests {
         };
 
         let c_probs: CProbabilities = (&model_probs).into();
-        assert_eq!(c_probs.win, 0.7);
-        assert_eq!(c_probs.win_g, 0.38);
+        assert_eq!(c_probs.win_normal, 0.32);
+        assert_eq!(c_probs.win_gammon, 0.26);
         assert_eq!(c_probs.win_bg, 0.12);
-        assert_eq!(c_probs.lose_g, 0.15);
+        assert_eq!(c_probs.lose_normal, 0.15);
+        assert_eq!(c_probs.lose_gammon, 0.1);
         assert_eq!(c_probs.lose_bg, 0.05);
     }
 
