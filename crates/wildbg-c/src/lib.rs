@@ -8,9 +8,7 @@ use logic::cube::CubeInfo;
 use logic::wildbg_api::{WildbgApi, WildbgConfig};
 
 // When this file is changed, recreate the header file by executing this from the project's root:
-// touch cbindgen.toml
-// cbindgen --config cbindgen.toml --crate wildbg-c --output crates/wildbg-c/wildbg.h --lang c
-// rm cbindgen.toml
+// cbindgen --config crates/wildbg-c/cbindgen.toml  --crate wildbg-c --output crates/wildbg-c/wildbg.h --lang c
 
 // For more infos about Rust -> C see
 // https://docs.rust-embedded.org/book/interoperability/rust-with-c.html
