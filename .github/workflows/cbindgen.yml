@@ -1,10 +1,9 @@
 name: Check cbindgen output
 
 on:
-  push:
-    branches: [main]
   pull_request:
-    branches: [main]
+    types: [ opened, synchronize ]
+  push:
 
 jobs:
   check-cbindgen:
@@ -14,18 +13,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-
       - name: Install cbindgen
         run: cargo install cbindgen
 
       - name: Run cbindgen
         run: |
-          cbindgen --config cbindgen.toml --crate wildbg-c --output crates/wildbg-c/wildbg.h --lang c
+          cbindgen --config crates/wildbg-c/bindgen.toml --crate wildbg-c --output crates/wildbg-c/wildbg.h --lang c
 
       - name: Check for changes
         run: |
