@@ -18,7 +18,7 @@ jobs:
 
       - name: Run cbindgen
         run: |
-          cbindgen --config crates/wildbg-c/bindgen.toml --crate wildbg-c --output crates/wildbg-c/wildbg.h --lang c
+          cbindgen --config crates/wildbg-c/cbindgen.toml --crate wildbg-c --output crates/wildbg-c/wildbg.h --lang c
 
       - name: Check for changes
         run: |
