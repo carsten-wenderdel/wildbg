@@ -40,11 +40,10 @@ deal with one or several files. These files contain position IDs in the GnuBG fo
 - Run `cargo run -p coach --bin convert-to-inputs`.
 This reads the downloaded CSV file and creates a new CSV file with inputs and outputs for PyTorch.
 If you want to try different inputs, you have to program that in Rust ([inputs.rs](../../crates/engine/src/inputs.rs)).
-- Edit the file [`train-on-rollout-data.py`](../../training/src/train-on-rollout-data.py). Make sure the correct model is
-defined, it should be something like `mode = "contact"`.
-- You might want to edit various hyperparameters. Number of epochs, optimizer and loss function should be ok, but maybe you find better ones.
-In any case you should try various learning rates, they have a big impact on the quality of the net.
-- Go to the folder `training` and execute `./src/train-on-rollout-data.py` - this will create several new nets in the `training-data` folder. It should take only a few minutes.
+- Go to the root folder of the project and execute [`python3 [./training/src/train_race.py`](../../training/src/train_race.py) or [`python3 ./training/src/train_contact.py`](../../training/src/train_contact.py) -
+this will create several new nets in the `training-data` folder. It should take only a few minutes.
+- You might want to edit various hyperparameters in these python files. The number of epochs, optimizer and loss function should be ok,
+but maybe you find better ones. In any case you should try various learning rates, they have a big impact on the quality of the net.
 
 ### Compare neural nets
 Before deciding which new neural net is the best, you should compare it to the current best net. This is done by letting two evaluators play against each other.
