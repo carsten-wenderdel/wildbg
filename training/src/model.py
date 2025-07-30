@@ -1,9 +1,13 @@
-from torch import nn
+from torch import optim, nn
+
 
 class Model(nn.Module):
+
     def __init__(self, num_inputs: int):
         super().__init__()
-        
+
+        self.num_inputs = num_inputs
+
         # Inputs to hidden layer linear transformation
         self.hidden1 = nn.Linear(num_inputs, 300)
         self.hidden2 = nn.Linear(300, 250)
@@ -11,7 +15,7 @@ class Model(nn.Module):
 
         # Output layer, 6 outputs for win/lose - normal/gammon/bg
         self.output = nn.Linear(200, 6)
-        
+
         # Define activation function
         self.activation = nn.ReLU()
 
@@ -25,6 +29,12 @@ class Model(nn.Module):
         x = self.activation(x)
         x = self.output(x)
         return x
+
+    def criterion(self):
+        return nn.CrossEntropyLoss()
+
+    def optimizer(self):
+        return optim.AdamW(self.parameters(), lr=1e-4, weight_decay=1e-2)
 
 
 # Wrap a model with logits as output and add softmax so that all outputs add up to 1.
