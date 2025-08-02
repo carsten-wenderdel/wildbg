@@ -48,8 +48,24 @@ impl WildbgApi<CompositeEvaluator> {
 
 impl<T: Evaluator> WildbgApi<T> {
     #[inline]
+    pub fn with_evaluator(evaluator: T) -> Self {
+        Self { evaluator }
+    }
+
+    #[inline]
     pub fn probabilities(&self, position: &Position) -> Probabilities {
         self.evaluator.eval(position)
+    }
+
+    #[inline]
+    pub fn all_moves(
+        &self,
+        position: &Position,
+        dice: &Dice,
+        config: &ScoreConfig,
+    ) -> Vec<(Position, Probabilities)> {
+        self.evaluator
+            .positions_and_probabilities(position, dice, config.value())
     }
 
     #[inline]
