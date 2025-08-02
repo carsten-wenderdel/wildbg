@@ -83,6 +83,10 @@ typedef struct CProbabilities {
  * The player on turn always moves from pip 24 to pip 1.
  * The array `pips` contains the player's bar in index 25, the opponent's bar in index 0.
  * Checkers of the player on turn are encoded with positive integers, the opponent's checkers with negative integers.
+ *
+ * # Safety
+ * The argument `wildbg` needs to be initialized with `wildbg_new()` and `wildbg_free()` must not be called yet.
+ * Otherwise we have random memory access here.
  */
 struct CMove best_move(const struct Wildbg *wildbg,
                        const int (*pips)[26],
