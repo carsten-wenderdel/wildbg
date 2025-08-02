@@ -5,7 +5,7 @@ use engine::position::Position;
 use engine::probabilities::Probabilities;
 use logic::bg_move::{BgMove, MoveDetail};
 use logic::cube::CubeInfo;
-use logic::wildbg_api::{WildbgApi, WildbgConfig};
+use logic::wildbg_api::{ScoreConfig, WildbgApi};
 
 // When this file is changed, recreate the header file by executing this from the project's root:
 // cbindgen --config crates/wildbg-c/cbindgen.toml  --crate wildbg-c --output crates/wildbg-c/wildbg.h --lang c
@@ -29,18 +29,6 @@ pub struct BgConfig {
     pub x_away: c_uint,
     /// Number of points the opponent needs to finish the match. Zero indicates money game.
     pub o_away: c_uint,
-}
-
-impl From<&BgConfig> for WildbgConfig {
-    fn from(value: &BgConfig) -> Self {
-        if value.x_away == 0 && value.o_away == 0 {
-            Self { away: None }
-        } else {
-            Self {
-                away: Some((value.x_away, value.o_away)),
-            }
-        }
-    }
 }
 
 #[no_mangle]
@@ -187,9 +175,8 @@ pub unsafe extern "C" fn best_move(
     let move_result = || -> Result<BgMove, Error> {
         let position = Position::try_from(pips)?;
         let dice = Dice::try_from((die1 as usize, die2 as usize))?;
-        let bg_move = (*wildbg)
-            .api
-            .best_move(&position, &dice, &WildbgConfig::from(config));
+        let score_config = ScoreConfig::try_from((config.x_away, config.o_away))?;
+        let bg_move = (*wildbg).api.best_move(&position, &dice, &score_config);
         Ok(bg_move)
     };
     match move_result() {
