@@ -1,4 +1,4 @@
-use crate::web_api::{DiceParams, EvalResponse, MoveResponse, PipParams, WebApi};
+use crate::web_api::{AwayParams, DiceParams, EvalResponse, MoveResponse, PipParams, WebApi};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::{routing::get, Json, Router};
@@ -127,6 +127,7 @@ async fn get_eval<T: Evaluator>(
     tag = "endpoints",
     params(
         DiceParams,
+        AwayParams,
         PipParams,
     ),
     responses(
@@ -143,6 +144,7 @@ async fn get_eval<T: Evaluator>(
 )]
 async fn get_move<T: Evaluator>(
     Query(dice): Query<DiceParams>,
+    Query(away): Query<AwayParams>,
     Query(pips): Query<PipParams>,
     State(web_api): State<DynWebApi<T>>,
 ) -> Result<Json<MoveResponse>, (StatusCode, Json<ErrorMessage>)> {
@@ -151,7 +153,7 @@ async fn get_move<T: Evaluator>(
             StatusCode::INTERNAL_SERVER_ERROR,
             ErrorMessage::json("Neural net could not be constructed."),
         )),
-        Some(web_api) => match web_api.get_move(pips, dice) {
+        Some(web_api) => match web_api.get_move(dice, away, pips) {
             Err(message) => Err((StatusCode::BAD_REQUEST, ErrorMessage::json(message))),
             Ok(move_response) => Ok(Json(move_response)),
         },

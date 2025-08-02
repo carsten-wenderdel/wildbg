@@ -1,8 +1,8 @@
-use axum::http::StatusCode;
 use engine::composite::CompositeEvaluator;
 use engine::dice::Dice;
 use engine::evaluator::Evaluator;
 use engine::position::Position;
+use hyper::StatusCode;
 use logic::bg_move::{BgMove, MoveDetail};
 use logic::cube::CubeInfo;
 use logic::wildbg_api::{ScoreConfig, WildbgApi};
@@ -47,12 +47,13 @@ impl<T: Evaluator> WebApi<T> {
 
     pub fn get_move(
         &self,
-        pip_params: PipParams,
         dice_params: DiceParams,
+        away_params: AwayParams,
+        pip_params: PipParams,
     ) -> Result<MoveResponse, &'static str> {
         let position = Position::try_from(pip_params)?;
         let dice = Dice::try_from((dice_params.die1, dice_params.die2))?;
-        let config = ScoreConfig::MoneyGame;
+        let config = ScoreConfig::try_from(away_params)?;
         let pos_and_probs = self.wildbg.all_moves(&position, &dice, &config);
         let moves: Vec<MoveInfo> = pos_and_probs
             .into_iter()
@@ -103,8 +104,6 @@ pub struct MoveInfo {
 // This is similar to evaluator::Probabilities. But while the former serves
 // as a model for calculations, this is more like a view model for the web API.
 // While in evaluator::Probabilities all 6 numbers add up to 1.0, this is different.
-/// Chances for winning/losing normal/gammon/backgammon.
-///
 /// `win` includes the chances to win gammon or BG.
 /// `winG` includes the chances to win BG and `loseG` includes the chance to lose BG.
 /// This way we use the same format as earlier engines like GnuBG have done.
@@ -242,6 +241,32 @@ impl TryFrom<PipParams> for Position {
             params.p25.unwrap_or_default(),
         ];
         Position::try_from(pips)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, IntoParams)]
+pub struct AwayParams {
+    /// Number of points the player on turn `x` needs to win.
+    ///
+    /// Currently only money game and one-pointers are supported.
+    ///
+    /// For a money game, omit both `x_away` and `o_away` or set both parameters to 0.
+    ///
+    /// For a one-pointer, set both `x_away` and `o_away` to 1.
+    #[param(minimum = 0, example = 0)]
+    x_away: Option<u32>,
+    /// Number of points the opponent `o` needs to win.
+    #[param(minimum = 0, example = 0)]
+    o_away: Option<u32>,
+}
+
+impl TryFrom<AwayParams> for ScoreConfig {
+    type Error = &'static str;
+
+    fn try_from(params: AwayParams) -> Result<Self, Self::Error> {
+        let x_away = params.x_away.unwrap_or_default();
+        let o_away = params.o_away.unwrap_or_default();
+        Self::try_from((x_away, o_away))
     }
 }
 
