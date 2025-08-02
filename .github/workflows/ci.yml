@@ -28,3 +28,21 @@ jobs:
 
       - name: Unit tests
         run: cargo test --workspace --exclude benchmarks --color always
+
+      - name: Install cbindgen
+        run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          brew install cbindgen
+
+      - name: Run cbindgen
+        run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          cbindgen --config crates/wildbg-c/cbindgen.toml --crate wildbg-c --output crates/wildbg-c/wildbg.h --lang c
+
+      - name: Check for changes in C API
+        run: |
+          if [[ -n $(git diff -- crates/wildbg-c/wildbg.h) ]]; then
+            echo "::error file=crates/wildbg-c/wildbg.h::cbindgen output is outdated. Please run cbindgen and commit the result."
+            git diff
+            exit 1
+          fi
