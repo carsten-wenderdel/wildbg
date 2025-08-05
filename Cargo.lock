@@ -631,12 +631,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d6ef0072f8a535281e4876be788938b528e9a1d43900b82c2569af7da799125"
 
 [[package]]
-name = "dyn-hash"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a650a461c6a8ff1ef205ed9a2ad56579309853fecefc2423f73dced342f92258"
-
-[[package]]
 name = "either"
 version = "1.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2881,9 +2875,9 @@ dependencies = [
 
 [[package]]
 name = "tract-core"
-version = "0.21.5"
+version = "0.21.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3c52d5de5f3d85f2dff661b63a368fc4f7fda945a7320c30287ecbd33939d85e"
+checksum = "364437045d4e34e4be0ca5d51d8eb2c2b45fe122189b189775e8414356ffd3ed"
 dependencies = [
  "anyhow",
  "bit-set",
@@ -2906,13 +2900,11 @@ dependencies = [
 
 [[package]]
 name = "tract-data"
-version = "0.21.5"
+version = "0.21.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "25d8cb18c6a3c11c89a0a27c186fb716b8012b447de7e5b29555a0402ec880fa"
+checksum = "63ba2b0b1bc092668a5d74b54227cdb34195161ef6d7dc66b52fa51e4e5145ef"
 dependencies = [
  "anyhow",
- "downcast-rs",
- "dyn-hash",
  "half",
  "itertools 0.12.1",
  "lazy_static",
@@ -2928,9 +2920,9 @@ dependencies = [
 
 [[package]]
 name = "tract-hir"
-version = "0.21.5"
+version = "0.21.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "93c75161a0ddb446eed0d6b9e4323e8d511b89baec98abbda76bc52482c7168f"
+checksum = "b4a0ac93517cc4edae98c9a32266e46b75d5a5168ddee74bc3a80b9a2a0bee18"
 dependencies = [
  "derive-new",
  "log",
@@ -2939,15 +2931,14 @@ dependencies = [
 
 [[package]]
 name = "tract-linalg"
-version = "0.21.5"
+version = "0.21.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "348c295bd8b8c4465ed3f6ec5082914b9351af3cd774f46ef6c542bf0b6f73be"
+checksum = "c172ebc33fa895cae362cb6ec0f60289328b2da14adcce49bbd6ef07c089a0f2"
 dependencies = [
  "cc",
  "derive-new",
  "downcast-rs",
  "dyn-clone",
- "dyn-hash",
  "half",
  "lazy_static",
  "liquid",
@@ -2965,9 +2956,9 @@ dependencies = [
 
 [[package]]
 name = "tract-nnef"
-version = "0.21.5"
+version = "0.21.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "98662452bc5b0835356634bde121dba279dc2c0f89aa0b853fd6e3fca1291a67"
+checksum = "553fff06dad2e7022e185a618b46a599ef058cc6c1d6e66c9e5b1e033478a793"
 dependencies = [
  "byteorder",
  "flate2",
@@ -2980,9 +2971,9 @@ dependencies = [
 
 [[package]]
 name = "tract-onnx"
-version = "0.21.5"
+version = "0.21.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b3a312c655a09c45353a136fc2699ca16451ea6c3ce176329b4c108fb3387d0"
+checksum = "e6b1375cec1301cc067ccb8afee2d0c6a5936961ec5ea378721bdf8fec868ac8"
 dependencies = [
  "bytes",
  "derive-new",
@@ -2998,9 +2989,9 @@ dependencies = [
 
 [[package]]
 name = "tract-onnx-opl"
-version = "0.21.5"
+version = "0.21.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0eb2bb7947af9bcb5e037b3f5c71f7226239c4111cbb3c07b9d8806ec8fcb935"
+checksum = "21b08a96e8523c3b64757d9f15812d994a2032af5457c58453a54be9efd8e309"
 dependencies = [
  "getrandom 0.2.15",
  "log",
