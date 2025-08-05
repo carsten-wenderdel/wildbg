@@ -48,7 +48,7 @@ https://wildbg-pwuo.shuttle.app/move?die1=3&die2=1&p24=2&p19=-5&p17=-3&p13=5&p12
 Install Rust on your machine and then execute `cargo run` or `cargo run --release`.
 A web server will be started which you can access via http://localhost:8080/swagger-ui/
 
-Beware that the networks committed to this repository are very small networks just for demonstration purposes.
+Beware that the networks committed to main branch of this repository are very small networks just for demonstration purposes.
 You can find the latest training progress and networks here: https://github.com/carsten-wenderdel/wildbg-training
 
 ## Documentation

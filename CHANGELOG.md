@@ -17,15 +17,43 @@ This means you can reuse the same neural networks between for example 0.2.0 and 
 
 ## Unreleased
 
+Thanks for their contributions:
+
+- [@deprus](https://github.com/deprus) ([#29]([https://github.com/carsten-wenderdel/wildbg/issues/29))
+- [@mbaum0](https://github.com/mbaum0) ([#28](https://github.com/carsten-wenderdel/wildbg/pull/28), [#30](https://github.com/carsten-wenderdel/wildbg/pull/30), [#32](https://github.com/carsten-wenderdel/wildbg/pull/32))
+- [@OfirMarom](https://github.com/OfirMarom) ([#27](https://github.com/carsten-wenderdel/wildbg/issues/27))
+- [@th3oth3rjak3](https://github.com/th3oth3rjak3) ([#25](https://github.com/carsten-wenderdel/wildbg/pull/25))
+- [@macherius](https://github.com/macherius) ([#24](https://github.com/carsten-wenderdel/wildbg/pull/24))
+
+### Added
+
+- C and HTTP API support 1-pointers (before only money game).
+- The C API supports cube actions.
+- HTTP address and port are configurable for the HTTP API.
+- Use custom allocator `MiMalloc` for faster and consistent memory handling.
+
+### Fixed
+
+- In edge cases some mixed moves where not calculated
+  correctly: ([#29]([https://github.com/carsten-wenderdel/wildbg/issues/29))
+- Position IDs were encoded wrongly when the opponent had checkers on the
+  bar: ([#27](https://github.com/carsten-wenderdel/wildbg/issues/27))
+
 ### Changed
 
+- Neural nets inputs generation is faster: 590% more calculations in the same time for race inputs,
+  670% more calculations for contact inputs.
+- Move generation is faster: From 109% more calculations in the same time (mixed moves, contact) to 160% more
+  (mixed moves, race).
+- Breaking change: The C API returns an array of move details instead of four separate fields.
 - Default neural nets are now compiled into the executable.
 
 ### Internal / Training
 
+- Split training scripts for `race` and `contact` and go back to `ReLU` for `race` positions.
 - Use `CrossEntropyLoss` as PyTorch Optimizer and add `softmax` only after training.
-- Reverted from `Hardsigmoid` back to `ReLU`.
 - Rollouts and the training process are now deterministic.
+- Generation of multiple neural nets during one training process and better tools for comparison/benchmarking.
 
 ## 0.2.0 - 2023-11-26
 
