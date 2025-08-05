@@ -47,7 +47,7 @@ impl<T: InputsGen> BatchEvaluator for OnnxEvaluator<T> {
 
         // Extract all the probabilities from the result:
         let array_view = result[0].to_array_view::<f32>().unwrap();
-        let probabilities_in_shape = array_view.into_shape((positions.len(), 6)).unwrap();
+        let probabilities_in_shape = array_view.to_shape((positions.len(), 6)).unwrap();
         let probabilities_iter = probabilities_in_shape.outer_iter().map(|x| Probabilities {
             win_normal: x[0],
             win_gammon: x[1],
@@ -66,10 +66,9 @@ impl<T: InputsGen> OnnxEvaluator<T> {
     #[inline]
     pub fn eval_inputs(&self, inputs: Vec<f32>) -> TVec<TValue> {
         let number_of_positions = inputs.len() / T::NUM_INPUTS;
-        let tract_inputs = tract_ndarray::Array1::from_vec(inputs)
-            .into_shape((number_of_positions, T::NUM_INPUTS))
-            .unwrap();
-        let tensor = tract_inputs.into_tensor();
+        let tract_inputs =
+            tract_ndarray::Array::from_shape_vec((number_of_positions, T::NUM_INPUTS), inputs)
+                .unwrap();
 
         // run the model on the input
         let index = if number_of_positions < self.models.len() {
@@ -77,7 +76,9 @@ impl<T: InputsGen> OnnxEvaluator<T> {
         } else {
             0
         };
-        self.models[index].run(tvec!(tensor.into())).unwrap()
+        self.models[index]
+            .run(tvec!(tract_inputs.into_tvalue()))
+            .unwrap()
     }
 }
 
@@ -197,7 +198,7 @@ impl<T: InputsGen> OnnxEvaluator<T> {
             let fact: InferenceFact = if i == 0 {
                 // The input tensor for the model could be for example [1, 202] - one position with 202 inputs.
                 // We override with [N, 202] to allow batch evaluation.
-                let batch = SymbolTable::default().sym("N");
+                let batch = model.sym("N");
                 InferenceFact::dt_shape(f32::datum_type(), shapefactoid![batch, (T::NUM_INPUTS)])
             } else {
                 InferenceFact::dt_shape(f32::datum_type(), shapefactoid![i, (T::NUM_INPUTS)])

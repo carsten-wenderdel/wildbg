@@ -8,5 +8,6 @@ license.workspace = true
 [dependencies]
 # external
 fastrand = "2.0.1"
-tract-onnx = "0.21.5"
+# We won't update beyond tract 0.21.7 because of performance regressions: https://github.com/sonos/tract/issues/1803
+tract-onnx = "=0.21.7"
 base64 = "0.22.1"
