@@ -25,6 +25,10 @@ name = "position_bench"
 harness = false
 
 [[bench]]
+name = "onnx_bench"
+harness = false
+
+[[bench]]
 name = "move_generation_bench"
 harness = false
 

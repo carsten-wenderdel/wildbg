@@ -43,18 +43,7 @@ impl<T: InputsGen> BatchEvaluator for OnnxEvaluator<T> {
         }
 
         let inputs = self.inputs_gen.inputs_for_all(&positions);
-        let tract_inputs = tract_ndarray::Array1::from_vec(inputs)
-            .into_shape((positions.len(), T::NUM_INPUTS))
-            .unwrap();
-        let tensor = tract_inputs.into_tensor();
-
-        // run the model on the input
-        let index = if positions.len() < self.models.len() {
-            positions.len()
-        } else {
-            0
-        };
-        let result = self.models[index].run(tvec!(tensor.into())).unwrap();
+        let result = self.eval_inputs(inputs);
 
         // Extract all the probabilities from the result:
         let array_view = result[0].to_array_view::<f32>().unwrap();
@@ -70,6 +59,25 @@ impl<T: InputsGen> BatchEvaluator for OnnxEvaluator<T> {
         let positions_and_probabilities: Vec<(Position, Probabilities)> =
             positions.into_iter().zip(probabilities_iter).collect();
         positions_and_probabilities
+    }
+}
+
+impl<T: InputsGen> OnnxEvaluator<T> {
+    #[inline]
+    pub fn eval_inputs(&self, inputs: Vec<f32>) -> TVec<TValue> {
+        let number_of_positions = inputs.len() / T::NUM_INPUTS;
+        let tract_inputs = tract_ndarray::Array1::from_vec(inputs)
+            .into_shape((number_of_positions, T::NUM_INPUTS))
+            .unwrap();
+        let tensor = tract_inputs.into_tensor();
+
+        // run the model on the input
+        let index = if number_of_positions < self.models.len() {
+            number_of_positions
+        } else {
+            0
+        };
+        self.models[index].run(tvec!(tensor.into())).unwrap()
     }
 }
 
