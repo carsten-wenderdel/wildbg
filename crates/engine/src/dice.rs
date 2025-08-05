@@ -37,6 +37,22 @@ impl Dice {
             Dice::Mixed(MixedDice::new(die1, die2))
         }
     }
+
+    /// 36 Dice, all double moves appear once, all mixed moves appear twice
+    pub const fn all_36() -> [Dice; 36] {
+        let mut all_36 = [Dice::Double(1); 36]; // Dummy values will be replaced
+        let mut i = 0_usize;
+        while i < 6 {
+            let mut j = 0_usize;
+            while j < 6 {
+                all_36[i * 6 + j] = Dice::new(i + 1, j + 1);
+                j += 1;
+            }
+            i += 1;
+        }
+        all_36
+    }
+
     const fn all_441() -> [([Dice; 2], usize); 441] {
         let mut dice_441 = [([Dice::Double(1), Dice::Double(1)], 0_usize); 441]; // Dummy values, will be replaced
         let dice_21 = Self::all_21();
@@ -144,6 +160,19 @@ mod dice_tests {
     use crate::dice::Dice::{Double, Mixed};
     use crate::dice::{Dice, ALL_441};
     use std::collections::HashSet;
+
+    #[test]
+    /// Test that all doubles are in there once and mixed in there twice.
+    fn all_36() {
+        let bla = Dice::all_36();
+        for dice in bla {
+            let frequency: usize = match dice {
+                Double(_) => 1,
+                Mixed(_) => 2,
+            };
+            assert_eq!(bla.iter().filter(|&x| x == &dice).count(), frequency);
+        }
+    }
 
     #[test]
     fn all_441() {
