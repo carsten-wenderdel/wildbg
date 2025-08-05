@@ -197,7 +197,7 @@ impl<T: InputsGen> OnnxEvaluator<T> {
             let fact: InferenceFact = if i == 0 {
                 // The input tensor for the model could be for example [1, 202] - one position with 202 inputs.
                 // We override with [N, 202] to allow batch evaluation.
-                let batch = SymbolTable::default().sym("N");
+                let batch = model.sym("N");
                 InferenceFact::dt_shape(f32::datum_type(), shapefactoid![batch, (T::NUM_INPUTS)])
             } else {
                 InferenceFact::dt_shape(f32::datum_type(), shapefactoid![i, (T::NUM_INPUTS)])
