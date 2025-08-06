@@ -196,6 +196,25 @@ mod fastrand_dice_tests {
         assert!(counts[1] > 49_500 && counts[1] < 50_500);
         assert!(counts[2] > 29_500 && counts[2] < 30_500);
     }
+
+    /// Make sure that we have the same behavior across different library versions.
+    #[test]
+    fn deterministic_behavior() {
+        let mut dice_gen = FastrandDice::with_seed(0);
+        assert_eq!(dice_gen.roll(), Dice::new(4, 4));
+        assert_eq!(dice_gen.roll(), Dice::new(1, 1));
+        assert_eq!(dice_gen.roll(), Dice::new(4, 1));
+        assert_eq!(dice_gen.roll(), Dice::new(5, 2));
+        assert_eq!(dice_gen.roll(), Dice::new(3, 1));
+        assert_eq!(dice_gen.roll(), Dice::new(5, 2));
+        assert_eq!(dice_gen.roll(), Dice::new(6, 4));
+        assert_eq!(dice_gen.roll(), Dice::new(3, 1));
+        assert_eq!(dice_gen.roll(), Dice::new(5, 2));
+        assert_eq!(dice_gen.roll(), Dice::new(5, 2));
+        assert_eq!(dice_gen.roll(), Dice::new(3, 1));
+        assert_eq!(dice_gen.roll(), Dice::new(6, 5));
+        assert_eq!(dice_gen.roll(), Dice::new(5, 1));
+    }
 }
 
 #[cfg(test)]
