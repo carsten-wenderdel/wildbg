@@ -1,9 +1,10 @@
 use coach::rollout::RolloutEvaluator;
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
 use engine::composite::CompositeEvaluator;
 use engine::evaluator::Evaluator;
 use engine::pos;
 use mimalloc::MiMalloc;
+use std::hint::black_box;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;

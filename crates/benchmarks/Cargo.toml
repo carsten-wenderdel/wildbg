@@ -10,7 +10,7 @@ license.workspace = true
 engine = { path = "../engine" }
 coach = { path = "../coach" }
 # external
-criterion = "0.5.1"
+criterion = "0.7.0"
 # Use the same allocator as the `coach` crate
 mimalloc = { version = "*", default-features = false }
 
