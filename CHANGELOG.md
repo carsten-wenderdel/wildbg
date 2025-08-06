@@ -21,7 +21,7 @@ This means you can reuse the same neural networks between for example 0.2.0 and 
 
 Thanks for their contributions:
 
-- [@deprus](https://github.com/deprus) ([#29]([https://github.com/carsten-wenderdel/wildbg/issues/29))
+- [@deprus](https://github.com/deprus) ([#29](https://github.com/carsten-wenderdel/wildbg/issues/29))
 - [@mbaum0](https://github.com/mbaum0) ([#28](https://github.com/carsten-wenderdel/wildbg/pull/28), [#30](https://github.com/carsten-wenderdel/wildbg/pull/30), [#32](https://github.com/carsten-wenderdel/wildbg/pull/32))
 - [@OfirMarom](https://github.com/OfirMarom) ([#27](https://github.com/carsten-wenderdel/wildbg/issues/27))
 - [@th3oth3rjak3](https://github.com/th3oth3rjak3) ([#25](https://github.com/carsten-wenderdel/wildbg/pull/25))
@@ -37,7 +37,7 @@ Thanks for their contributions:
 ### Fixed
 
 - In edge cases some mixed moves where not calculated
-  correctly: ([#29]([https://github.com/carsten-wenderdel/wildbg/issues/29))
+  correctly: ([#29](https://github.com/carsten-wenderdel/wildbg/issues/29))
 - Position IDs were encoded wrongly when the opponent had checkers on the
   bar: ([#27](https://github.com/carsten-wenderdel/wildbg/issues/27))
 
