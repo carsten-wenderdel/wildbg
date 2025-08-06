@@ -17,6 +17,8 @@ This means you can reuse the same neural networks between for example 0.2.0 and 
 
 ## Unreleased
 
+## 0.3.0 - 2025-08-06
+
 Thanks for their contributions:
 
 - [@deprus](https://github.com/deprus) ([#29]([https://github.com/carsten-wenderdel/wildbg/issues/29))
