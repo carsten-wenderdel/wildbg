@@ -84,6 +84,7 @@ const TD_INPUTS: [[f32; 4]; 31] = [
 fn td_inputs(number_of_checkers: isize) -> &'static [f32; 4] {
     // We need to add `15` to `pip` to make sure that the index is non negative.
     let array_index = (number_of_checkers + 15) as usize;
+    assert!(array_index < 31);
     // Using a lookup table for the 31 different cases (-15 to 15) is much faster than for example a match statement.
     TD_INPUTS
         .get(array_index)

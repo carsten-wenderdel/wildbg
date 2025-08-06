@@ -41,8 +41,8 @@ Thanks for their contributions:
 
 ### Changed
 
-- Neural nets inputs generation is faster: 590% more calculations in the same time for race inputs,
-  670% more calculations for contact inputs.
+- Neural nets inputs generation is faster: 640% more calculations in the same time for race inputs,
+  760% more calculations for contact inputs.
 - Move generation is faster: From 109% more calculations in the same time (mixed moves, contact) to 160% more
   (mixed moves, race).
 - Breaking change: The C API returns an array of move details instead of four separate fields.
