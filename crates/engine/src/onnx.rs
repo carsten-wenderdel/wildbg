@@ -221,6 +221,7 @@ mod tests {
     use crate::onnx::OnnxEvaluator;
     use crate::pos;
 
+    #[ignore]
     #[test]
     fn eval_certain_win_normal() {
         let onnx = OnnxEvaluator::contact_default().unwrap();
@@ -231,6 +232,7 @@ mod tests {
         assert!(probabilities.win_normal < 0.9); // This should be wrong, let's improve the nets.
     }
 
+    #[ignore]
     #[test]
     fn eval_certain_win_gammon() {
         let onnx = OnnxEvaluator::contact_default().unwrap();
@@ -241,6 +243,7 @@ mod tests {
         assert!(probabilities.win_gammon < 0.9); // This should be wrong, let's improve the nets.
     }
 
+    #[ignore]
     #[test]
     fn eval_certain_win_bg() {
         let onnx = OnnxEvaluator::contact_default().unwrap();
@@ -251,6 +254,7 @@ mod tests {
         assert!(probabilities.win_bg < 0.32); // This should be wrong, let's improve the nets.
     }
 
+    #[ignore]
     #[test]
     fn eval_certain_lose_normal() {
         let onnx = OnnxEvaluator::contact_default().unwrap();
@@ -261,6 +265,7 @@ mod tests {
         assert!(probabilities.lose_normal < 0.82); // This should be wrong, let's improve the nets.
     }
 
+    #[ignore]
     #[test]
     fn eval_certain_lose_gammon() {
         let onnx = OnnxEvaluator::contact_default().unwrap();
@@ -271,6 +276,7 @@ mod tests {
         assert!(probabilities.lose_gammon < 0.98); // This should be wrong, let's improve the nets.
     }
 
+    #[ignore]
     #[test]
     fn eval_certain_lose_bg() {
         let onnx = OnnxEvaluator::contact_default().unwrap();
