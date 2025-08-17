@@ -31,7 +31,7 @@ pub struct BgConfig {
     pub o_away: c_uint,
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 /// Loads the neural nets into memory and returns a pointer to the API.
 /// Returns `NULL` if the neural nets cannot be found.
 ///
@@ -46,7 +46,7 @@ pub extern "C" fn wildbg_new() -> *mut Wildbg {
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 /// # Safety
 ///
 /// Frees the memory of the argument.
@@ -163,7 +163,7 @@ type Error = &'static str;
 /// # Safety
 /// The argument `wildbg` needs to be initialized with `wildbg_new()` and `wildbg_free()` must not be called yet.
 /// Otherwise we have random memory access here.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn best_move(
     wildbg: *const Wildbg,
     pips: &[c_int; 26],
@@ -176,8 +176,10 @@ pub unsafe extern "C" fn best_move(
         let position = Position::try_from(pips)?;
         let dice = Dice::try_from((die1 as usize, die2 as usize))?;
         let score_config = ScoreConfig::try_from((config.x_away, config.o_away))?;
-        let bg_move = (*wildbg).api.best_move(&position, &dice, &score_config);
-        Ok(bg_move)
+        unsafe {
+            let bg_move = (*wildbg).api.best_move(&position, &dice, &score_config);
+            Ok(bg_move)
+        }
     };
     match move_result() {
         Ok(bg_move) => CMove::from(bg_move),
@@ -194,7 +196,7 @@ pub unsafe extern "C" fn best_move(
 /// The player on turn always moves from pip 24 to pip 1.
 /// The array `pips` contains the player's bar in index 25, the opponent's bar in index 0.
 /// Checkers of the player on turn are encoded with positive integers, the opponent's checkers with negative integers.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn probabilities(wildbg: &Wildbg, pips: &[c_int; 26]) -> CProbabilities {
     let pips = pips.map(|pip| pip as i8);
     match Position::try_from(pips) {
@@ -206,7 +208,7 @@ pub extern "C" fn probabilities(wildbg: &Wildbg, pips: &[c_int; 26]) -> CProbabi
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn cube_info(wildbg: &Wildbg, pips: &[c_int; 26]) -> CCubeInfo {
     let pips = pips.map(|pip| pip as i8);
     match Position::try_from(pips) {
@@ -223,7 +225,7 @@ pub extern "C" fn cube_info(wildbg: &Wildbg, pips: &[c_int; 26]) -> CCubeInfo {
 
 #[cfg(test)]
 mod tests {
-    use crate::{best_move, wildbg_new, BgConfig, CMove, CMoveDetail, CProbabilities};
+    use crate::{BgConfig, CMove, CMoveDetail, CProbabilities, best_move, wildbg_new};
     use engine::position::X_BAR;
     use engine::{dice::Dice, pos};
 

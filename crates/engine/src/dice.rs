@@ -158,7 +158,7 @@ impl MixedDice {
 #[cfg(test)]
 mod dice_tests {
     use crate::dice::Dice::{Double, Mixed};
-    use crate::dice::{Dice, ALL_441};
+    use crate::dice::{ALL_441, Dice};
     use std::collections::HashSet;
 
     #[test]

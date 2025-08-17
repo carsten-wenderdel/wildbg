@@ -1,4 +1,4 @@
-use engine::dice::{Dice, ALL_441};
+use engine::dice::{ALL_441, Dice};
 use engine::dice_gen::{DiceGen, FastrandDice};
 use engine::evaluator::{Evaluator, RandomEvaluator};
 use engine::position::GameState::{GameOver, Ongoing};

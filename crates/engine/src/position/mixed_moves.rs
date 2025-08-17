@@ -1,5 +1,5 @@
 use crate::dice::MixedDice;
-use crate::position::{Position, MOVES_CAPACITY, O_BAR, X_BAR};
+use crate::position::{MOVES_CAPACITY, O_BAR, Position, X_BAR};
 use std::cmp::max;
 
 impl Position {
@@ -427,7 +427,9 @@ mod tests {
         let expected6 = pos!(x 5:2, 4:2; o 20:1);
         assert_eq!(
             resulting_positions,
-            vec![expected1, expected4, expected5, expected6, expected3, expected2]
+            vec![
+                expected1, expected4, expected5, expected6, expected3, expected2
+            ]
         );
     }
 

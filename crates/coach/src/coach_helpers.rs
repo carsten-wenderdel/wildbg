@@ -1,5 +1,5 @@
 use engine::position::OngoingPhase;
-use std::io::{stdout, Write};
+use std::io::{Write, stdout};
 use std::time::Instant;
 
 pub fn positions_file_name(phase: &OngoingPhase) -> String {

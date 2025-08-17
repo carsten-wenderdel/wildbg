@@ -1,6 +1,6 @@
-use crate::position::{Position, NUM_OF_CHECKERS, O_BAR, X_BAR};
-use base64::engine::general_purpose;
+use crate::position::{NUM_OF_CHECKERS, O_BAR, Position, X_BAR};
 use base64::Engine;
+use base64::engine::general_purpose;
 use std::collections::HashMap;
 
 /// Simple way to create positions for testing.
@@ -118,7 +118,7 @@ impl Position {
 
 #[cfg(test)]
 mod tests {
-    use crate::position::{Position, O_BAR, STARTING, X_BAR};
+    use crate::position::{O_BAR, Position, STARTING, X_BAR};
 
     #[test]
     fn start_id() {

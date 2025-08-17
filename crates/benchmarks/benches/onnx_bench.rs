@@ -1,5 +1,5 @@
 use crate::helper::{contact_positions_after_moving, race_positions_after_moving};
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 use engine::inputs::{ContactInputsGen, InputsGen, RaceInputsGen};
 use engine::onnx::OnnxEvaluator;
 use mimalloc::MiMalloc;

@@ -1,4 +1,4 @@
-use crate::position::{Position, MOVES_CAPACITY, O_BAR, X_BAR};
+use crate::position::{MOVES_CAPACITY, O_BAR, Position, X_BAR};
 use std::cmp::min;
 
 impl Position {

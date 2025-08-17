@@ -733,7 +733,7 @@ mod tests {
 #[cfg(test)]
 mod private_tests {
     use crate::pos;
-    use crate::position::{Position, O_BAR, STARTING};
+    use crate::position::{O_BAR, Position, STARTING};
     use std::collections::HashMap;
 
     #[test]

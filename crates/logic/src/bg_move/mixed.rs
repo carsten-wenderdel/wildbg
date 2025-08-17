@@ -13,34 +13,33 @@ impl BgMove {
                 for (die1, die2) in [(dice.small(), dice.big()), (dice.big(), dice.small())] {
                     if let Some(position) =
                         can_move_both(old, from_pip, die1, from_pip as isize - die1 as isize, die2)
+                        && position == *new
                     {
-                        if position == *new {
-                            // In case of bear off, we want 0, not negative numbers
-                            let to = from_pip.saturating_sub(die1 + die2);
-                            return BgMove {
-                                details: vec![
-                                    MoveDetail {
-                                        from: from_pip,
-                                        to: from_pip - die1,
-                                    },
-                                    MoveDetail {
-                                        from: from_pip - die1,
-                                        to,
-                                    },
-                                ],
-                            };
-                        }
+                        // In case of bear off, we want 0, not negative numbers
+                        let to = from_pip.saturating_sub(die1 + die2);
+                        return BgMove {
+                            details: vec![
+                                MoveDetail {
+                                    from: from_pip,
+                                    to: from_pip - die1,
+                                },
+                                MoveDetail {
+                                    from: from_pip - die1,
+                                    to,
+                                },
+                            ],
+                        };
                     }
                 }
                 // We couldn't find one checker being moved twice. So it must have been a checker only moved once.
                 for die in [dice.small(), dice.big()] {
-                    if let Some(position) = old.try_move_single_checker(from_pip, die) {
-                        if position == *new {
-                            let to = from_pip.saturating_sub(die);
-                            return BgMove {
-                                details: vec![MoveDetail { from: from_pip, to }],
-                            };
-                        }
+                    if let Some(position) = old.try_move_single_checker(from_pip, die)
+                        && position == *new
+                    {
+                        let to = from_pip.saturating_sub(die);
+                        return BgMove {
+                            details: vec![MoveDetail { from: from_pip, to }],
+                        };
                     }
                 }
                 panic!("One of the previous if/else branches should have returned something.");

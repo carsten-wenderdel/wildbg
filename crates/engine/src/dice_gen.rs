@@ -130,11 +130,11 @@ mod fastrand_dice_tests {
     #[test]
     fn all_numbers_are_occurring() {
         // Given
-        let mut gen = FastrandDice::with_seed(123);
+        let mut dice_gen = FastrandDice::with_seed(123);
         let mut count = [[0_u32; 6]; 6];
         // When
         for _ in 0..360_000 {
-            let dice = gen.roll();
+            let dice = dice_gen.roll();
             match dice {
                 Dice::Double(die) => {
                     count[die - 1][die - 1] += 1;

@@ -1,7 +1,7 @@
 use crate::web_api::{AwayParams, DiceParams, EvalResponse, MoveResponse, PipParams, WebApi};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
-use axum::{routing::get, Json, Router};
+use axum::{Json, Router, routing::get};
 use engine::evaluator::Evaluator;
 use serde::Serialize;
 use std::sync::Arc;
@@ -163,13 +163,13 @@ async fn get_move<T: Evaluator>(
 #[cfg(test)]
 mod tests {
     // use crate::{router, DynWebApi};
-    use crate::axum::router;
     use crate::axum::DynWebApi;
+    use crate::axum::router;
     use crate::web_api::WebApi;
     use axum::body::Body;
     use axum::extract::Request;
-    use axum::http::header::CONTENT_TYPE;
     use axum::http::StatusCode;
+    use axum::http::header::CONTENT_TYPE;
     use engine::evaluator::Evaluator;
     use engine::inputs::ContactInputsGen;
     use engine::onnx::OnnxEvaluator;

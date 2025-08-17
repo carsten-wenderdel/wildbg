@@ -1,5 +1,5 @@
 use crate::helper::{contact_positions, race_positions};
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 use engine::dice::Dice;
 use engine::position::Position;
 use mimalloc::MiMalloc;

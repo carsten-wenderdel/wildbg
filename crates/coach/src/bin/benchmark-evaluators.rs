@@ -6,7 +6,7 @@ use engine::probabilities::{Probabilities, ResultCounter};
 use mimalloc::MiMalloc;
 use rayon::prelude::*;
 use std::fs;
-use std::io::{stdout, Write};
+use std::io::{Write, stdout};
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
