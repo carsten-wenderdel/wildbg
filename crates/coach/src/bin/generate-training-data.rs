@@ -7,6 +7,7 @@ use engine::evaluator::Evaluator;
 use engine::position::{OngoingPhase, Position};
 use mimalloc::MiMalloc;
 use std::fs::File;
+use std::path::Path;
 use std::time::Instant;
 
 #[global_allocator]
@@ -37,20 +38,50 @@ fn find_and_roll_out<T: Evaluator>(
 
     println!("Read positions from {positions_path} and write training data to {training_path}");
 
-    let reader = csv::ReaderBuilder::new()
+    let positions: Vec<Position> = csv::ReaderBuilder::new()
         .has_headers(true)
-        .from_path(&positions_path)?;
-    let positions: Vec<Position> = reader
+        .from_path(&positions_path)?
         .into_records()
         .map(|record| Position::from_id(record.unwrap().as_slice()))
         .collect();
 
-    _ = std::fs::create_dir("training-data");
-    _ = std::fs::remove_file(&training_path);
-    let mut csv_writer = csv::WriterBuilder::new()
-        .has_headers(false)
-        .from_writer(File::create(&training_path)?);
-    csv_writer.write_record(PositionRecord::csv_header())?;
+    // We want to be able to stop this application and resume later on.
+    // So let's see whether we've already rolled out positions to skip them.
+    let existing_positions: Vec<Position> = if Path::new(&training_path).exists() {
+        csv::ReaderBuilder::new()
+            .has_headers(true)
+            .from_path(&training_path)?
+            .into_records()
+            .map(|record| Position::from_id(record.unwrap().get(0).unwrap()))
+            .collect()
+    } else {
+        Vec::new()
+    };
+
+    let positions = positions
+        .strip_prefix(existing_positions.as_slice())
+        .ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "The target file already contains other rollout data, delete it first.",
+            )
+        })?;
+
+    let mut csv_writer = csv::WriterBuilder::new().has_headers(false).from_writer(
+        File::options()
+            .create(true)
+            .append(true)
+            .open(&training_path)?,
+    );
+
+    if !existing_positions.is_empty() {
+        println!(
+            "{} positions have already been rolled out, let's deal with the remaining:",
+            existing_positions.len(),
+        );
+    } else {
+        csv_writer.write_record(PositionRecord::csv_header())?;
+    }
 
     println!("Roll out {} '{:?}' positions", positions.len(), phase);
 

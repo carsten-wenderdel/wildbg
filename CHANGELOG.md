@@ -17,6 +17,10 @@ This means you can reuse the same neural networks between for example 0.2.0 and 
 
 ## Unreleased
 
+### Internal / Training
+
+- Training data generation can be suspended and resumed.
+
 ## 0.3.0 - 2025-08-06
 
 Thanks for their contributions:
