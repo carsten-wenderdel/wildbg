@@ -1,3 +1,4 @@
+use clap::Parser;
 use coach::duel::Duel;
 use coach::unwrap::UnwrapHelper;
 use engine::composite::CompositeEvaluator;
@@ -10,16 +11,32 @@ use std::io::{Write, stdout};
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
+#[derive(Parser)]
+#[command(version)]
+#[command(about = "Let standard neural nets duel various neural nets in the folder `training-data`", long_about = None)]
+struct Args {
+    #[arg(long, value_name = "FILE", default_value = "neural-nets/contact.onnx")]
+    contact_1: String,
+    #[arg(long, value_name = "FILE", default_value = "neural-nets/race.onnx")]
+    race_1: String,
+    #[arg(long, value_name = "FILE", default_value = "neural-nets/contact.onnx")]
+    contact_2: String,
+    #[arg(long, value_name = "FILE", default_value = "neural-nets/race.onnx")]
+    race_2: String,
+}
+
 fn main() {
+    let args = Args::parse();
+
     let evaluator_1 = CompositeEvaluator::from_file_paths_optimized(
-        "neural-nets/contact.onnx",
-        "neural-nets/race.onnx",
+        args.contact_1.as_str(),
+        args.race_1.as_str(),
     )
     .unwrap_or_exit_with_message();
 
     let evaluator_2 = CompositeEvaluator::from_file_paths_optimized(
-        "neural-nets/contact.onnx",
-        "neural-nets/race.onnx",
+        args.contact_2.as_str(),
+        args.race_2.as_str(),
     )
     .unwrap_or_exit_with_message();
     // let evaluator_2 = engine::multiply::MultiPlyEvaluator {
