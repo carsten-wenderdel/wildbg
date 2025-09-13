@@ -1,3 +1,4 @@
+use clap::Parser;
 use coach::coach_helpers::{positions_file_name, print_progress};
 use coach::data::PositionRecord;
 use coach::rollout::RolloutEvaluator;
@@ -6,6 +7,7 @@ use engine::composite::CompositeEvaluator;
 use engine::evaluator::Evaluator;
 use engine::position::{OngoingPhase, Position};
 use mimalloc::MiMalloc;
+use serde::Serialize;
 use std::fs::File;
 use std::path::Path;
 use std::time::Instant;
@@ -13,13 +15,32 @@ use std::time::Instant;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
+#[derive(Parser)]
+#[command(version)]
+#[command(about = "Generate training data by rolling out positions from a CSV file.", long_about = None)]
+struct Args {
+    #[arg(long)]
+    phase: Phase,
+}
+
+#[derive(clap::ValueEnum, Clone, Serialize)]
+enum Phase {
+    Contact,
+    Race,
+}
+
 /// This binary is for generating training data in CSV format.
 ///
 /// The data is persisted with position ID and the "classic" 5 values for the probabilities.
 /// The resulting file cannot be read by the Python scripts, they have to be converted first with `convert-to-inputs.rs`.
 fn main() -> std::io::Result<()> {
-    // Change the next couple of lines to configure what, how and how much you want to roll out.
-    let phase = OngoingPhase::Race;
+    let args = Args::parse();
+
+    let phase = match args.phase {
+        Phase::Contact => OngoingPhase::Contact,
+        Phase::Race => OngoingPhase::Race,
+    };
+
     let rollout_evaluator = CompositeEvaluator::try_default()
         .map(RolloutEvaluator::with_evaluator)
         .unwrap_or_exit_with_message();

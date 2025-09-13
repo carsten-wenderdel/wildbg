@@ -20,12 +20,15 @@ Using it requires manual editing of source code, which is described in the next 
 
 ## HowTo`generate-training-data`
 
-This sections describes the creation of new training data.
+This section describes the creation of new training data.
 
 - The networks committed in [`neural-nets`](../../neural-nets) are small weak nets. Replace them with the latest nets from https://github.com/carsten-wenderdel/wildbg-training.
-- Edit [`generate-training-data.rs`](../../crates/coach/src/bin/generate-training-data.rs) and chose the desired game **phase** (`contact` or `race`) and
-the **amount** of positions for rollout.
-- Execute `cargo run -r -p coach --bin generate-training-data`. This will take many hours.
+- Execute `cargo run -r -p coach --bin generate-positions -- --help` to see all options and pick the correct 
+  CLI arguments (`race`/`contact`, number of positions).
+  The resulting data will be stored as a CSV file in the `training-data` folder.
+- Execute `cargo run -r -p coach --bin generate-training-data -- --help`, add the correct CLI arguments.
+  This will roll out the positions from the previously generated CSV file.
+  Execution will take many hours. You can stop and resume it any time you want.
 
 ##  HowTo`training`
 
@@ -36,10 +39,10 @@ This section describes the creation of new nets via supervised learning.
 Look for a file `contact.csv` in the `data` folder. It also might make sense to download multiple `contact.csv` files, the Python code can
 deal with one or several files. These files contain position IDs in the GnuBG format along with game outcome probabilities.
 - Store those files in the `training-data` folder.
-- Run `cargo run -p coach --bin convert-to-inputs -- --help`.
+- Run `cargo run -p coach --bin convert-to-inputs -- --phase contact`.
 This reads the downloaded CSV file and creates a new CSV file with inputs and outputs for PyTorch.
 If you want to try different inputs, you have to program that in Rust ([inputs.rs](../../crates/engine/src/inputs.rs)).
-- Go to the root folder of the project and execute [`python3 [./training/src/train_race.py`](../../training/src/train_race.py) or [`python3 ./training/src/train_contact.py`](../../training/src/train_contact.py) -
+- Go to the root folder of the project and execute [`python3 [./training/src/train_contact.py`](../../training/src/train_race.py) or [`python3 ./training/src/train_contact.py`](../../training/src/train_contact.py) -
 this will create several new nets in the `training-data` folder. It should take only a few minutes.
 - You might want to edit various hyperparameters in these python files. The number of epochs, optimizer and loss function should be ok,
 but maybe you find better ones. In any case you should try various learning rates, they have a big impact on the quality of the net.
