@@ -36,8 +36,7 @@ This section describes the creation of new nets via supervised learning.
 Look for a file `contact.csv` in the `data` folder. It also might make sense to download multiple `contact.csv` files, the Python code can
 deal with one or several files. These files contain position IDs in the GnuBG format along with game outcome probabilities.
 - Store those files in the `training-data` folder.
-- Edit the file [`convert-to-inputs.rs`](../../crates/coach/src/bin/convert-to-inputs.rs) and make sure that the filenames are correct.
-- Run `cargo run -p coach --bin convert-to-inputs`.
+- Run `cargo run -p coach --bin convert-to-inputs -- --help`.
 This reads the downloaded CSV file and creates a new CSV file with inputs and outputs for PyTorch.
 If you want to try different inputs, you have to program that in Rust ([inputs.rs](../../crates/engine/src/inputs.rs)).
 - Go to the root folder of the project and execute [`python3 [./training/src/train_race.py`](../../training/src/train_race.py) or [`python3 ./training/src/train_contact.py`](../../training/src/train_contact.py) -
