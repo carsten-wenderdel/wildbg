@@ -23,12 +23,12 @@ impl<T: Evaluator> PositionFinder<T, FastrandDice> {
 }
 
 impl<T: Evaluator, U: DiceGen> PositionFinder<T, U> {
-    pub fn find_positions(&mut self, amount: usize, phase: OngoingPhase) -> IndexSet<Position> {
+    pub fn find_positions(&mut self, number: usize, phase: OngoingPhase) -> IndexSet<Position> {
         let phase = GamePhase::Ongoing(phase);
-        let mut found: IndexSet<Position> = IndexSet::with_capacity(amount);
-        while found.len() < amount {
+        let mut found: IndexSet<Position> = IndexSet::with_capacity(number);
+        while found.len() < number {
             for position in self.positions_in_one_random_game() {
-                if found.len() < amount && position.game_phase() == phase {
+                if found.len() < number && position.game_phase() == phase {
                     found.insert(position);
                 }
             }
