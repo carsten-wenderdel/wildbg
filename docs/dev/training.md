@@ -56,5 +56,7 @@ To have a baseline, copy existing onnx files from https://github.com/carsten-wen
 After several ten thousand games a difference in equity should be visible. This helps to pick the strongest net.
 
 #### Compare all neural nets in the `training-data` folder
-- Edit [`benchmark-evaluators.rs`](../../crates/coach/src/bin/compare-evaluators.rs) and and pick the number of games that should be played per comparison. Even with 300,000 games the results can easily fluctuate by 0.04 equity points.
-- Execute `cargo run -r -p coach --bin benchmark-evaluators`. After having results, you might want to repeat this with less onnx files in the `training-data` folder and more games.
+- Execute `cargo run -r -p coach --bin compare-folder -- --state contact --number 50000`
+  or `cargo run -r -p coach --bin compare-folder -- --help` to see all options.
+  After having results, you might want to repeat this with fewer onnx files in the `training-data` folder and more
+  games. Even with 300,000 games, the results can easily fluctuate by 0.04 equity points.

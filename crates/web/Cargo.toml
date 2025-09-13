@@ -12,6 +12,7 @@ engine = { path = "../engine" }
 logic = { path = "../logic", features = ["web"] }
 # external
 axum = "0.8.4"
+clap = { workspace = true, features = ["derive"] }
 hyper = "*"
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
@@ -21,7 +22,6 @@ tokio = { version = "*", features = ["full"] }
 tower = "*"
 utoipa = { workspace = true, features = ["axum_extras", "preserve_order"] }
 utoipa-swagger-ui = { version = "9", features = ["axum"] }
-clap = { version = "4.5.2", features = ["derive"] }
 
 [dev-dependencies]
 http-body-util = "0.1.0"
