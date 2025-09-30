@@ -17,6 +17,10 @@ This means you can reuse the same neural networks between for example 0.2.0 and 
 
 ## Unreleased
 
+### Fixed
+
+- Removed duplicates in the move generation for forced bear offs.
+
 ### Internal / Training
 
 - Training data generation can be suspended and resumed.

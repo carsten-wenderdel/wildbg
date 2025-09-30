@@ -124,29 +124,35 @@ impl Position {
             });
 
         // All moves where the `big` die is moved first
-        (self.smallest_pip_to_check(dice.big)..X_BAR).for_each(|i| {
-            if self.can_move_when_bearoff_is_legal(i, dice.big) {
-                let position = self.clone_and_move_single_checker(i, dice.big);
-                let different_outcomes =
-                    i >= dice.big && (self.pips[i - dice.big] < 0 || self.pips[i - dice.small] < 0);
-                let smallest_pip = position.smallest_pip_to_check(dice.small);
-                let range = if different_outcomes {
-                    #[allow(clippy::reversed_empty_ranges)]
-                    (smallest_pip..i).chain(0..0)
-                } else {
-                    // If we move a single checker with both dice, this position was already
-                    // included above when `small` was moved first. So we omit it here.
-                    let omitted_pip = i.saturating_sub(dice.big);
-                    (smallest_pip..omitted_pip).chain(max(smallest_pip, omitted_pip + 1)..i)
-                };
-                range.for_each(|i| {
-                    if position.can_move_when_bearoff_is_legal(i, dice.small) {
-                        let position = position.clone_and_move_single_checker(i, dice.small);
-                        moves.push(position);
-                    }
-                });
-            }
-        });
+        let smallest_pip_to_check = self.smallest_pip_to_check(dice.big);
+        if smallest_pip_to_check > dice.small {
+            // If the smallest pip to check is not bigger than the smaller dice, it's a bear off
+            // where we are forced to bear off two checkers not matter with which die we start.
+            // This case was already covered when `small` was moved first.
+            (smallest_pip_to_check..X_BAR).for_each(|i| {
+                if self.can_move_when_bearoff_is_legal(i, dice.big) {
+                    let position = self.clone_and_move_single_checker(i, dice.big);
+                    let different_outcomes = i >= dice.big
+                        && (self.pips[i - dice.big] < 0 || self.pips[i - dice.small] < 0);
+                    let smallest_pip = position.smallest_pip_to_check(dice.small);
+                    let range = if different_outcomes {
+                        #[allow(clippy::reversed_empty_ranges)]
+                        (smallest_pip..i).chain(0..0)
+                    } else {
+                        // If we move a single checker with both dice, this position was already
+                        // included above when `small` was moved first. So we omit it here.
+                        let omitted_pip = i.saturating_sub(dice.big);
+                        (smallest_pip..omitted_pip).chain(max(smallest_pip, omitted_pip + 1)..i)
+                    };
+                    range.for_each(|i| {
+                        if position.can_move_when_bearoff_is_legal(i, dice.small) {
+                            let position = position.clone_and_move_single_checker(i, dice.small);
+                            moves.push(position);
+                        }
+                    });
+                }
+            });
+        }
 
         moves
     }
@@ -532,6 +538,17 @@ mod tests {
         let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(6, 4));
         // Then
         let expected = pos!(x 5:3, 3:2; o 24:10, 23:3, 1:2);
+        assert_eq!(resulting_positions, vec![expected]);
+    }
+
+    #[test]
+    fn forced_bearoff() {
+        // Given
+        let position = pos!(x 4:1, 2:4; o 24:1, 1:1);
+        // When
+        let resulting_positions = position.all_positions_after_mixed_move(&MixedDice::new(6, 4));
+        // Then
+        let expected = pos!(x 2:3; o 24:1, 1:1);
         assert_eq!(resulting_positions, vec![expected]);
     }
 }

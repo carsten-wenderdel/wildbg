@@ -42,7 +42,7 @@ fn contact_double(c: &mut Criterion) {
 
     let number = number_double_moves(&positions);
     assert_eq!(number, 218_356);
-    println!("1000 positions, 6 double dice rolls -> {number} generated moves.");
+    println!("1000 contact positions, 6 double dice rolls -> {number} generated moves.");
 
     c.bench_function("generate moves: contact, double", |b| {
         b.iter(|| number_double_moves(black_box(&positions)))
@@ -54,8 +54,8 @@ fn contact_mixed(c: &mut Criterion) {
     let positions = contact_positions();
 
     let number = number_mixed_moves(&positions);
-    assert_eq!(number, 185_964);
-    println!("1000 positions, 15 mixed dice rolls -> {number} generated moves.");
+    assert_eq!(number, 185_957);
+    println!("1000 contact positions, 15 mixed dice rolls -> {number} generated moves.");
 
     c.bench_function("generate moves: contact, mixed", |b| {
         b.iter(|| number_mixed_moves(black_box(&positions)))
@@ -68,7 +68,7 @@ fn race_double(c: &mut Criterion) {
 
     let number = number_double_moves(&positions);
     assert_eq!(number, 140_720);
-    println!("1000 positions, 6 double dice rolls -> {number} generated moves.");
+    println!("1000 race positions, 6 double dice rolls -> {number} generated moves.");
 
     c.bench_function("generate moves: race, double", |b| {
         b.iter(|| number_double_moves(black_box(&positions)))
@@ -80,8 +80,8 @@ fn race_mixed(c: &mut Criterion) {
     let positions = race_positions();
 
     let number = number_mixed_moves(&positions);
-    assert_eq!(number, 123_303);
-    println!("1000 positions, 15 mixed dice rolls -> {number} generated moves.");
+    assert_eq!(number, 122_570);
+    println!("1000 race positions, 15 mixed dice rolls -> {number} generated moves.");
 
     c.bench_function("generate moves: race, mixed", |b| {
         b.iter(|| number_mixed_moves(black_box(&positions)))
