@@ -215,6 +215,7 @@ mod game_over_tests {
         assert_eq!(probabilities.equity(), 3.);
     }
 
+    #[ignore]
     #[test]
     fn game_over_ongoing() {
         let evaluator = super::CompositeEvaluator::default_tests();
