@@ -37,7 +37,7 @@ pub struct Args {
 /// ```
 pub fn get_web_address(cli_args: &Args) -> String {
     match cli_args.address.to_ascii_lowercase().as_str() {
-        "localhost" | "127.0.0.1" | "0.0.0.0" => format!("localhost:{}", cli_args.port),
+        "localhost" | "127.0.0.1" => format!("localhost:{}", cli_args.port),
         _ => format!("{}:{}", cli_args.address, cli_args.port),
     }
 }
