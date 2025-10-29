@@ -7,6 +7,7 @@ use engine::probabilities::{Probabilities, ResultCounter};
 use mimalloc::MiMalloc;
 use rayon::prelude::*;
 use serde::Serialize;
+use std::collections::HashSet;
 use std::fs;
 use std::io::{Write, stdout};
 
@@ -31,21 +32,39 @@ enum Phase {
 }
 
 /// Compare one evaluator with neural nets in the folder `training-data`.
+/// This is meant to be used together with `train_contact.py` or `train_race.py`.
 fn main() {
     let args = Args::parse();
 
     let folder_name = "training-data";
     println!("Start benchmarking, read contents of {folder_name}");
-    let mut paths = fs::read_dir(folder_name)
-        .unwrap()
-        .map(|x| x.unwrap().file_name().into_string().unwrap())
-        .filter(|x| x.starts_with(args.phase.to_possible_value().unwrap().get_name()))
-        .filter(|x| x.ends_with(".onnx"))
-        .collect::<Vec<_>>();
-    paths.sort();
 
+    let mut already_compared_nets: HashSet<String> = HashSet::new();
+
+    loop {
+        // Let's find all neural nets in the folder that are not yet compared.
+        let mut paths_of_nets_to_compare: Vec<String> = fs::read_dir(folder_name)
+            .unwrap()
+            .map(|x| x.unwrap().file_name().into_string().unwrap())
+            .filter(|x| x.starts_with(args.phase.to_possible_value().unwrap().get_name()))
+            .filter(|x| x.ends_with(".onnx"))
+            .filter(|x| !already_compared_nets.contains(x))
+            .collect();
+
+        if paths_of_nets_to_compare.is_empty() {
+            print!("\rWaiting for new neural nets to be created. Kill the process to stop.");
+            stdout().flush().unwrap();
+            std::thread::sleep(std::time::Duration::from_secs(1));
+        } else {
+            paths_of_nets_to_compare.sort();
+            compare_nets_with_default_nets(&paths_of_nets_to_compare, folder_name, &args);
+            already_compared_nets.extend(paths_of_nets_to_compare);
+        }
+    }
+}
+
+fn compare_nets_with_default_nets(paths: &Vec<String>, folder_name: &str, args: &Args) {
     for file_name in paths {
-        print!("Load current neural nets");
         stdout().flush().unwrap();
         let current = CompositeEvaluator::from_file_paths_optimized(
             "neural-nets/contact.onnx",
@@ -54,7 +73,8 @@ fn main() {
         .unwrap_or_exit_with_message();
 
         let path_string = folder_name.to_string() + "/" + file_name.as_str();
-        print!("\rTry {path_string}");
+        // We print lots of whitespace to overwrite the previous line.
+        print!("\rTry {path_string}                                   ");
         stdout().flush().unwrap();
         let contender = match args.phase {
             Phase::Contact => {
@@ -93,5 +113,4 @@ fn main() {
             probabilities,
         );
     }
-    println!("Finished benchmarking");
 }
