@@ -18,6 +18,10 @@ A graphical user interface (GUI) is not part of this project.
 
 ### Bots on Backgammon Servers
 
+#### kutuama.com
+
+Click the practice button and select the wildbg bot at https://kutuama.com. No need to download a client or register.
+
 #### bgammon.org
 
 Thanks to [@tslocum](https://github.com/tslocum) you can play against `BOT_wildbg` on his new backgammon server https://bgammon.org.
