@@ -1,3 +1,6 @@
+mod finder_rand;
+
+use crate::position_finder::finder_rand::{FinderRand, FinderRandomizer};
 use engine::dice_gen::{DiceGen, FastrandDice};
 use engine::evaluator::Evaluator;
 use engine::position::GameState::Ongoing;
@@ -17,15 +20,17 @@ pub fn position_finder_with_evaluator<'a, T: Evaluator + 'a>(
     Box::new(ConcreteFinder {
         evaluator,
         dice_gen: FastrandDice::with_seed(0),
+        rand: FinderRand::with_seed(0),
     })
 }
 
-pub struct ConcreteFinder<T: Evaluator, U: DiceGen> {
+struct ConcreteFinder<T: Evaluator, U: DiceGen, V: FinderRandomizer> {
     evaluator: T,
     dice_gen: U,
+    rand: V,
 }
 
-impl<T: Evaluator, U: DiceGen> PositionFinder for ConcreteFinder<T, U> {
+impl<T: Evaluator, U: DiceGen, V: FinderRandomizer> PositionFinder for ConcreteFinder<T, U, V> {
     fn find_positions(&mut self, number: usize, phase: OngoingPhase) -> IndexSet<Position> {
         let phase = GamePhase::Ongoing(phase);
         let mut found: IndexSet<Position> = IndexSet::with_capacity(number);
@@ -40,7 +45,7 @@ impl<T: Evaluator, U: DiceGen> PositionFinder for ConcreteFinder<T, U> {
     }
 }
 
-impl<T: Evaluator, U: DiceGen> ConcreteFinder<T, U> {
+impl<T: Evaluator, U: DiceGen, V: FinderRandomizer> ConcreteFinder<T, U, V> {
     fn positions_in_one_random_game(&mut self) -> Vec<Position> {
         let mut positions: Vec<Position> = Vec::new();
         let mut pos = STARTING;
@@ -139,7 +144,7 @@ impl<T: Evaluator, U: DiceGen> ConcreteFinder<T, U> {
                 }
             })
             .collect();
-        let choice = self.dice_gen.choose_index(&chances);
+        let choice = self.rand.sample(&chances);
         positions_and_probabilities
             .get(choice)
             .expect("choose_index must return index smaller than the number of moves")
@@ -149,25 +154,20 @@ impl<T: Evaluator, U: DiceGen> ConcreteFinder<T, U> {
 
 #[cfg(test)]
 mod private_tests {
+    use crate::position_finder::finder_rand::FinderRandomizer;
     use crate::position_finder::{ConcreteFinder, position_finder_with_evaluator};
     use engine::composite::CompositeEvaluator;
-    use engine::dice::Dice;
-    use engine::dice_gen::DiceGen;
+    use engine::dice_gen::FastrandDice;
     use engine::evaluator::RandomEvaluator;
     use engine::pos;
     use engine::position::OngoingPhase;
     use engine::probabilities::{Probabilities, ResultCounter};
 
-    struct DiceGenChooseMock {}
+    struct RandMock {}
 
-    /// Mock to make sure that the `dice_gen` is called with the right values in the tests.
-    impl DiceGen for DiceGenChooseMock {
-        fn roll(&mut self) -> Dice {
-            unreachable!()
-        }
-
+    impl FinderRandomizer for RandMock {
         /// A bit quick and dirty - the values and asserts are hard coded for two tests at once: "contact()" and "race()"
-        fn choose_index(&mut self, chances: &[f32]) -> usize {
+        fn sample(&mut self, chances: &[f32]) -> usize {
             // This method should only be called in the test "contact". In race, this method should
             // not be called as the best position should be returned.
             assert_eq!(chances.len(), 2);
@@ -193,7 +193,8 @@ mod private_tests {
 
         let mut finder = ConcreteFinder {
             evaluator: RandomEvaluator {},
-            dice_gen: DiceGenChooseMock {},
+            dice_gen: FastrandDice::with_seed(0),
+            rand: RandMock {},
         };
 
         // Given
@@ -203,7 +204,7 @@ mod private_tests {
         // Then
         assert_eq!(
             found, pos_2,
-            "Second best move should be returned as specified in DiceGenChooseMock."
+            "Second best move should be returned as specified in RandMock."
         );
     }
 
@@ -223,7 +224,8 @@ mod private_tests {
 
         let mut finder = ConcreteFinder {
             evaluator: RandomEvaluator {},
-            dice_gen: DiceGenChooseMock {},
+            dice_gen: FastrandDice::with_seed(0),
+            rand: RandMock {},
         };
 
         // Given

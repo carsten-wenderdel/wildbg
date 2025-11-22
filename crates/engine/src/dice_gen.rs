@@ -19,12 +19,6 @@ pub trait DiceGen {
             }
         }
     }
-
-    /// Returns a number at least zero but smaller than the length of array `choices`.
-    ///
-    /// The chance that `i` is returned is proportional to the number in `choices[i]`.
-    /// Example: When choices is [1.0, 2.0, 2.0], then in 20% of all cases '0` is returned and in
-    fn choose_index(&mut self, chances: &[f32]) -> usize;
 }
 
 pub struct FastrandDice {
@@ -38,23 +32,6 @@ impl DiceGen for FastrandDice {
         let die1 = random / 6 + 1;
         let die2 = random % 6 + 1;
         Dice::new(die1, die2)
-    }
-
-    fn choose_index(&mut self, chances: &[f32]) -> usize {
-        // This is all no very exact because of rounding errors, but good enough for our use case
-        let big_number: u32 = 1_000_000;
-        let random_number = self.generator.u32(0..big_number);
-        // `choice` will be random number between 0 and the sum of `choices`.
-        let threshold: f32 =
-            (chances.iter().sum::<f32>() / big_number as f32) * random_number as f32;
-        let mut sum: f32 = 0.0;
-        for (index, &value) in chances.iter().enumerate() {
-            sum += value;
-            if sum > threshold {
-                return index;
-            }
-        }
-        chances.len() - 1
     }
 }
 
@@ -97,10 +74,6 @@ impl DiceGen for DiceGenMock {
         let dice = self.dice[self.no_calls];
         self.no_calls += 1;
         dice
-    }
-
-    fn choose_index(&mut self, _chances: &[f32]) -> usize {
-        0
     }
 }
 
@@ -182,19 +155,6 @@ mod fastrand_dice_tests {
         // Well, as there are only 21 dice, sometimes we will see the same behavior. But mostly not.
         assert_ne!(dice_gen1.seed(), dice_gen2.seed());
         assert_ne!(dice_gen1.roll(), dice_gen2.roll());
-    }
-
-    #[test]
-    fn choose() {
-        let mut counts = [0; 3];
-        let mut dice_gen = FastrandDice::with_seed(123);
-        let choices = vec![0.2, 0.5, 0.3];
-        for _ in 0..100_000 {
-            counts[dice_gen.choose_index(&choices)] += 1;
-        }
-        assert!(counts[0] > 19_500 && counts[0] < 20_500);
-        assert!(counts[1] > 49_500 && counts[1] < 50_500);
-        assert!(counts[2] > 29_500 && counts[2] < 30_500);
     }
 
     /// Make sure that we have the same behavior across different library versions.

@@ -9,6 +9,8 @@ license = "Apache-2.0 OR MIT"
 version = "0.3.1-pre"
 
 [workspace.dependencies]
+# Fix version for fastrand so we keep deterministic behavior, for example for rollouts
+fastrand = "=2.3.0"
 rayon = "1"
 serde = "1"
 serde_json = "1"

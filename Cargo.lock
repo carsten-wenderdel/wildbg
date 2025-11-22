@@ -414,6 +414,7 @@ dependencies = [
  "clap",
  "csv",
  "engine",
+ "fastrand",
  "indexmap",
  "mimalloc",
  "rayon",
