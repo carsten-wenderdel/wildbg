@@ -1,6 +1,6 @@
 use clap::Parser;
 use coach::coach_helpers::{duration, positions_file_name};
-use coach::position_finder::PositionFinder;
+use coach::position_finder::position_finder_with_evaluator;
 use coach::unwrap::UnwrapHelper;
 use engine::composite::CompositeEvaluator;
 use engine::position::OngoingPhase;
@@ -58,7 +58,7 @@ fn main() -> std::io::Result<()> {
     );
 
     let find_start = Instant::now();
-    let mut finder = PositionFinder::with_evaluator(finder_evaluator);
+    let mut finder = position_finder_with_evaluator(finder_evaluator);
     let positions = finder.find_positions(args.number, phase);
     for position in positions {
         csv_writer.write_record([position.position_id()])?;

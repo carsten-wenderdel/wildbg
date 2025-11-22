@@ -7,23 +7,26 @@ use engine::probabilities::Probabilities;
 use indexmap::IndexSet;
 
 /// Finds random positions for later rollout.
-pub struct PositionFinder<T: Evaluator, U: DiceGen> {
+pub trait PositionFinder {
+    fn find_positions(&mut self, number: usize, phase: OngoingPhase) -> IndexSet<Position>;
+}
+
+pub fn position_finder_with_evaluator<'a, T: Evaluator + 'a>(
+    evaluator: T,
+) -> Box<dyn PositionFinder + 'a> {
+    Box::new(ConcreteFinder {
+        evaluator,
+        dice_gen: FastrandDice::with_seed(0),
+    })
+}
+
+pub struct ConcreteFinder<T: Evaluator, U: DiceGen> {
     evaluator: T,
     dice_gen: U,
 }
 
-impl<T: Evaluator> PositionFinder<T, FastrandDice> {
-    /// Deterministic, always same dice.
-    pub fn with_evaluator(evaluator: T) -> Self {
-        PositionFinder {
-            evaluator,
-            dice_gen: FastrandDice::with_seed(0),
-        }
-    }
-}
-
-impl<T: Evaluator, U: DiceGen> PositionFinder<T, U> {
-    pub fn find_positions(&mut self, number: usize, phase: OngoingPhase) -> IndexSet<Position> {
+impl<T: Evaluator, U: DiceGen> PositionFinder for ConcreteFinder<T, U> {
+    fn find_positions(&mut self, number: usize, phase: OngoingPhase) -> IndexSet<Position> {
         let phase = GamePhase::Ongoing(phase);
         let mut found: IndexSet<Position> = IndexSet::with_capacity(number);
         while found.len() < number {
@@ -35,7 +38,9 @@ impl<T: Evaluator, U: DiceGen> PositionFinder<T, U> {
         }
         found
     }
+}
 
+impl<T: Evaluator, U: DiceGen> ConcreteFinder<T, U> {
     fn positions_in_one_random_game(&mut self) -> Vec<Position> {
         let mut positions: Vec<Position> = Vec::new();
         let mut pos = STARTING;
@@ -144,7 +149,7 @@ impl<T: Evaluator, U: DiceGen> PositionFinder<T, U> {
 
 #[cfg(test)]
 mod private_tests {
-    use crate::position_finder::PositionFinder;
+    use crate::position_finder::{ConcreteFinder, position_finder_with_evaluator};
     use engine::composite::CompositeEvaluator;
     use engine::dice::Dice;
     use engine::dice_gen::DiceGen;
@@ -186,7 +191,7 @@ mod private_tests {
         assert!((prob_1.equity() - prob_2.equity() - 0.01).abs() < 0.0000001);
         assert!((prob_1.equity() - prob_3.equity() - 0.06).abs() < 0.0000001);
 
-        let mut finder = PositionFinder {
+        let mut finder = ConcreteFinder {
             evaluator: RandomEvaluator {},
             dice_gen: DiceGenChooseMock {},
         };
@@ -216,7 +221,7 @@ mod private_tests {
         assert!((prob_1.equity() - prob_2.equity() - 0.01).abs() < 0.0000001);
         assert!((prob_1.equity() - prob_3.equity() - 0.06).abs() < 0.0000001);
 
-        let mut finder = PositionFinder {
+        let mut finder = ConcreteFinder {
             evaluator: RandomEvaluator {},
             dice_gen: DiceGenChooseMock {},
         };
@@ -232,12 +237,8 @@ mod private_tests {
     #[test]
     // We could look at each position from two sides. Make sure it's the correct one.
     fn direction_of_positions_is_correct() {
-        // Just make sure the dice generator works as expected.
-        let mut finder = PositionFinder::with_evaluator(CompositeEvaluator::default_tests());
-        assert_eq!(finder.dice_gen.roll_mixed(), Dice::new(4, 1));
-
         // Given
-        let mut finder = PositionFinder::with_evaluator(CompositeEvaluator::default_tests());
+        let mut finder = position_finder_with_evaluator(CompositeEvaluator::default_tests());
         // When
         let found_position = finder
             .find_positions(1, OngoingPhase::Contact)
