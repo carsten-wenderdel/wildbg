@@ -1,6 +1,7 @@
 mod finder_rand;
 
 use crate::position_finder::finder_rand::{FinderRand, FinderRandomizer};
+use engine::dice::Dice;
 use engine::dice_gen::{DiceGen, FastrandDice};
 use engine::evaluator::Evaluator;
 use engine::position::GameState::Ongoing;
@@ -51,26 +52,21 @@ impl<T: Evaluator, U: DiceGen, V: FinderRandomizer> ConcreteFinder<T, U, V> {
         let mut pos = STARTING;
         let mut dice = self.dice_gen.roll_mixed();
         loop {
-            let positions_and_probabilities = self
-                .evaluator
-                .positions_and_probabilities_by_equity(&pos, &dice);
-            let next = self.next_position(&positions_and_probabilities);
+            let (next, rollout_positions) = self.next_and_found(pos, dice);
             if next.game_state() == Ongoing {
-                pos = next.sides_switched();
-                dice = self.dice_gen.roll();
-                let rollout_positions =
-                    Self::positions_from_one_move(next, positions_and_probabilities);
                 positions.extend(rollout_positions);
+                pos = next;
+                dice = self.dice_gen.roll();
             } else {
                 return positions;
             }
         }
     }
 
-    /// Returns up to four positions for a rollout, all from an array of legal moves.
+    /// Returns the next position and a vector with up to four positions for a rollout.
     ///
-    /// Returned is:
-    /// 1. The positon at th top of the array
+    /// The vector potentially contains:
+    /// 1. The position at the top of the array
     /// 2. `next`, the position to which the `PositionFinder` is about to move.
     /// 3. Added is then a position from the middle of the input array, so that we also rollout
     ///    positions that are not so good.
@@ -82,27 +78,37 @@ impl<T: Evaluator, U: DiceGen, V: FinderRandomizer> ConcreteFinder<T, U, V> {
     ///
     /// The input values need to be from the perspective of the player who is about to move.
     /// The return values have switched sides, so they are in the proper format for a rollout.
-    fn positions_from_one_move(
-        next: Position,
-        all: Vec<(Position, Probabilities)>,
-    ) -> Vec<Position> {
-        let mut positions: Vec<Position> = Vec::new();
-        // Best position:
-        positions.push(all[0].0.sides_switched());
-        // Best position with different game phase:
-        if let Some(different_phase) = all.iter().position(|(pos, _)| {
-            pos.game_state() == Ongoing && pos.game_phase() != next.game_phase()
-        }) {
-            positions.push(all[different_phase].0.sides_switched());
-        }
-        // Next position:
-        positions.push(next.sides_switched());
-        // Mediocre position:
-        if all.len() > 1 {
-            let middle = positions.len() / 2;
-            positions.push(all[middle].0.sides_switched());
-        }
-        positions
+    fn next_and_found(&mut self, position: Position, dice: Dice) -> (Position, Vec<Position>) {
+        let pos_and_probs = self
+            .evaluator
+            .positions_and_probabilities_by_equity(&position, &dice);
+        let next = self.next_position(&pos_and_probs).sides_switched();
+
+        let positions: Vec<Position> = if next.game_state() != Ongoing {
+            vec![]
+        } else {
+            let mut positions = Vec::with_capacity(4);
+
+            // Best position:
+            positions.push(pos_and_probs[0].0.sides_switched());
+            // Next position:
+            positions.push(next);
+            // Mediocre position:
+            if pos_and_probs.len() > 1 {
+                let middle = positions.len() / 2;
+                positions.push(pos_and_probs[middle].0.sides_switched());
+            }
+            // Best position with different game phase:
+            if let Some(different_phase) = pos_and_probs.iter().position(|(pos, _)| {
+                pos.game_state() == Ongoing && pos.game_phase() != next.game_phase()
+            }) {
+                positions.push(pos_and_probs[different_phase].0.sides_switched());
+            }
+
+            positions
+        };
+
+        (next, positions)
     }
 
     fn next_position(
