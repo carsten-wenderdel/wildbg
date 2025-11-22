@@ -145,10 +145,12 @@ impl<T: Evaluator, U: DiceGen> PositionFinder<T, U> {
 #[cfg(test)]
 mod private_tests {
     use crate::position_finder::PositionFinder;
+    use engine::composite::CompositeEvaluator;
     use engine::dice::Dice;
     use engine::dice_gen::DiceGen;
     use engine::evaluator::RandomEvaluator;
     use engine::pos;
+    use engine::position::OngoingPhase;
     use engine::probabilities::{Probabilities, ResultCounter};
 
     struct DiceGenChooseMock {}
@@ -225,5 +227,26 @@ mod private_tests {
         let found = finder.next_position(&input);
         // Then
         assert_eq!(found, pos_1, "Best move should be returned");
+    }
+
+    #[test]
+    // We could look at each position from two sides. Make sure it's the correct one.
+    fn direction_of_positions_is_correct() {
+        // Just make sure the dice generator works as expected.
+        let mut finder = PositionFinder::with_evaluator(CompositeEvaluator::default_tests());
+        assert_eq!(finder.dice_gen.roll_mixed(), Dice::new(4, 1));
+
+        // Given
+        let mut finder = PositionFinder::with_evaluator(CompositeEvaluator::default_tests());
+        // When
+        let found_position = finder
+            .find_positions(1, OngoingPhase::Contact)
+            .first()
+            .unwrap()
+            .to_owned();
+        // Then
+        // x is still in the starting position, o has some moved pieces.
+        let expected = pos!(x 24:2, 13:5, 8:3, 6:5; o 19:5, 17:4, 12:4, 1:2);
+        assert_eq!(found_position, expected);
     }
 }
