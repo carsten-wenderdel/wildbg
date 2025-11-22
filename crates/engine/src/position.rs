@@ -272,28 +272,23 @@ impl fmt::Debug for Position {
 /// Private helper methods
 impl Position {
     /// Only call if this move is legal.
-    fn move_single_checker(&mut self, from: usize, die: usize) {
-        self.pips[from] -= 1;
+    fn clone_and_move_single_checker(&self, from: usize, die: usize) -> Position {
+        let mut position = *self;
+        position.pips[from] -= 1;
         if from > die {
-            if self.pips[from - die] == -1 {
+            if position.pips[from - die] == -1 {
                 // hit opponent
-                self.pips[from - die] = 1;
-                self.pips[O_BAR] -= 1;
+                position.pips[from - die] = 1;
+                position.pips[O_BAR] -= 1;
             } else {
                 // mixed move
-                self.pips[from - die] += 1;
+                position.pips[from - die] += 1;
             }
         } else {
             // bear off
-            self.x_off += 1;
+            position.x_off += 1;
         }
-    }
-
-    /// Only call if this move is legal.
-    fn clone_and_move_single_checker(&self, from: usize, die: usize) -> Position {
-        let mut new = *self;
-        new.move_single_checker(from, die);
-        new
+        position
     }
 
     #[inline]
