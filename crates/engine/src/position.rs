@@ -58,7 +58,7 @@ pub enum GameState {
     GameOver(GameResult),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum OngoingPhase {
     Contact,
     Race,
