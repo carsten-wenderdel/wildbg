@@ -1,3 +1,5 @@
+pub mod expert;
+
 use crate::position::{Position, X_BAR};
 
 pub trait InputsGen {

@@ -35,3 +35,8 @@ harness = false
 [[bench]]
 name = "inputs_bench"
 harness = false
+
+[[bench]]
+name = "expert_bench"
+harness = false
+
