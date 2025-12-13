@@ -170,17 +170,15 @@ mod tests {
     use axum::extract::Request;
     use axum::http::StatusCode;
     use axum::http::header::CONTENT_TYPE;
-    use engine::evaluator::Evaluator;
+    use engine::evaluator::EvaluatorFake;
     use engine::inputs::ContactInputsGen;
     use engine::onnx::OnnxEvaluator;
     use engine::pos;
-    use engine::position::Position;
-    use engine::probabilities::{Probabilities, ResultCounter};
+    use engine::probabilities::ResultCounter;
     use http_body_util::BodyExt;
     use std::sync::Arc;
     use tower::ServiceExt; // for `oneshot
 
-    struct EvaluatorFake {}
     /// Because of different floating point implementations on different CPUs we don't want to
     /// use a real neural net evaluator in unit tests. Instead we we use a fake evaluator.
     /// This fake evaluator _knows_ evaluations for all given positions.
@@ -189,25 +187,32 @@ mod tests {
     /// For internal probabilities all six values later add up to 1, for the json `win` and `lose`
     /// will add up to 1.
     /// Also sides are switched, so winning and losing values are switched.
-    impl Evaluator for EvaluatorFake {
-        fn eval(&self, position: &Position) -> Probabilities {
-            let forced_move = pos!(x 1:1; o 24:1).sides_switched();
-            let double_roll_1 = pos!(x 4:1, 2:1; o 24:1).sides_switched();
-            let double_roll_2 = pos!(x 5:1, 1:1; o 24:1).sides_switched();
-            let double_roll_3 = pos!(x 3:2; o 24:1).sides_switched();
+    fn evaluator_fake() -> EvaluatorFake {
+        let mut fake = EvaluatorFake::with_no_default();
 
-            if position == &forced_move {
-                Probabilities::from(&ResultCounter::new(874, 1, 1, 130, 1, 1))
-            } else if position == &double_roll_1 {
-                Probabilities::from(&ResultCounter::new(865, 1, 0, 137, 1, 1))
-            } else if position == &double_roll_2 {
-                Probabilities::from(&ResultCounter::new(12, 1, 1, 16, 3, 1))
-            } else if position == &double_roll_3 {
-                Probabilities::from(&ResultCounter::new(925, 1, 0, 75, 1, 1))
-            } else {
-                unreachable!("All evaluated positions should be listed here");
-            }
-        }
+        let forced_move = pos!(x 1:1; o 24:1).sides_switched();
+        let double_roll_1 = pos!(x 4:1, 2:1; o 24:1).sides_switched();
+        let double_roll_2 = pos!(x 5:1, 1:1; o 24:1).sides_switched();
+        let double_roll_3 = pos!(x 3:2; o 24:1).sides_switched();
+
+        fake.insert(
+            forced_move,
+            (&ResultCounter::new(874, 1, 1, 130, 1, 1)).into(),
+        );
+        fake.insert(
+            double_roll_1,
+            (&ResultCounter::new(865, 1, 0, 137, 1, 1)).into(),
+        );
+        fake.insert(
+            double_roll_2,
+            (&ResultCounter::new(12, 1, 1, 16, 3, 1)).into(),
+        );
+        fake.insert(
+            double_roll_3,
+            (&ResultCounter::new(925, 1, 0, 75, 1, 1)).into(),
+        );
+
+        fake
     }
 
     /// Consumes the response, so use it at the end of the test
@@ -218,7 +223,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_eval_wrong_checkers_on_bar() {
-        let web_api = Arc::new(Some(WebApi::new(EvaluatorFake {})));
+        let web_api = Arc::new(Some(WebApi::new(evaluator_fake())));
         let response = router(web_api)
             .oneshot(
                 Request::builder()
@@ -241,7 +246,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_eval_success() {
-        let web_api = Arc::new(Some(WebApi::new(EvaluatorFake {})));
+        let web_api = Arc::new(Some(WebApi::new(evaluator_fake())));
         let response = router(web_api)
             .oneshot(
                 Request::builder()
@@ -309,7 +314,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_move_illegal_dice() {
-        let web_api = Arc::new(Some(WebApi::new(EvaluatorFake {})));
+        let web_api = Arc::new(Some(WebApi::new(evaluator_fake())));
         let response = router(web_api)
             .oneshot(
                 Request::builder()
@@ -332,7 +337,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_move_wrong_checkers_on_bar() {
-        let web_api = Arc::new(Some(WebApi::new(EvaluatorFake {})));
+        let web_api = Arc::new(Some(WebApi::new(evaluator_fake())));
         let response = router(web_api)
             .oneshot(
                 Request::builder()
@@ -355,7 +360,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_move_body_forced_move() {
-        let web_api = Arc::new(Some(WebApi::new(EvaluatorFake {})));
+        let web_api = Arc::new(Some(WebApi::new(evaluator_fake())));
         let response = router(web_api)
             .oneshot(
                 Request::builder()
@@ -378,7 +383,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_move_double_roll() {
-        let web_api = Arc::new(Some(WebApi::new(EvaluatorFake {})));
+        let web_api = Arc::new(Some(WebApi::new(evaluator_fake())));
         let response = router(web_api)
             .oneshot(
                 Request::builder()

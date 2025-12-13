@@ -1,6 +1,7 @@
 use crate::dice::Dice;
 use crate::position::Position;
 use crate::probabilities::Probabilities;
+use std::collections::HashMap;
 
 /// [Evaluator] is one of the central parts of the engine. Implementing structs only have to
 /// implement the function [Evaluator::eval], Examples are `OnnxEvaluator` and `RolloutEvaluator`.
@@ -154,10 +155,48 @@ impl Evaluator for RandomEvaluator {
     }
 }
 
+/// Double for unit tests.
+pub struct EvaluatorFake {
+    default_value: Option<Probabilities>,
+    values: HashMap<Position, Probabilities>,
+}
+impl Evaluator for EvaluatorFake {
+    fn eval(&self, pos: &Position) -> Probabilities {
+        if let Some(probabilities) = self.values.get(pos) {
+            probabilities.clone()
+        } else {
+            // If there is no default value, it will crash, and we want that.
+            self.default_value
+                .clone()
+                .expect("Use of non specified position.")
+        }
+    }
+}
+
+impl EvaluatorFake {
+    pub fn with_no_default() -> Self {
+        Self {
+            default_value: None,
+            values: HashMap::new(),
+        }
+    }
+
+    pub fn with_default(probabilities: Probabilities) -> Self {
+        Self {
+            default_value: Some(probabilities),
+            values: HashMap::new(),
+        }
+    }
+
+    pub fn insert(&mut self, position: Position, probabilities: Probabilities) {
+        self.values.insert(position, probabilities);
+    }
+}
+
 #[cfg(test)]
 mod evaluator_trait_tests {
     use crate::dice::Dice;
-    use crate::evaluator::{Evaluator, Probabilities};
+    use crate::evaluator::{Evaluator, EvaluatorFake};
     use crate::pos;
     use crate::position::Position;
 
@@ -165,37 +204,21 @@ mod evaluator_trait_tests {
         pos!(x 5:1, 3:1; o 20:2).sides_switched()
     }
 
-    /// Test double. Returns not so good probabilities for `expected_pos`, better for everything else.
-    struct EvaluatorFake {}
-    impl Evaluator for EvaluatorFake {
-        fn eval(&self, pos: &Position) -> Probabilities {
-            if pos == &position_with_lowest_equity() {
-                Probabilities {
-                    win_normal: 0.5,
-                    win_gammon: 0.1,
-                    win_bg: 0.1,
-                    lose_normal: 0.1,
-                    lose_gammon: 0.1,
-                    lose_bg: 0.1,
-                }
-            } else {
-                Probabilities {
-                    win_normal: 0.38,
-                    win_gammon: 0.2,
-                    win_bg: 0.1,
-                    lose_normal: 0.12,
-                    lose_gammon: 0.1,
-                    lose_bg: 0.1,
-                }
-            }
-        }
+    // Test double. Returns not so good probabilities for `expected_pos`, better for everything else.
+    fn evaluator_fake() -> EvaluatorFake {
+        let mut fake = EvaluatorFake::with_default([0.38, 0.2, 0.1, 0.12, 0.1, 0.1].into());
+        fake.insert(
+            position_with_lowest_equity(),
+            [0.5, 0.1, 0.1, 0.1, 0.1, 0.1].into(),
+        );
+        fake
     }
 
     #[test]
     fn best_position_by_equity() {
         // Given
         let given_pos = pos!(x 7:2; o 20:2);
-        let evaluator = EvaluatorFake {};
+        let evaluator = evaluator_fake();
         // When
         let best_pos = evaluator.best_position_by_equity(&given_pos, &Dice::new(4, 2));
         // Then
@@ -208,7 +231,7 @@ mod evaluator_trait_tests {
     fn best_position_for_1ptr() {
         // Given
         let given_pos = pos!(x 7:2; o 20:2);
-        let evaluator = EvaluatorFake {};
+        let evaluator = evaluator_fake();
         // When
         let best_pos = evaluator.best_position(&given_pos, &Dice::new(4, 2), |p| p.win());
         // Then
@@ -220,7 +243,7 @@ mod evaluator_trait_tests {
     fn positions_and_probabilities_by_equity() {
         // Given
         let given_pos = pos!(x 7:2; o 20:2);
-        let evaluator = EvaluatorFake {};
+        let evaluator = evaluator_fake();
         // When
         let values = evaluator.positions_and_probabilities_by_equity(&given_pos, &Dice::new(4, 2));
         // Then
@@ -238,7 +261,7 @@ mod evaluator_trait_tests {
     fn positions_and_probabilities_for_1ptr() {
         // Given
         let given_pos = pos!(x 7:2; o 20:2);
-        let evaluator = EvaluatorFake {};
+        let evaluator = evaluator_fake();
         // When
         let values =
             evaluator.positions_and_probabilities(&given_pos, &Dice::new(4, 2), |probabilities| {
@@ -258,7 +281,7 @@ mod evaluator_trait_tests {
     #[test]
     fn eval_batch_empty() {
         // Given
-        let evaluator = EvaluatorFake {};
+        let evaluator = evaluator_fake();
         // When
         let values = evaluator.eval_batch(vec![]);
         // Then
@@ -270,7 +293,7 @@ mod evaluator_trait_tests {
         // Given
         let pos_1 = pos!(x 7:2; o 20:2);
         let pos_2 = position_with_lowest_equity();
-        let evaluator = EvaluatorFake {};
+        let evaluator = evaluator_fake();
         // When
         let values = evaluator.eval_batch(vec![pos_1, pos_2]);
         // Then

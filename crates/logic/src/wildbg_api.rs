@@ -84,49 +84,29 @@ mod tests {
     use crate::bg_move::{BgMove, MoveDetail};
     use crate::wildbg_api::{ScoreConfig, WildbgApi};
     use engine::dice::Dice;
-    use engine::evaluator::Evaluator;
+    use engine::evaluator::EvaluatorFake;
     use engine::pos;
     use engine::position::Position;
-    use engine::probabilities::Probabilities;
 
     fn position_with_lowest_equity() -> Position {
         pos!(x 5:1, 3:1; o 20:2).sides_switched()
     }
 
     /// Test double. Returns not so good probabilities for `expected_pos`, better for everything else.
-    struct EvaluatorFake {}
-    impl Evaluator for EvaluatorFake {
-        fn eval(&self, pos: &Position) -> Probabilities {
-            if pos == &position_with_lowest_equity() {
-                // This would be position for money game.
-                // Remember that this equity is already from the point of the opponent.
-                Probabilities {
-                    win_normal: 0.5,
-                    win_gammon: 0.1,
-                    win_bg: 0.1,
-                    lose_normal: 0.1,
-                    lose_gammon: 0.1,
-                    lose_bg: 0.1,
-                }
-            } else {
-                // This would be position for 1 ptrs.
-                Probabilities {
-                    win_normal: 0.38,
-                    win_gammon: 0.2,
-                    win_bg: 0.1,
-                    lose_normal: 0.12,
-                    lose_gammon: 0.1,
-                    lose_bg: 0.1,
-                }
-            }
-        }
+    fn evaluator_fake() -> EvaluatorFake {
+        let mut fake = EvaluatorFake::with_default([0.38, 0.2, 0.1, 0.12, 0.1, 0.1].into());
+        fake.insert(
+            position_with_lowest_equity(),
+            [0.5, 0.1, 0.1, 0.1, 0.1, 0.1].into(),
+        );
+        fake
     }
 
     #[test]
     fn best_move_1ptr() {
         // Given
         let given_pos = pos!(x 7:2; o 20:2);
-        let evaluator = EvaluatorFake {};
+        let evaluator = evaluator_fake();
         let api = WildbgApi { evaluator };
         // When
         let config = ScoreConfig::OnePointer;
@@ -142,7 +122,7 @@ mod tests {
     fn best_move_money_game() {
         // Given
         let given_pos = pos!(x 7:2; o 20:2);
-        let evaluator = EvaluatorFake {};
+        let evaluator = evaluator_fake();
         let api = WildbgApi { evaluator };
         // When
         let config = ScoreConfig::MoneyGame;

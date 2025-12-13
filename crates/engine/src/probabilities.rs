@@ -73,6 +73,19 @@ impl Probabilities {
     }
 }
 
+impl From<[f32; 6]> for Probabilities {
+    fn from(value: [f32; 6]) -> Self {
+        Self {
+            win_normal: value[0],
+            win_gammon: value[1],
+            win_bg: value[2],
+            lose_normal: value[3],
+            lose_gammon: value[4],
+            lose_bg: value[5],
+        }
+    }
+}
+
 impl From<&ResultCounter> for Probabilities {
     /// Typically used from rollouts.
     fn from(value: &ResultCounter) -> Self {
@@ -176,6 +189,20 @@ mod tests {
         LoseBg, LoseGammon, LoseNormal, WinBg, WinGammon, WinNormal,
     };
     use crate::probabilities::{Probabilities, ResultCounter};
+
+    #[test]
+    fn from_array() {
+        let expected = Probabilities {
+            win_normal: 0.04,
+            win_gammon: 0.06,
+            win_bg: 0.1,
+            lose_normal: 0.2,
+            lose_gammon: 0.25,
+            lose_bg: 0.35,
+        };
+        let actual = Probabilities::from([0.04, 0.06, 0.1, 0.2, 0.25, 0.35]);
+        assert_eq!(actual, expected);
+    }
 
     #[test]
     fn from_game_result() {
