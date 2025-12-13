@@ -33,11 +33,13 @@ pub fn diverse_with_evaluator<'a, T: Evaluator + 'a>(evaluator: T) -> Box<dyn Po
 
 pub fn discrepancy_with_evaluator<'a, T: Evaluator + 'a>(
     evaluator: T,
+    threshold: f32,
 ) -> Box<dyn PositionFinder + 'a> {
     let multiply = MultiPlyEvaluator { evaluator };
     let discrepancy = MultiPlyDiscrepancy { multiply };
     let move_selector = DiscrepancySelector {
         evaluators: discrepancy,
+        threshold,
     };
     let dice_gen = FastrandDice::with_seed(0);
 

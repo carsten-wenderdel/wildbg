@@ -18,6 +18,9 @@ struct Args {
     phase: Phase,
     #[arg(long)]
     strategy: Strategy,
+    #[arg(long, required_if_eq("strategy", "discrepancy"))]
+    /// Threshold for equity discrepancy between the two best positions according to both evaluators. A good value is 0.4.
+    threshold: Option<f32>,
     /// Number of positions to find.
     #[arg(long)]
     number: usize,
@@ -53,6 +56,7 @@ fn main() -> std::io::Result<()> {
         ),
         Strategy::Discrepancy => coach::position_finder::discrepancy_with_evaluator(
             CompositeEvaluator::try_default_optimized().unwrap(),
+            args.threshold.unwrap(),
         ),
     };
 

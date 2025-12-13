@@ -4,6 +4,7 @@ use engine::evaluator::Evaluator;
 use engine::multiply::MultiPlyEvaluator;
 use engine::position::GamePhase::Ongoing;
 use engine::position::{OngoingPhase, Position};
+use engine::probabilities::Probabilities;
 
 pub(super) trait DiscrepantEvaluators {
     type Strong: Evaluator;
@@ -32,6 +33,7 @@ impl<T: Evaluator> DiscrepantEvaluators for MultiPlyDiscrepancy<T> {
 /// Finds positions where two different evaluators return different equities.
 pub(super) struct DiscrepancySelector<T: DiscrepantEvaluators> {
     pub(super) evaluators: T,
+    pub(super) threshold: f32,
 }
 
 impl<T: DiscrepantEvaluators> MoveSelector for DiscrepancySelector<T> {
@@ -58,20 +60,30 @@ impl<T: DiscrepantEvaluators> MoveSelector for DiscrepancySelector<T> {
             return (*end_of_game, vec![]);
         }
 
-        let weak_pos = self
+        let weak_positions_and_probabilities = self
             .evaluators
             .weak()
-            .best_position_by_equity(&position, &dice);
+            .positions_and_probabilities_by_equity(&position, &dice);
+        let weak_pos = weak_positions_and_probabilities
+            .first()
+            .unwrap()
+            .0
+            .sides_switched();
 
         if weak_pos.game_phase() != Ongoing(phase) {
             // We are only interested in positions of type `phase`, so let's not waste time using the strong evaluator.
             return (weak_pos, vec![]);
         }
 
-        let strong_pos = self
+        let strong_positions_and_probabilities = self
             .evaluators
             .strong()
-            .best_position_by_equity(&position, &dice);
+            .positions_and_probabilities_by_equity(&position, &dice);
+        let strong_pos = strong_positions_and_probabilities
+            .first()
+            .unwrap()
+            .0
+            .sides_switched();
 
         if strong_pos.game_phase() != Ongoing(phase) {
             // weak_pos and _strong_pos are in different phases. Let's ignore that for now.
@@ -81,8 +93,48 @@ impl<T: DiscrepantEvaluators> MoveSelector for DiscrepancySelector<T> {
         if weak_pos == strong_pos {
             (strong_pos, vec![])
         } else {
-            (strong_pos, vec![weak_pos, strong_pos])
+            let discrepancy = self.discrepancy_between_best_positions(
+                &weak_positions_and_probabilities,
+                &strong_positions_and_probabilities,
+            );
+            if discrepancy < self.threshold {
+                (strong_pos, vec![])
+            } else {
+                (strong_pos, vec![weak_pos, strong_pos])
+            }
         }
+    }
+}
+
+impl<T: DiscrepantEvaluators> DiscrepancySelector<T> {
+    fn discrepancy_between_best_positions(
+        &mut self,
+        weak_pos_and_probs: &[(Position, Probabilities)],
+        strong_pos_and_probs: &[(Position, Probabilities)],
+    ) -> f32 {
+        assert_eq!(weak_pos_and_probs.len(), strong_pos_and_probs.len());
+        let (weak_pos, weak_probs) = weak_pos_and_probs.first().unwrap().clone();
+        let (strong_pos, strong_probs) = strong_pos_and_probs.first().unwrap().clone();
+        let weak_equity = weak_probs.equity();
+        let strong_equity = strong_probs.equity();
+
+        let weak_equity_for_strong_pos = weak_pos_and_probs
+            .iter()
+            .find(|(pos, _)| pos == &strong_pos)
+            .unwrap()
+            .1
+            .equity();
+        let strong_equity_for_weak_pos = strong_pos_and_probs
+            .iter()
+            .find(|(pos, _)| pos == &weak_pos)
+            .unwrap()
+            .1
+            .equity();
+
+        // Positions and equities are already reverted.
+        assert!(weak_equity >= weak_equity_for_strong_pos);
+        assert!(strong_equity >= strong_equity_for_weak_pos);
+        (weak_equity - weak_equity_for_strong_pos) + (strong_equity - strong_equity_for_weak_pos)
     }
 }
 
@@ -91,7 +143,7 @@ mod tests {
     use crate::position_finder::MoveSelector;
     use crate::position_finder::discrepancy_selector::{DiscrepancySelector, DiscrepantEvaluators};
     use engine::dice::Dice;
-    use engine::evaluator::EvaluatorFake;
+    use engine::evaluator::{Evaluator, EvaluatorFake};
     use engine::pos;
     use engine::position::OngoingPhase;
     use engine::probabilities::Probabilities;
@@ -126,6 +178,7 @@ mod tests {
         // Given
         let mut selector = DiscrepancySelector {
             evaluators: unused_evaluator_fake(),
+            threshold: 0.03,
         };
 
         // When
@@ -142,6 +195,7 @@ mod tests {
         // Given
         let mut selector = DiscrepancySelector {
             evaluators: unused_evaluator_fake(),
+            threshold: 0.03,
         };
 
         // When
@@ -166,7 +220,10 @@ mod tests {
         weak.insert(best_position, best_probabilities);
 
         let evaluators = DiscrepancyFake { strong, weak };
-        let mut selector = DiscrepancySelector { evaluators };
+        let mut selector = DiscrepancySelector {
+            evaluators,
+            threshold: 0.03,
+        };
 
         // When
         let pos = pos![x 15:6, 10:4 ; o 24:10];
@@ -190,7 +247,10 @@ mod tests {
         weak.insert(best_position, best_probabilities);
 
         let evaluators = DiscrepancyFake { strong, weak };
-        let mut selector = DiscrepancySelector { evaluators };
+        let mut selector = DiscrepancySelector {
+            evaluators,
+            threshold: 0.02,
+        };
 
         // When
         let pos = pos![x 24:2, 13:2; o 12:10];
@@ -216,7 +276,10 @@ mod tests {
         weak.insert(best_weak_pos, best_probabilities);
 
         let evaluators = DiscrepancyFake { strong, weak };
-        let mut selector = DiscrepancySelector { evaluators };
+        let mut selector = DiscrepancySelector {
+            evaluators,
+            threshold: 0.03,
+        };
 
         // When
         let pos = pos![x 15:6, 10:4 ; o 24:10];
@@ -225,5 +288,75 @@ mod tests {
         // Then
         assert_eq!(pos, best_strong_pos);
         assert_eq!(found, vec![best_weak_pos, best_strong_pos]);
+    }
+
+    #[test]
+    fn both_evaluators_disagree_but_discrepancy_is_under_threshold() {
+        // Given
+        // best probabilities from the player's perspective means worst from the opponent's perspective.
+        let best_probabilities: Probabilities = [0.6, 0.0, 0.1, 0.1, 0.1, 0.1].into();
+        let default_probabilities: Probabilities = [0.59, 0.01, 0.1, 0.1, 0.1, 0.1].into();
+
+        let mut strong = EvaluatorFake::with_default(default_probabilities.clone());
+        let mut weak = EvaluatorFake::with_default(default_probabilities);
+        let best_strong_pos = pos![x 1:10; o 10:5, 15:5];
+        let best_weak_pos = pos![x 1:10; o 10:4, 12:1, 13:1, 15:4];
+        strong.insert(best_strong_pos, best_probabilities.clone());
+        weak.insert(best_weak_pos, best_probabilities);
+
+        let evaluators = DiscrepancyFake { strong, weak };
+        let mut selector = DiscrepancySelector {
+            evaluators,
+            threshold: 0.03,
+        };
+
+        // When
+        let pos = pos![x 15:6, 10:4 ; o 24:10];
+        let (pos, found) = selector.next_and_found(pos, Dice::new(3, 2), OngoingPhase::Race);
+
+        // Then
+        assert_eq!(pos, best_strong_pos);
+        assert_eq!(found, vec![]);
+    }
+
+    #[test]
+    fn discrepancy_between_best_positions_calculates_correctly() {
+        // Given
+        let strong_default: Probabilities = [0.5, 0.1, 0.1, 0.1, 0.1, 0.1].into();
+        let strong_best: Probabilities = [0.55, 0.05, 0.1, 0.1, 0.1, 0.1].into();
+        let weak_default: Probabilities = [0.4, 0.2, 0.1, 0.1, 0.1, 0.1].into();
+        let weak_best: Probabilities = [0.41, 0.19, 0.1, 0.1, 0.1, 0.1].into();
+
+        let best_strong_pos = pos![x 1:10; o 10:5, 15:5];
+        let best_weak_pos = pos![x 1:10; o 10:4, 12:1, 13:1, 15:4];
+
+        let mut strong = EvaluatorFake::with_default(strong_default);
+        let mut weak = EvaluatorFake::with_default(weak_default);
+        strong.insert(best_strong_pos, strong_best);
+        weak.insert(best_weak_pos, weak_best);
+
+        let evaluators = DiscrepancyFake { strong, weak };
+        let mut selector = DiscrepancySelector {
+            evaluators,
+            threshold: 0.03,
+        };
+
+        // When
+        let pos = pos![x 15:6, 10:4 ; o 24:10];
+        let weak_pos_and_probs = selector
+            .evaluators
+            .weak()
+            .positions_and_probabilities_by_equity(&pos, &Dice::new(3, 2));
+        let strong_pos_and_probs = selector
+            .evaluators
+            .strong()
+            .positions_and_probabilities_by_equity(&pos, &Dice::new(3, 2));
+
+        // Then
+        let actual_discrepancy =
+            selector.discrepancy_between_best_positions(&weak_pos_and_probs, &strong_pos_and_probs);
+        let expected = 0.06;
+        // Floating points are not base 10 -> minor errors.
+        assert!((actual_discrepancy - expected).abs() < 0.000001);
     }
 }
