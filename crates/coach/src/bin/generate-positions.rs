@@ -1,7 +1,5 @@
 use clap::Parser;
 use coach::coach_helpers::{duration, positions_file_name};
-use coach::position_finder::diverse_with_evaluator;
-use coach::unwrap::UnwrapHelper;
 use engine::composite::CompositeEvaluator;
 use engine::position::OngoingPhase;
 use mimalloc::MiMalloc;
@@ -14,12 +12,14 @@ static GLOBAL: MiMalloc = MiMalloc;
 
 #[derive(Parser)]
 #[command(version)]
-#[command(about = "Let standard neural nets duel various neural nets in the folder `training-data`", long_about = None)]
+#[command(about = "Find positions for later rollout and store them in a CSV file. The result can be used for rollout and training.", long_about = None)]
 struct Args {
     #[arg(long)]
     phase: Phase,
+    #[arg(long)]
+    strategy: Strategy,
     /// Number of positions to find.
-    #[arg(long, default_value_t = 200_000)]
+    #[arg(long)]
     number: usize,
 }
 
@@ -27,6 +27,12 @@ struct Args {
 enum Phase {
     Contact,
     Race,
+}
+
+#[derive(clap::ValueEnum, Clone, Serialize)]
+enum Strategy {
+    Diverse,
+    Discrepancy,
 }
 
 /// This binary is for generating positions.
@@ -41,7 +47,14 @@ fn main() -> std::io::Result<()> {
         Phase::Race => OngoingPhase::Race,
     };
 
-    let finder_evaluator = CompositeEvaluator::try_default().unwrap_or_exit_with_message();
+    let mut finder = match args.strategy {
+        Strategy::Diverse => coach::position_finder::diverse_with_evaluator(
+            CompositeEvaluator::try_default_optimized().unwrap(),
+        ),
+        Strategy::Discrepancy => coach::position_finder::discrepancy_with_evaluator(
+            CompositeEvaluator::try_default_optimized().unwrap(),
+        ),
+    };
 
     let path = positions_file_name(&phase);
     _ = std::fs::create_dir("training-data");
@@ -58,7 +71,6 @@ fn main() -> std::io::Result<()> {
     );
 
     let find_start = Instant::now();
-    let mut finder = diverse_with_evaluator(finder_evaluator);
     let positions = finder.find_positions(args.number, phase);
     for position in positions {
         csv_writer.write_record([position.position_id()])?;

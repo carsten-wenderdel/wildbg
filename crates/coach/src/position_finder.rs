@@ -1,11 +1,14 @@
+mod discrepancy_selector;
 mod diverse_selector;
 mod finder_rand;
 
+use crate::position_finder::discrepancy_selector::{DiscrepancySelector, MultiPlyDiscrepancy};
 use crate::position_finder::diverse_selector::DiverseSelector;
 use crate::position_finder::finder_rand::{FinderRand, FinderRandomizer};
 use engine::dice::Dice;
 use engine::dice_gen::{DiceGen, FastrandDice};
 use engine::evaluator::Evaluator;
+use engine::multiply::MultiPlyEvaluator;
 use engine::position::GameState::Ongoing;
 use engine::position::{GamePhase, OngoingPhase, Position, STARTING};
 use indexmap::IndexSet;
@@ -19,6 +22,22 @@ pub fn diverse_with_evaluator<'a, T: Evaluator + 'a>(evaluator: T) -> Box<dyn Po
     let move_selector = DiverseSelector {
         evaluator,
         rand: FinderRand::with_seed(0),
+    };
+    let dice_gen = FastrandDice::with_seed(0);
+
+    Box::new(ConcreteFinder {
+        move_selector,
+        dice_gen,
+    })
+}
+
+pub fn discrepancy_with_evaluator<'a, T: Evaluator + 'a>(
+    evaluator: T,
+) -> Box<dyn PositionFinder + 'a> {
+    let multiply = MultiPlyEvaluator { evaluator };
+    let discrepancy = MultiPlyDiscrepancy { multiply };
+    let move_selector = DiscrepancySelector {
+        evaluators: discrepancy,
     };
     let dice_gen = FastrandDice::with_seed(0);
 
