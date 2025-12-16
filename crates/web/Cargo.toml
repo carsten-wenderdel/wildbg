@@ -16,8 +16,6 @@ clap = { workspace = true, features = ["derive"] }
 hyper = "*"
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
-shuttle-axum = { version = "0.56.0" }
-shuttle-runtime = "0.56.0"
 tokio = { version = "*", features = ["full"] }
 tower = "*"
 utoipa = { workspace = true, features = ["axum_extras", "preserve_order"] }

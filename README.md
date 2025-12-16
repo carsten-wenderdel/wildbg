@@ -42,10 +42,10 @@ Thanks to [@oysteijo](https://github.com/oysteijo) you can play against `wildbg`
 
 #### Online
 
-You can access the API and see yourself how `wildbg` would move: https://wildbg-pwuo.shuttle.app/swagger-ui/
+You can access the API and see yourself how `wildbg` would move: http://46.224.159.43/swagger-ui/
 
 An example for the starting position and rolling 3 and 1:
-https://wildbg-pwuo.shuttle.app/move?die1=3&die2=1&p24=2&p19=-5&p17=-3&p13=5&p12=-5&p8=3&p6=5&p1=-2
+http://46.224.159.43/move?die1=3&die2=1&p24=2&p19=-5&p17=-3&p13=5&p12=-5&p8=3&p6=5&p1=-2
 
 #### Locally
 
@@ -69,7 +69,7 @@ docker run -p 8082:8082 wildbg
 ## Documentation
 
 #### For users (bots and GUIs)
-- HTTP API: https://wildbg-pwuo.shuttle.app/swagger-ui/
+- HTTP API: http://46.224.159.43/swagger-ui/
 - C API: [docs/user/wildbg-c.md](docs/user/wildbg-c.md)
 
 #### For contributors
