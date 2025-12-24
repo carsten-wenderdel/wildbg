@@ -20,7 +20,7 @@ A graphical user interface (GUI) is not part of this project.
 
 #### kutuama.com
 
-Click the practice button and select the wildbg bot at https://kutuama.com. No need to download a client or register.
+Click the play vs bot button and enjoy the wildbg bot at https://kutuama.com. No need to download a client or register.
 
 #### bgammon.org
 
