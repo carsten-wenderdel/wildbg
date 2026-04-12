@@ -133,17 +133,13 @@ fn main() {
             let best_position =
                 evaluator.best_position(&position, &dice, context.score_config.value());
             let best_move = BgMove::new(&position, &best_position.sides_switched(), &dice);
-            let best_move_id = best_position.position_id();
             let best_move_text = format_move(best_move);
 
             reply(
                 &mut stdout,
-                &format!(
-                    "info role chequer pv {} moveid {}",
-                    best_move_text, best_move_id
-                ),
+                &format!("info role chequer pv {}", best_move_text),
             );
-            reply(&mut stdout, &format!("bestmoveid {best_move_id}"));
+            reply(&mut stdout, &format!("bestmove {best_move_text}"));
             continue;
         }
 
@@ -271,9 +267,38 @@ fn format_move(bg_move: BgMove) -> String {
     if details.is_empty() {
         return "pass".to_string();
     }
+
+    fn point_text(point: usize) -> &'static str {
+        if point == 25 {
+            "bar"
+        } else if point == 0 {
+            "off"
+        } else {
+            ""
+        }
+    }
+
     details
         .iter()
-        .map(|d| format!("{}/{}", d.from(), d.to()))
+        .map(|d| {
+            let from = d.from();
+            let to = d.to();
+            let from_text = point_text(from);
+            let to_text = point_text(to);
+
+            let from_part = if from_text.is_empty() {
+                from.to_string()
+            } else {
+                from_text.to_string()
+            };
+            let to_part = if to_text.is_empty() {
+                to.to_string()
+            } else {
+                to_text.to_string()
+            };
+
+            format!("{from_part}/{to_part}")
+        })
         .collect::<Vec<String>>()
         .join(" ")
 }
