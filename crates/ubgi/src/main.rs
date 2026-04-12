@@ -182,9 +182,7 @@ impl Default for Context {
 }
 
 fn handle_setoption(cmd: &str, context: &mut Context) -> Option<String> {
-    let Some(rest) = cmd.strip_prefix("setoption name ") else {
-        return None;
-    };
+    let rest = cmd.strip_prefix("setoption name ")?;
     let Some((name, value)) = rest.split_once(" value ") else {
         return Some("error bad_argument setoption".to_string());
     };

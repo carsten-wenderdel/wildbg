@@ -1,0 +1,15 @@
+[package]
+name = "ubgi"
+
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "wildbg"
+path = "src/main.rs"
+
+[dependencies]
+# internal
+engine = { path = "../engine" }
+logic = { path = "../logic" }
