@@ -141,6 +141,9 @@ impl From<&MoveDetail> for CMoveDetail {
 pub struct CCubeInfo {
     should_double: bool,
     should_accept: bool,
+    equity_cubeless: f32,
+    equity_no_double: f32,
+    equity_double_take: f32,
 }
 
 impl From<&CubeInfo> for CCubeInfo {
@@ -148,6 +151,9 @@ impl From<&CubeInfo> for CCubeInfo {
         Self {
             should_double: value.double(),
             should_accept: value.accept(),
+            equity_cubeless: value.equity_cubeless(),
+            equity_no_double: value.equity_no_double(),
+            equity_double_take: value.equity_double_take(),
         }
     }
 }
@@ -215,19 +221,36 @@ pub extern "C" fn cube_info(wildbg: &Wildbg, pips: &[c_int; 26]) -> CCubeInfo {
         Ok(position) => (&wildbg.api.cube_info(&position)).into(),
         Err(error) => {
             eprintln!("{error}");
-            CCubeInfo {
-                should_double: false,
-                should_accept: false,
-            }
+            CCubeInfo::default()
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{BgConfig, CMove, CMoveDetail, CProbabilities, best_move, wildbg_new};
+    use crate::{BgConfig, CCubeInfo, CMove, CMoveDetail, CProbabilities, best_move, wildbg_new};
     use engine::position::X_BAR;
     use engine::{dice::Dice, pos};
+    use logic::cube::CubeInfo;
+
+    #[test]
+    fn from_cube_info() {
+        let probs = engine::probabilities::Probabilities {
+            win_normal: 0.7,
+            win_gammon: 0.0,
+            win_bg: 0.0,
+            lose_normal: 0.3,
+            lose_gammon: 0.0,
+            lose_bg: 0.0,
+        };
+        let cube_info = CubeInfo::from(&probs);
+        let c_cube: CCubeInfo = (&cube_info).into();
+        assert_eq!(c_cube.should_double, cube_info.double());
+        assert_eq!(c_cube.should_accept, cube_info.accept());
+        assert_eq!(c_cube.equity_cubeless, cube_info.equity_cubeless());
+        assert_eq!(c_cube.equity_no_double, cube_info.equity_no_double());
+        assert_eq!(c_cube.equity_double_take, cube_info.equity_double_take());
+    }
 
     #[test]
     fn from_probabilities() {
