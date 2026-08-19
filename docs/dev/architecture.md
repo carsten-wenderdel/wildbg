@@ -13,6 +13,8 @@ graph
     coach ---> engine
     wildbg-c --> engine
     wildbg-c --> logic
+    wildbg-wasm --> engine
+    wildbg-wasm --> logic
     logic --> engine
     web --> logic
     web ---> engine
@@ -46,6 +48,12 @@ While `engine` only deals with cubeless equities, [`logic`](../../crates/logic/s
 [`wildbg-c`](../../crates/wildbg-c/src) is a small layer on top of `logic` which allows C code to access `wildbg`.
 
 For a more detailed documentation, see [docs/user/wildbg-c.md](../user/wildbg-c.md).
+
+#### wildbg-wasm
+
+[`wildbg-wasm`](../../crates/wildbg-wasm/src) provides WebAssembly bindings to run `wildbg` client-side in browsers or JavaScript/TypeScript applications.
+
+For a more detailed documentation, see [docs/user/wildbg-wasm.md](../user/wildbg-wasm.md).
 
 #### web
 

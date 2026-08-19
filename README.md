@@ -71,6 +71,7 @@ docker run -p 8082:8082 wildbg
 #### For users (bots and GUIs)
 - HTTP API: http://46.224.159.43/swagger-ui/
 - C API: [docs/user/wildbg-c.md](docs/user/wildbg-c.md)
+- WebAssembly (JavaScript/TypeScript): [docs/user/wildbg-wasm.md](docs/user/wildbg-wasm.md)
 
 #### For contributors
 - Code structure: [docs/dev/architecture.md](docs/dev/architecture.md)

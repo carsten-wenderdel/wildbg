@@ -1,6 +1,6 @@
 use crate::dice::ALL_21;
 use crate::evaluator::Evaluator;
-use crate::position::Position;
+use crate::position::{GamePhase, Position};
 use crate::probabilities::Probabilities;
 
 /// Looks one more ply ahead
@@ -16,6 +16,10 @@ pub struct MultiPlyEvaluator<T: Evaluator> {
 
 impl<T: Evaluator> Evaluator for MultiPlyEvaluator<T> {
     fn eval(&self, position: &Position) -> Probabilities {
+        if let GamePhase::GameOver(result) = position.game_phase() {
+            return Probabilities::from(result);
+        }
+
         let mut win_normal = 0f32;
         let mut win_gammon = 0f32;
         let mut win_bg = 0f32;
@@ -83,5 +87,16 @@ mod tests {
         let expected_equity = ((-2.0 * loser_equity_1 - 3.0 * loser_equity_2) + 31.0) / 36.0;
 
         assert!((multi_equity - expected_equity).abs() < 0.0000001);
+    }
+
+    #[test]
+    fn game_over_position_does_not_panic() {
+        let evaluator = CompositeEvaluator::default_tests();
+        let multi = MultiPlyEvaluator { evaluator };
+
+        // Position where x has lost (o has borne off all checkers)
+        let game_over_pos = pos!(x 1:1; o);
+        let probabilities = multi.eval(&game_over_pos);
+        assert_eq!(probabilities.equity(), -1.0);
     }
 }
