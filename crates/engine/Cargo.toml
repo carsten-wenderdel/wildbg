@@ -10,3 +10,8 @@ license.workspace = true
 fastrand = { workspace = true }
 tract-onnx = "=0.23.4"
 base64 = "0.22.1"
+
+# Feature unification for wasm32-unknown-unknown:
+# Enables the "wasm_js" backend for the transitive getrandom dependency pulled in by tract-onnx/rand.
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+getrandom = { version = "0.4", features = ["wasm_js"] }

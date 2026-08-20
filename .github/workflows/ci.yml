@@ -29,6 +29,11 @@ jobs:
       - name: Unit tests
         run: cargo test --workspace --exclude benchmarks --color always
 
+      - name: Check WASM build
+        run: |
+          rustup target add wasm32-unknown-unknown
+          cargo check --package wildbg-wasm --target wasm32-unknown-unknown
+
       - name: Install cbindgen
         run: |
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
