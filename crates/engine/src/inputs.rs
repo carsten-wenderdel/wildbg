@@ -33,9 +33,10 @@ pub trait InputsGen {
         //     vec.set_len(vec.capacity());
         // }
 
+        // SELF::NUM_INPUTS is not a real constant, so we can't use `as_chunks_mut`.
+        #[allow(clippy::chunks_exact_to_as_chunks)]
         vec.chunks_exact_mut(Self::NUM_INPUTS)
             .zip(positions)
-            .rev()
             .for_each(|(slice, pos)| {
                 self.fill_inputs(pos, slice);
             });
